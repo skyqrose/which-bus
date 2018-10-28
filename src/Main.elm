@@ -1,8 +1,28 @@
 module Main exposing (main)
 
+import Browser
 import Html
+import Json.Decode
+import Model exposing (..)
+import Update exposing (update)
+import Url exposing (Url)
+import View exposing (view)
 
 
-main : Html.Html a
+main : Program Json.Decode.Value Model Msg
 main =
-    Html.text "Hello World!!"
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = \model -> Sub.none
+        , onUrlRequest = OnUrlRequest
+        , onUrlChange = OnUrlChange
+        }
+
+
+init : Json.Decode.Value -> Url -> key -> ( Model, Cmd Msg )
+init flags url key =
+    ( ()
+    , Cmd.none
+    )
