@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Browser.Navigation as Navigation
 import Browser
 import Html
 import Json.Decode
@@ -22,9 +23,13 @@ main =
         }
 
 
-init : Json.Decode.Value -> Url -> key -> ( Model, Cmd Msg )
+init : Json.Decode.Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { stops = UrlParsing.parseStopsFromUrl url
-      }
+    ( { url = url
+    , navigationKey = key
+    , stops = UrlParsing.parseStopsFromUrl url
+    , routeIdFormText = ""
+    , stopIdFormText = ""
+    }
     , Cmd.none
     )
