@@ -23,9 +23,13 @@ update msg model =
             )
 
         AddStop stop ->
+            let
+                newStops =
+                    model.stops ++ [ stop ]
+            in
             ( model
             , model.url
-                |> addQueryParam stop
+                |> setUrlQuery (queryParamsForStops newStops)
                 |> Url.toString
                 |> Navigation.pushUrl model.navigationKey
             )
@@ -45,28 +49,21 @@ update msg model =
             )
 
 
-addQueryParam : Stop -> Url -> Url
-addQueryParam stop url =
-    let
-        previousQuery =
-            Maybe.withDefault "" url.query
+setUrlQuery : String -> Url -> Url
+setUrlQuery query url =
+    { url | query = Just query }
 
-        joiner =
-            case previousQuery of
-                "" ->
-                    ""
 
-                _ ->
-                    "&"
-
-        newQuery =
-            String.concat
-                [ previousQuery
-                , joiner
-                , "stop="
-                , stop.routeId
-                , ","
-                , stop.stopId
-                ]
-    in
-    { url | query = Just newQuery }
+queryParamsForStops : List Stop -> String
+queryParamsForStops stops =
+    stops
+        |> List.map
+            (\stop ->
+                String.concat
+                    [ "stop="
+                    , stop.routeId
+                    , ","
+                    , stop.stopId
+                    ]
+            )
+        |> String.join "&"
