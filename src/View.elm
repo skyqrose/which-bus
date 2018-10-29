@@ -6,14 +6,25 @@ import Html exposing (Html)
 import Model exposing (..)
 
 
-view : Model -> Browser.Document Msg
+view : Model -> Browser.Document msg
 view model =
     { title = "MBTA Stop Predictions - skyqrose"
     , body =
-        [ El.layout [] ui ]
+        [ El.layout [] (ui model) ]
     }
 
 
-ui : Element Msg
-ui =
-    El.text "Hello World"
+ui : Model -> Element msg
+ui model =
+    El.column []
+        (El.text "Stops"
+            :: List.map viewStop model.stops
+        )
+
+
+viewStop : Stop -> Element msg
+viewStop stop =
+    El.row []
+        [ El.text stop.routeId
+        , El.text stop.stopId
+        ]

@@ -6,6 +6,7 @@ import Json.Decode
 import Model exposing (..)
 import Update exposing (update)
 import Url exposing (Url)
+import UrlParsing
 import View exposing (view)
 
 
@@ -23,6 +24,7 @@ main =
 
 init : Json.Decode.Value -> Url -> key -> ( Model, Cmd Msg )
 init flags url key =
-    ( ()
+    ( { stops = UrlParsing.parseStopsFromUrl url
+      }
     , Cmd.none
     )
