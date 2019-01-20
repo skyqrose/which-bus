@@ -12,6 +12,45 @@
         JavaScript is required for this page
     </noscript>
     <script>
+        /*
+        port: subscribe
+          log
+          make EventSource(pass callback)
+        port message received
+          (route, id, (event, data) or raw text)
+        */
+        var route_id = "Red";
+        var stop_id = "place-pktrm";
+        var api_key = "3a6d67c08111426d8617a30340a9fad3"
+        var url = "https://api-v3.mbta.com/predictions?api_key=" + api_key + "&filter[route]=" + route_id + "&filter[stop]=" + stop_id;
+        console.log("url="+ url);
+        var eventSource = new EventSource(url);
+        console.log(eventSource);
+        eventSource.addEventListener("reset", function(event) {
+            console.log("reset");
+            console.log(event);
+        }, false);
+        eventSource.addEventListener("add", function(event) {
+            console.log("add");
+            console.log(event);
+        }, false);
+        eventSource.addEventListener("update", function(event) {
+            console.log("update");
+            console.log(event);
+        }, false);
+        eventSource.addEventListener("remove", function(event) {
+            console.log("remove");
+            console.log(event);
+        }, false);
+        eventSource.onerror = function(event) {
+            console.log("event");
+            console.log(event);
+        }
+        eventSource.onmessage = function(event) {
+            console.log("event");
+            console.log(event);
+        }
+        console.log(eventSource);
         Elm.Main.init();
     </script>
 </body>
