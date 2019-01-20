@@ -17,7 +17,7 @@ main =
         { init = init
         , view = view
         , update = update
-        , subscriptions = \model -> Sub.none
+        , subscriptions = subscriptions
         , onUrlRequest = OnUrlRequest
         , onUrlChange = OnUrlChange
         }
@@ -42,8 +42,16 @@ init flags url key =
 port predictionStreamJson : Json.Decode.Value -> Cmd msg
 
 
+port predictionEvent : (Json.Decode.Value -> msg) -> Sub msg
+
+
 predictionStreamStop : Stop -> Cmd Msg
 predictionStreamStop stop =
     stop
         |> encodeStop
         |> predictionStreamJson
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    predictionEvent PredictionEvent

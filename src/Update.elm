@@ -48,6 +48,15 @@ update msg model =
             , Cmd.none
             )
 
+        PredictionEvent json ->
+            let
+                _ =
+                    Debug.log "receivedEvent" json
+            in
+            ( model
+            , Cmd.none
+            )
+
 
 setUrlQuery : String -> Url -> Url
 setUrlQuery query url =

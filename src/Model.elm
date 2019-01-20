@@ -26,6 +26,7 @@ type Msg
     | AddStop Stop
     | TypeRouteId String
     | TypeStopId String
+    | PredictionEvent Json.Encode.Value
 
 
 type alias Stop =

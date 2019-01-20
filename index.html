@@ -25,10 +25,15 @@
             for (i = 0; i < eventNames.length; i++) {
                 var eventName = eventNames[i];
                 console.log("adding " + eventName);
-                eventSource.addEventListener(eventName, function (event) {
+                eventSource.addEventListener(eventName, function (eventData) {
                     console.log(eventName);
                     console.log(stop);
-                    console.log(event);
+                    console.log(eventData);
+                    app.ports.predictionEvent.send({
+                        event: eventName,
+                        stop: stop,
+                        data: eventData,
+                    })
                 }, false);
             }
             console.log("watching");
