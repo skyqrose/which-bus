@@ -1,7 +1,7 @@
-module Main exposing (main)
+port module Main exposing (main)
 
-import Browser.Navigation as Navigation
 import Browser
+import Browser.Navigation as Navigation
 import Html
 import Json.Decode
 import Model exposing (..)
@@ -25,11 +25,25 @@ main =
 
 init : Json.Decode.Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
+    let
+        stops =
+            UrlParsing.parseStopsFromUrl url
+    in
     ( { url = url
-    , navigationKey = key
-    , stops = UrlParsing.parseStopsFromUrl url
-    , routeIdFormText = ""
-    , stopIdFormText = ""
-    }
-    , Cmd.none
+      , navigationKey = key
+      , stops = stops
+      , routeIdFormText = ""
+      , stopIdFormText = ""
+      }
+    , Cmd.batch (List.map predictionStreamStop stops)
     )
+
+
+port predictionStreamJson : Json.Decode.Value -> Cmd msg
+
+
+predictionStreamStop : Stop -> Cmd Msg
+predictionStreamStop stop =
+    stop
+        |> encodeStop
+        |> predictionStreamJson

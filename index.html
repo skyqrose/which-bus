@@ -23,35 +23,41 @@
         var stop_id = "place-pktrm";
         var api_key = "3a6d67c08111426d8617a30340a9fad3"
         var url = "https://api-v3.mbta.com/predictions?api_key=" + api_key + "&filter[route]=" + route_id + "&filter[stop]=" + stop_id;
-        console.log("url="+ url);
+        console.log("url=" + url);
+        /*
         var eventSource = new EventSource(url);
         console.log(eventSource);
-        eventSource.addEventListener("reset", function(event) {
+        eventSource.addEventListener("reset", function (event) {
             console.log("reset");
             console.log(event);
         }, false);
-        eventSource.addEventListener("add", function(event) {
+        eventSource.addEventListener("add", function (event) {
             console.log("add");
             console.log(event);
         }, false);
-        eventSource.addEventListener("update", function(event) {
+        eventSource.addEventListener("update", function (event) {
             console.log("update");
             console.log(event);
         }, false);
-        eventSource.addEventListener("remove", function(event) {
+        eventSource.addEventListener("remove", function (event) {
             console.log("remove");
             console.log(event);
         }, false);
-        eventSource.onerror = function(event) {
+        eventSource.onerror = function (event) {
             console.log("event");
             console.log(event);
         }
-        eventSource.onmessage = function(event) {
+        eventSource.onmessage = function (event) {
             console.log("event");
             console.log(event);
         }
         console.log(eventSource);
-        Elm.Main.init();
+        */
+        app = Elm.Main.init();
+        app.ports.predictionStreamJson.subscribe(function (stop) {
+            console.log("watching");
+            console.log(stop);
+        })
     </script>
 </body>
 
