@@ -61,8 +61,8 @@ type StreamEvent
 
 type alias Prediction =
     { id : PredictionId
-    , arrival_time : String
-    , departure_time : String
+    , arrivalTime : String
+    , departureTime : String
     , stop : Stop
     }
 

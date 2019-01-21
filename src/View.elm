@@ -89,7 +89,7 @@ viewStop stop maybePredictions =
 
 viewPrediction : Prediction -> Element msg
 viewPrediction prediction =
-    El.text prediction.arrival_time
+    El.text prediction.arrivalTime
 
 
 addStopForm : Model -> Element Msg
