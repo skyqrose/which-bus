@@ -7,8 +7,8 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
-import Iso8601
 import Model exposing (..)
+import Time
 
 
 view : Model -> Browser.Document Msg
@@ -30,27 +30,27 @@ ui model =
             [ El.spacing unit
             , El.width El.fill
             ]
-            (viewStops model.stops)
+            (viewStops model.currentTime model.stops)
         , addStopForm model
         ]
 
 
-viewStops : StopsData -> List (Element msg)
-viewStops stopsWithMaybePredictions =
-    case stopsWithMaybePredictions of
+viewStops : Time.Posix -> StopsData -> List (Element msg)
+viewStops currentTime stopsData =
+    case stopsData of
         Loading stops ->
             List.map
-                (\stop -> viewStop stop Nothing)
+                (\stop -> viewStop currentTime stop Nothing)
                 stops
 
         Success stopsWithPredictions ->
             stopsWithPredictions
-                |> AssocList.map (\stop predictions -> viewStop stop (Just predictions))
+                |> AssocList.map (\stop predictions -> viewStop currentTime stop (Just predictions))
                 |> AssocList.values
 
 
-viewStop : Stop -> Maybe PredictionsForStop -> Element msg
-viewStop stop maybePredictions =
+viewStop : Time.Posix -> Stop -> Maybe PredictionsForStop -> Element msg
+viewStop currentTime stop maybePredictions =
     let
         (RouteId routeIdText) =
             stop.routeId
@@ -83,14 +83,33 @@ viewStop stop maybePredictions =
                 Just predictionsForStop ->
                     predictionsForStop
                         |> AssocList.values
-                        |> List.map viewPrediction
+                        |> List.sortBy (.time >> Time.posixToMillis)
+                        |> List.map (predictionTimeString currentTime)
+                        |> List.map El.text
             )
         ]
 
 
-viewPrediction : Prediction -> Element msg
-viewPrediction prediction =
-    El.text (Iso8601.fromTime prediction.time)
+predictionTimeString : Time.Posix -> Prediction -> String
+predictionTimeString currentTime prediction =
+    let
+        differenceMillis =
+            Time.posixToMillis prediction.time - Time.posixToMillis currentTime
+
+        differenceSecs =
+            differenceMillis // 1000
+
+        displayMins =
+            String.fromInt (differenceSecs // 60)
+
+        displaySecs =
+            differenceSecs
+                |> remainderBy 60
+                |> abs
+                |> String.fromInt
+                |> String.padLeft 2 '0'
+    in
+    displayMins ++ ":" ++ displaySecs
 
 
 addStopForm : Model -> Element Msg
