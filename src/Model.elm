@@ -1,12 +1,11 @@
 module Model exposing
     ( Model
     , Msg(..)
-    , PredictionsForStop(..)
+    , PredictionsForStop
     , Stop
-    , StopsWithPredictions
+    , StopsWithPredictions(..)
     , StreamEvent
     , encodeStop
-    , stopsWithLoadingPredictions
     , streamEventDecoder
     )
 
@@ -37,13 +36,13 @@ type Msg
     | StreamEvent (Result Decode.Error StreamEvent)
 
 
-type alias StopsWithPredictions =
-    AssocList.Dict Stop PredictionsForStop
+type StopsWithPredictions
+    = Loading (List Stop)
+    | Success (AssocList.Dict Stop PredictionsForStop)
 
 
-type PredictionsForStop
-    = Loading
-    | Success (AssocList.Dict String Prediction)
+type alias PredictionsForStop =
+    AssocList.Dict String Prediction
 
 
 type StreamEvent
@@ -121,10 +120,3 @@ predictionDecoder =
                 |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] Decode.string
                 |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] Decode.string
             )
-
-
-stopsWithLoadingPredictions : List Stop -> StopsWithPredictions
-stopsWithLoadingPredictions stops =
-    stops
-        |> List.map (\stop -> ( stop, Loading ))
-        |> AssocList.fromList

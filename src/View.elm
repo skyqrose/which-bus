@@ -29,16 +29,27 @@ ui model =
             [ El.spacing unit
             , El.width El.fill
             ]
-            (model.stops
-                |> AssocList.map viewStop
-                |> AssocList.values
-            )
+            (viewStops model.stops)
         , addStopForm model
         ]
 
 
-viewStop : Stop -> PredictionsForStop -> Element msg
-viewStop stop predictions =
+viewStops : StopsWithPredictions -> List (Element msg)
+viewStops stopsWithMaybePredictions =
+    case stopsWithMaybePredictions of
+        Loading stops ->
+            List.map
+                (\stop -> viewStop stop Nothing)
+                stops
+
+        Success stopsWithPredictions ->
+            stopsWithPredictions
+                |> AssocList.map (\stop predictions -> viewStop stop (Just predictions))
+                |> AssocList.values
+
+
+viewStop : Stop -> Maybe PredictionsForStop -> Element msg
+viewStop stop maybePredictions =
     El.row
         [ El.width El.fill
         , Border.width 1
@@ -57,11 +68,11 @@ viewStop stop predictions =
         , El.column
             [ El.alignRight
             ]
-            (case predictions of
-                Loading ->
+            (case maybePredictions of
+                Nothing ->
                     [ El.text "Loading" ]
 
-                _ ->
+                Just predictions ->
                     [ El.text "Predictions" ]
             )
         ]

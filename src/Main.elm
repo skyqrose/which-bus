@@ -37,7 +37,7 @@ init flags url key =
     in
     ( { url = url
       , navigationKey = key
-      , stops = stopsWithLoadingPredictions stops
+      , stops = Loading stops
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
@@ -60,7 +60,7 @@ update msg model =
             in
             ( { model
                 | url = url
-                , stops = stopsWithLoadingPredictions newStops
+                , stops = Loading newStops
               }
             , startStream newStops
             )
@@ -68,7 +68,12 @@ update msg model =
         AddStop newStop ->
             let
                 existingStops =
-                    AssocList.keys model.stops
+                    case model.stops of
+                        Loading stops ->
+                            stops
+
+                        Success stopsWithPredictions ->
+                            AssocList.keys stopsWithPredictions
 
                 newStops =
                     existingStops ++ [ newStop ]
