@@ -7,6 +7,13 @@ import Html exposing (Html)
 import Model exposing (..)
 
 
+{-| Pixels
+-}
+unit : Int
+unit =
+    16
+
+
 view : Model -> Browser.Document Msg
 view model =
     { title = "MBTA Stop Predictions - skyqrose"
@@ -17,24 +24,48 @@ view model =
 
 ui : Model -> Element Msg
 ui model =
-    El.column []
+    El.column
+        [ El.padding unit
+        , El.spacing unit
+        ]
         [ El.text "Stops"
-        , El.column [] (List.map viewStop model.stops)
+        , El.column
+            [ El.spacing unit
+            ]
+            (List.map viewStop model.stops)
         , addStopForm model
         ]
 
 
 viewStop : ( Stop, PredictionsForStop ) -> Element msg
 viewStop ( stop, predictions ) =
-    El.row []
-        [ El.text stop.routeId
-        , El.text stop.stopId
+    El.row
+        [ El.padding unit
+        ]
+        [ El.column
+            [ El.alignLeft
+            ]
+            [ El.text stop.routeId
+            , El.text stop.stopId
+            ]
+        , El.column
+            [ El.alignRight
+            ]
+            (case predictions of
+                Loading ->
+                    [ El.text "Loading" ]
+
+                _ ->
+                    [ El.text "Predictions" ]
+            )
         ]
 
 
 addStopForm : Model -> Element Msg
 addStopForm model =
-    El.column []
+    El.column
+        [ El.spacing unit
+        ]
         [ Input.text []
             { onChange = TypeRouteId
             , text = model.routeIdFormText
