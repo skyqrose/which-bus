@@ -5,10 +5,15 @@ import Browser.Navigation as Navigation
 import Html
 import Json.Decode as Decode
 import Model exposing (..)
-import Update exposing (update)
 import Url exposing (Url)
 import UrlParsing
 import View exposing (view)
+
+
+port startStreamPort : String -> Cmd msg
+
+
+port streamEventPort : (Decode.Value -> msg) -> Sub msg
 
 
 main : Program Decode.Value Model Msg
@@ -39,10 +44,67 @@ init flags url key =
     )
 
 
-port startStreamPort : String -> Cmd msg
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        OnUrlRequest urlRequest ->
+            ( model
+            , Cmd.none
+            )
 
+        OnUrlChange url ->
+            ( { model
+                | url = url
+                , stops = UrlParsing.parseStopsFromUrl url
+              }
+            , Cmd.none
+            )
 
-port streamEventPort : (Decode.Value -> msg) -> Sub msg
+        AddStop stop ->
+            let
+                newStops =
+                    model.stops ++ [ stop ]
+            in
+            ( model
+            , model.url
+                |> UrlParsing.setStopsInUrl newStops
+                |> Url.toString
+                |> Navigation.pushUrl model.navigationKey
+            )
+
+        TypeRouteId text ->
+            ( { model
+                | routeIdFormText = text
+              }
+            , Cmd.none
+            )
+
+        TypeStopId text ->
+            ( { model
+                | stopIdFormText = text
+              }
+            , Cmd.none
+            )
+
+        StreamEvent decodeResult ->
+            case decodeResult of
+                Ok event ->
+                    let
+                        _ =
+                            Debug.log "successfully decoded" event
+                    in
+                    ( model
+                    , Cmd.none
+                    )
+
+                Err error ->
+                    let
+                        _ =
+                            Debug.log "failed to decode" (Debug.toString error)
+                    in
+                    ( model
+                    , Cmd.none
+                    )
 
 
 startStream : List Stop -> Cmd Msg
