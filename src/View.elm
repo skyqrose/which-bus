@@ -24,8 +24,8 @@ ui model =
         ]
 
 
-viewStop : Stop -> Element msg
-viewStop stop =
+viewStop : ( Stop, PredictionsForStop ) -> Element msg
+viewStop ( stop, predictions ) =
     El.row []
         [ El.text stop.routeId
         , El.text stop.stopId

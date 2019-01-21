@@ -36,7 +36,7 @@ init flags url key =
     in
     ( { url = url
       , navigationKey = key
-      , stops = stops
+      , stops = List.map (\stop -> ( stop, Loading )) stops
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
@@ -53,17 +53,24 @@ update msg model =
             )
 
         OnUrlChange url ->
-            ( { model
-                | url = url
-                , stops = UrlParsing.parseStopsFromUrl url
-              }
-            , Cmd.none
-            )
-
-        AddStop stop ->
             let
                 newStops =
-                    model.stops ++ [ stop ]
+                    UrlParsing.parseStopsFromUrl url
+            in
+            ( { model
+                | url = url
+                , stops = List.map (\stop -> ( stop, Loading )) newStops
+              }
+            , startStream newStops
+            )
+
+        AddStop newStop ->
+            let
+                existingStops =
+                    List.map (\( stop, _ ) -> stop) model.stops
+
+                newStops =
+                    existingStops ++ [ newStop ]
             in
             ( model
             , model.url

@@ -1,6 +1,7 @@
 module Model exposing
     ( Model
     , Msg(..)
+    , PredictionsForStop(..)
     , Stop
     , encodeStop
     , streamEventDecoder
@@ -17,7 +18,7 @@ import Url exposing (Url)
 type alias Model =
     { url : Url
     , navigationKey : Navigation.Key
-    , stops : List Stop
+    , stops : List ( Stop, PredictionsForStop )
     , routeIdFormText : String
     , stopIdFormText : String
     }
@@ -30,6 +31,11 @@ type Msg
     | TypeRouteId String
     | TypeStopId String
     | StreamEvent (Result Decode.Error StreamEvent)
+
+
+type PredictionsForStop
+    = Loading
+    | Success (List Prediction)
 
 
 type StreamEvent
