@@ -1,4 +1,4 @@
-module UrlParsing exposing (parseStopsFromUrl)
+module UrlParsing exposing (parseStopsFromUrl, setStopsInUrl)
 
 import Model exposing (Stop)
 import Url
@@ -36,3 +36,23 @@ parseStop queryValue =
         _ ->
             Nothing
 
+
+setStopsInUrl : List Stop -> Url.Url -> Url.Url
+setStopsInUrl stops url =
+    let
+        queryParams =
+            stops
+                |> List.map encodeStopAsQueryParam
+                |> String.join "&"
+    in
+    { url | query = Just queryParams }
+
+
+encodeStopAsQueryParam : Stop -> String
+encodeStopAsQueryParam stop =
+    String.concat
+        [ "stop="
+        , stop.routeId
+        , ","
+        , stop.stopId
+        ]

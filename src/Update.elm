@@ -29,7 +29,7 @@ update msg model =
             in
             ( model
             , model.url
-                |> setUrlQuery (queryParamsForStops newStops)
+                |> UrlParsing.setStopsInUrl newStops
                 |> Url.toString
                 |> Navigation.pushUrl model.navigationKey
             )
@@ -67,23 +67,3 @@ update msg model =
                     ( model
                     , Cmd.none
                     )
-
-
-setUrlQuery : String -> Url -> Url
-setUrlQuery query url =
-    { url | query = Just query }
-
-
-queryParamsForStops : List Stop -> String
-queryParamsForStops stops =
-    stops
-        |> List.map
-            (\stop ->
-                String.concat
-                    [ "stop="
-                    , stop.routeId
-                    , ","
-                    , stop.stopId
-                    ]
-            )
-        |> String.join "&"
