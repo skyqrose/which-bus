@@ -12,8 +12,8 @@
         JavaScript is required for this page
     </noscript>
     <script>
-        var api_key = "3a6d67c08111426d8617a30340a9fad3"
-        var eventNames = ["reset", "add", "update", "remove"]
+        var api_key = "3a6d67c08111426d8617a30340a9fad3";
+        var eventNames = ["reset", "add", "update", "remove"];
         app = Elm.Main.init();
         app.ports.predictionStreamJson.subscribe(function (stop) {
             var url = ("https://api-v3.mbta.com/predictions"
@@ -33,7 +33,7 @@
                         event: eventName,
                         stop: stop,
                         data: eventData,
-                    })
+                    });
                 }, false);
             }
             console.log("watching");
