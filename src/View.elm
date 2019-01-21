@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import AssocList
 import Browser
 import Element as El exposing (Element)
 import Element.Border as Border
@@ -28,13 +29,16 @@ ui model =
             [ El.spacing unit
             , El.width El.fill
             ]
-            (List.map viewStop model.stops)
+            (model.stops
+                |> AssocList.map viewStop
+                |> AssocList.values
+            )
         , addStopForm model
         ]
 
 
-viewStop : ( Stop, PredictionsForStop ) -> Element msg
-viewStop ( stop, predictions ) =
+viewStop : Stop -> PredictionsForStop -> Element msg
+viewStop stop predictions =
     El.row
         [ El.width El.fill
         , Border.width 1

@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import AssocList
 import Browser
 import Browser.Navigation as Navigation
 import Html
@@ -36,7 +37,7 @@ init flags url key =
     in
     ( { url = url
       , navigationKey = key
-      , stops = List.map (\stop -> ( stop, Loading )) stops
+      , stops = stopsWithLoadingPredictions stops
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
@@ -59,7 +60,7 @@ update msg model =
             in
             ( { model
                 | url = url
-                , stops = List.map (\stop -> ( stop, Loading )) newStops
+                , stops = stopsWithLoadingPredictions newStops
               }
             , startStream newStops
             )
@@ -67,7 +68,7 @@ update msg model =
         AddStop newStop ->
             let
                 existingStops =
-                    List.map (\( stop, _ ) -> stop) model.stops
+                    AssocList.keys model.stops
 
                 newStops =
                     existingStops ++ [ newStop ]

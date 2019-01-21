@@ -3,10 +3,14 @@ module Model exposing
     , Msg(..)
     , PredictionsForStop(..)
     , Stop
+    , StopsWithPredictions
+    , StreamEvent
     , encodeStop
+    , stopsWithLoadingPredictions
     , streamEventDecoder
     )
 
+import AssocList
 import Browser
 import Browser.Navigation as Navigation
 import Json.Decode as Decode
@@ -18,7 +22,7 @@ import Url exposing (Url)
 type alias Model =
     { url : Url
     , navigationKey : Navigation.Key
-    , stops : List ( Stop, PredictionsForStop )
+    , stops : StopsWithPredictions
     , routeIdFormText : String
     , stopIdFormText : String
     }
@@ -33,9 +37,13 @@ type Msg
     | StreamEvent (Result Decode.Error StreamEvent)
 
 
+type alias StopsWithPredictions =
+    AssocList.Dict Stop PredictionsForStop
+
+
 type PredictionsForStop
     = Loading
-    | Success (List Prediction)
+    | Success (AssocList.Dict String Prediction)
 
 
 type StreamEvent
@@ -113,3 +121,10 @@ predictionDecoder =
                 |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] Decode.string
                 |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] Decode.string
             )
+
+
+stopsWithLoadingPredictions : List Stop -> StopsWithPredictions
+stopsWithLoadingPredictions stops =
+    stops
+        |> List.map (\stop -> ( stop, Loading ))
+        |> AssocList.fromList
