@@ -2,16 +2,11 @@ module View exposing (view)
 
 import Browser
 import Element as El exposing (Element)
+import Element.Border as Border
+import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
 import Model exposing (..)
-
-
-{-| Pixels
--}
-unit : Int
-unit =
-    16
 
 
 view : Model -> Browser.Document Msg
@@ -40,13 +35,18 @@ ui model =
 viewStop : ( Stop, PredictionsForStop ) -> Element msg
 viewStop ( stop, predictions ) =
     El.row
-        [ El.padding unit
+        [ Border.width 1
+        , Border.rounded 4
+        , El.padding unit
         ]
         [ El.column
             [ El.alignLeft
             ]
             [ El.text stop.routeId
-            , El.text stop.stopId
+            , El.el
+                [ Font.size fontSmall
+                ]
+                (El.text stop.stopId)
             ]
         , El.column
             [ El.alignRight
@@ -94,3 +94,15 @@ addStopForm model =
 label : String -> Input.Label msg
 label text =
     Input.labelAbove [] (El.text text)
+
+
+{-| Pixels
+-}
+unit : Int
+unit =
+    16
+
+
+fontSmall : Int
+fontSmall =
+    14
