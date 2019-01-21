@@ -3,7 +3,7 @@ port module Main exposing (main)
 import Browser
 import Browser.Navigation as Navigation
 import Html
-import Json.Decode
+import Json.Decode as Decode
 import Model exposing (..)
 import Update exposing (update)
 import Url exposing (Url)
@@ -11,7 +11,7 @@ import UrlParsing
 import View exposing (view)
 
 
-main : Program Json.Decode.Value Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
@@ -23,7 +23,7 @@ main =
         }
 
 
-init : Json.Decode.Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
+init : Decode.Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
         stops =
@@ -39,10 +39,10 @@ init flags url key =
     )
 
 
-port predictionStreamJson : Json.Decode.Value -> Cmd msg
+port predictionStreamJson : Decode.Value -> Cmd msg
 
 
-port predictionEvent : (Json.Decode.Value -> msg) -> Sub msg
+port predictionEvent : (Decode.Value -> msg) -> Sub msg
 
 
 predictionStreamStop : Stop -> Cmd Msg
