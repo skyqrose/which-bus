@@ -1,6 +1,11 @@
 module UrlParsing exposing (parseStopsFromUrl, setStopsInUrl)
 
-import Model exposing (Stop)
+import Model
+    exposing
+        ( RouteId(..)
+        , Stop
+        , StopId(..)
+        )
 import Url
 import Url.Parser
 import Url.Parser.Query
@@ -29,8 +34,8 @@ parseStop queryValue =
     case String.split "," queryValue of
         [ routeId, stopId ] ->
             Just
-                { routeId = routeId
-                , stopId = stopId
+                { routeId = RouteId routeId
+                , stopId = StopId stopId
                 }
 
         _ ->
@@ -50,9 +55,16 @@ setStopsInUrl stops url =
 
 encodeStopAsQueryParam : Stop -> String
 encodeStopAsQueryParam stop =
+    let
+        (RouteId routeId) =
+            stop.routeId
+
+        (StopId stopId) =
+            stop.stopId
+    in
     String.concat
         [ "stop="
-        , stop.routeId
+        , routeId
         , ","
-        , stop.stopId
+        , stopId
         ]

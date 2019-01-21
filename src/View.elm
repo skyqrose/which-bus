@@ -50,6 +50,13 @@ viewStops stopsWithMaybePredictions =
 
 viewStop : Stop -> Maybe PredictionsForStop -> Element msg
 viewStop stop maybePredictions =
+    let
+        (RouteId routeIdText) =
+            stop.routeId
+
+        (StopId stopIdText) =
+            stop.stopId
+    in
     El.row
         [ El.width El.fill
         , Border.width 1
@@ -59,11 +66,11 @@ viewStop stop maybePredictions =
         [ El.column
             [ El.alignLeft
             ]
-            [ El.text stop.routeId
+            [ El.text routeIdText
             , El.el
                 [ Font.size fontSmall
                 ]
-                (El.text stop.stopId)
+                (El.text stopIdText)
             ]
         , El.column
             [ El.alignRight
@@ -99,8 +106,8 @@ addStopForm model =
             { onPress =
                 Just
                     (AddStop
-                        { routeId = model.routeIdFormText
-                        , stopId = model.stopIdFormText
+                        { routeId = RouteId model.routeIdFormText
+                        , stopId = StopId model.stopIdFormText
                         }
                     )
             , label = El.text "Add Stop"

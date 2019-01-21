@@ -3,7 +3,9 @@ module Model exposing
     , Msg(..)
     , Prediction
     , PredictionsForStop
+    , RouteId(..)
     , Stop
+    , StopId(..)
     , StopsData(..)
     , StopsWithPredictions
     , StreamEvent(..)
@@ -48,17 +50,17 @@ type alias StopsWithPredictions =
 
 
 type alias PredictionsForStop =
-    AssocList.Dict String Prediction
+    AssocList.Dict PredictionId Prediction
 
 
 type StreamEvent
     = Reset (List Prediction)
     | Insert Prediction
-    | Remove String
+    | Remove PredictionId
 
 
 type alias Prediction =
-    { id : String
+    { id : PredictionId
     , arrival_time : String
     , departure_time : String
     , stop : Stop
@@ -66,24 +68,36 @@ type alias Prediction =
 
 
 type alias Stop =
-    { routeId : String
-    , stopId : String
+    { routeId : RouteId
+    , stopId : StopId
     }
+
+
+type RouteId
+    = RouteId String
+
+
+type StopId
+    = StopId String
+
+
+type PredictionId
+    = PredictionId String
 
 
 encodeStop : Stop -> Json.Encode.Value
 encodeStop stop =
+    let
+        (RouteId routeId) =
+            stop.routeId
+
+        (StopId stopId) =
+            stop.stopId
+    in
     Json.Encode.object
-        [ ( "route_id", Json.Encode.string stop.routeId )
-        , ( "stop_id", Json.Encode.string stop.stopId )
+        [ ( "route_id", Json.Encode.string routeId )
+        , ( "stop_id", Json.Encode.string stopId )
         ]
-
-
-stopDecoder : Decode.Decoder Stop
-stopDecoder =
-    Decode.succeed Stop
-        |> Pipeline.required "route_id" Decode.string
-        |> Pipeline.required "stop_id" Decode.string
 
 
 streamEventDecoder : Decode.Decoder StreamEvent
@@ -108,7 +122,7 @@ eventDataDecoder eventName =
             Decode.map Insert predictionDecoder
 
         "remove" ->
-            Decode.map Remove Decode.string
+            Decode.map Remove (Decode.map PredictionId Decode.string)
 
         _ ->
             Decode.fail ("unrecognized event name " ++ eventName)
@@ -117,11 +131,11 @@ eventDataDecoder eventName =
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     Decode.succeed Prediction
-        |> Pipeline.required "id" Decode.string
+        |> Pipeline.required "id" (Decode.map PredictionId Decode.string)
         |> Pipeline.requiredAt [ "attributes", "arrival_time" ] Decode.string
         |> Pipeline.requiredAt [ "attributes", "departure_time" ] Decode.string
         |> Pipeline.custom
             (Decode.succeed Stop
-                |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] Decode.string
-                |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] Decode.string
+                |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
+                |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] (Decode.map StopId Decode.string)
             )

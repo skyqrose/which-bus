@@ -131,11 +131,13 @@ startStream stops =
         route_ids =
             stops
                 |> List.map .routeId
+                |> List.map (\(RouteId routeId) -> routeId)
                 |> String.join ","
 
         stop_ids =
             stops
                 |> List.map .stopId
+                |> List.map (\(StopId stopId) -> stopId)
                 |> String.join ","
 
         url =
