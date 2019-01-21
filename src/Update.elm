@@ -48,21 +48,21 @@ update msg model =
             , Cmd.none
             )
 
-        PredictionEvent decodeResult ->
+        StreamEvent decodeResult ->
             case decodeResult of
-                Ok stopPrediction ->
+                Ok event ->
                     let
                         _ =
-                            Debug.log "successfully decoded" stopPrediction
+                            Debug.log "successfully decoded" event
                     in
                     ( model
                     , Cmd.none
                     )
 
-                Err e ->
+                Err error ->
                     let
                         _ =
-                            Debug.log "failed to decode" (Debug.toString e)
+                            Debug.log "failed to decode" (Debug.toString error)
                     in
                     ( model
                     , Cmd.none

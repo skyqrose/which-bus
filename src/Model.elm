@@ -3,7 +3,7 @@ module Model exposing
     , Msg(..)
     , Stop
     , encodeStop
-    , stopPredictionDecoder
+    , streamEventDecoder
     )
 
 import Browser
@@ -29,16 +29,10 @@ type Msg
     | AddStop Stop
     | TypeRouteId String
     | TypeStopId String
-    | PredictionEvent (Result Decode.Error StopPrediction)
+    | StreamEvent (Result Decode.Error StreamEvent)
 
 
-type alias StopPrediction =
-    { stop : Stop
-    , event : PredictionEvent
-    }
-
-
-type PredictionEvent
+type StreamEvent
     = Reset (List Prediction)
     | Add Prediction
     | Update Prediction
@@ -74,24 +68,17 @@ stopDecoder =
         |> Pipeline.required "stop_id" Decode.string
 
 
-stopPredictionDecoder : Decode.Decoder StopPrediction
-stopPredictionDecoder =
-    Decode.succeed StopPrediction
-        |> Pipeline.required "stop" stopDecoder
-        |> Pipeline.custom predictionEventDecoder
-
-
-predictionEventDecoder : Decode.Decoder PredictionEvent
-predictionEventDecoder =
+streamEventDecoder : Decode.Decoder StreamEvent
+streamEventDecoder =
     Decode.field "event" Decode.string
         |> Decode.andThen
             (\eventName ->
-                Decode.field "data" (predictionsDataDecoder eventName)
+                Decode.field "data" (eventDataDecoder eventName)
             )
 
 
-predictionsDataDecoder : String -> Decode.Decoder PredictionEvent
-predictionsDataDecoder eventName =
+eventDataDecoder : String -> Decode.Decoder StreamEvent
+eventDataDecoder eventName =
     case eventName of
         "reset" ->
             Decode.map Reset (Decode.list predictionDecoder)

@@ -35,28 +35,49 @@ init flags url key =
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
-    , Cmd.batch (List.map predictionStreamStop stops)
+    , startStream stops
     )
 
 
-port predictionStreamJson : Decode.Value -> Cmd msg
+port startStreamPort : String -> Cmd msg
 
 
-port predictionEvent : (Decode.Value -> msg) -> Sub msg
+port streamEventPort : (Decode.Value -> msg) -> Sub msg
 
 
-predictionStreamStop : Stop -> Cmd Msg
-predictionStreamStop stop =
-    stop
-        |> encodeStop
-        |> predictionStreamJson
+startStream : List Stop -> Cmd Msg
+startStream stops =
+    let
+        api_key =
+            "3a6d67c08111426d8617a30340a9fad3"
+
+        route_ids =
+            stops
+                |> List.map .routeId
+                |> String.join ","
+
+        stop_ids =
+            stops
+                |> List.map .stopId
+                |> String.join ","
+
+        url =
+            "https://api-v3.mbta.com/predictions"
+                ++ "?api_key="
+                ++ api_key
+                ++ "&filter[route]="
+                ++ route_ids
+                ++ "&filter[stop]="
+                ++ stop_ids
+    in
+    startStreamPort url
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    predictionEvent
-        (\predictionJson ->
-            predictionJson
-                |> Decode.decodeValue stopPredictionDecoder
-                |> PredictionEvent
+    streamEventPort
+        (\json ->
+            json
+                |> Decode.decodeValue streamEventDecoder
+                |> StreamEvent
         )
