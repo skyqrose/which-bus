@@ -16,9 +16,11 @@ module Model exposing
 import AssocList
 import Browser
 import Browser.Navigation as Navigation
+import Iso8601
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
+import Time
 import Url exposing (Url)
 
 
@@ -61,8 +63,8 @@ type StreamEvent
 
 type alias Prediction =
     { id : PredictionId
-    , arrivalTime : String
-    , departureTime : String
+    , arrivalTime : Time.Posix
+    , departureTime : Time.Posix
     , stop : Stop
     }
 
@@ -132,8 +134,8 @@ predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     Decode.succeed Prediction
         |> Pipeline.required "id" (Decode.map PredictionId Decode.string)
-        |> Pipeline.requiredAt [ "attributes", "arrival_time" ] Decode.string
-        |> Pipeline.requiredAt [ "attributes", "departure_time" ] Decode.string
+        |> Pipeline.requiredAt [ "attributes", "arrival_time" ] Iso8601.decoder
+        |> Pipeline.requiredAt [ "attributes", "departure_time" ] Iso8601.decoder
         |> Pipeline.custom
             (Decode.succeed Stop
                 |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)

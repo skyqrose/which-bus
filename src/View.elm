@@ -7,6 +7,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import Iso8601
 import Model exposing (..)
 
 
@@ -89,7 +90,7 @@ viewStop stop maybePredictions =
 
 viewPrediction : Prediction -> Element msg
 viewPrediction prediction =
-    El.text prediction.arrivalTime
+    El.text (Iso8601.fromTime prediction.arrivalTime)
 
 
 addStopForm : Model -> Element Msg
