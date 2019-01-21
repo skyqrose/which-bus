@@ -47,8 +47,7 @@ type alias PredictionsForStop =
 
 type StreamEvent
     = Reset (List Prediction)
-    | Add Prediction
-    | Update Prediction
+    | Insert Prediction
     | Remove String
 
 
@@ -97,10 +96,10 @@ eventDataDecoder eventName =
             Decode.map Reset (Decode.list predictionDecoder)
 
         "add" ->
-            Decode.map Add predictionDecoder
+            Decode.map Insert predictionDecoder
 
         "update" ->
-            Decode.map Update predictionDecoder
+            Decode.map Insert predictionDecoder
 
         "remove" ->
             Decode.map Remove Decode.string
