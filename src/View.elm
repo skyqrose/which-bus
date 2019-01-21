@@ -84,6 +84,7 @@ viewStop currentTime stop maybePredictions =
                     predictionsForStop
                         |> AssocList.values
                         |> List.sortBy (.time >> Time.posixToMillis)
+                        |> List.take 3
                         |> List.map (predictionTimeString currentTime)
                         |> List.map El.text
             )
