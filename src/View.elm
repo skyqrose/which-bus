@@ -26,6 +26,7 @@ ui model =
         [ El.text "Stops"
         , El.column
             [ El.spacing unit
+            , El.width El.fill
             ]
             (List.map viewStop model.stops)
         , addStopForm model
@@ -35,7 +36,8 @@ ui model =
 viewStop : ( Stop, PredictionsForStop ) -> Element msg
 viewStop ( stop, predictions ) =
     El.row
-        [ Border.width 1
+        [ El.width El.fill
+        , Border.width 1
         , Border.rounded 4
         , El.padding unit
         ]
