@@ -63,8 +63,7 @@ type StreamEvent
 
 type alias Prediction =
     { id : PredictionId
-    , arrivalTime : Time.Posix
-    , departureTime : Time.Posix
+    , time : Time.Posix
     , stop : Stop
     }
 
@@ -134,8 +133,12 @@ predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     Decode.succeed Prediction
         |> Pipeline.required "id" (Decode.map PredictionId Decode.string)
-        |> Pipeline.requiredAt [ "attributes", "arrival_time" ] Iso8601.decoder
-        |> Pipeline.requiredAt [ "attributes", "departure_time" ] Iso8601.decoder
+        |> Pipeline.custom
+            (Decode.oneOf
+                [ Decode.at [ "attributes", "arrival_time" ] Iso8601.decoder
+                , Decode.at [ "attributes", "departure_time" ] Iso8601.decoder
+                ]
+            )
         |> Pipeline.custom
             (Decode.succeed Stop
                 |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
