@@ -25,7 +25,8 @@ import Url exposing (Url)
 
 
 type alias Model =
-    { url : Url
+    { currentTime : Time.Posix
+    , url : Url
     , navigationKey : Navigation.Key
     , stops : StopsData
     , routeIdFormText : String
@@ -34,7 +35,8 @@ type alias Model =
 
 
 type Msg
-    = OnUrlRequest Browser.UrlRequest
+    = Tick Time.Posix
+    | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url
     | AddStop Stop
     | TypeRouteId String

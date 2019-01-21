@@ -6,6 +6,8 @@ import Browser.Navigation as Navigation
 import Html
 import Json.Decode as Decode
 import Model exposing (..)
+import Task
+import Time
 import Url exposing (Url)
 import UrlParsing
 import View exposing (view)
@@ -35,19 +37,30 @@ init flags url key =
         stops =
             UrlParsing.parseStopsFromUrl url
     in
-    ( { url = url
+    ( { currentTime = Time.millisToPosix 0
+      , url = url
       , navigationKey = key
       , stops = Loading stops
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
-    , startStream stops
+    , Cmd.batch
+        [ Task.perform Tick Time.now
+        , startStream stops
+        ]
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Tick time ->
+            ( { model
+                | currentTime = time
+              }
+            , Cmd.none
+            )
+
         OnUrlRequest urlRequest ->
             ( model
             , Cmd.none
@@ -154,12 +167,15 @@ startStream stops =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    streamEventPort
-        (\json ->
-            json
-                |> Decode.decodeValue streamEventDecoder
-                |> StreamEvent
-        )
+    Sub.batch
+        [ Time.every 1000 Tick
+        , streamEventPort
+            (\json ->
+                json
+                    |> Decode.decodeValue streamEventDecoder
+                    |> StreamEvent
+            )
+        ]
 
 
 applyStreamEvent : StreamEvent -> StopsData -> StopsData
