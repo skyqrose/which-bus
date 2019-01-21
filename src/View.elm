@@ -79,10 +79,17 @@ viewStop stop maybePredictions =
                 Nothing ->
                     [ El.text "Loading" ]
 
-                Just predictions ->
-                    [ El.text "Predictions" ]
+                Just predictionsForStop ->
+                    predictionsForStop
+                        |> AssocList.values
+                        |> List.map viewPrediction
             )
         ]
+
+
+viewPrediction : Prediction -> Element msg
+viewPrediction prediction =
+    El.text prediction.arrival_time
 
 
 addStopForm : Model -> Element Msg
