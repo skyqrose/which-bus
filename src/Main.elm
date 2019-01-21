@@ -106,7 +106,9 @@ update msg model =
                         _ =
                             Debug.log "successfully decoded" event
                     in
-                    ( model
+                    ( { model
+                        | stops = applyStreamEvent event model.stops
+                      }
                     , Cmd.none
                     )
 
@@ -156,3 +158,63 @@ subscriptions _ =
                 |> Decode.decodeValue streamEventDecoder
                 |> StreamEvent
         )
+
+
+applyStreamEvent : StreamEvent -> StopsData -> StopsData
+applyStreamEvent event stopsData =
+    case ( event, stopsData ) of
+        ( Reset newPredictions, Loading stops ) ->
+            let
+                stopsWithEmptyPredictions =
+                    stops
+                        |> List.map (\stop -> ( stop, AssocList.empty ))
+                        |> AssocList.fromList
+            in
+            Success <|
+                List.foldl insertPrediction stopsWithEmptyPredictions newPredictions
+
+        ( Reset newPredictions, Success stopsWithPredictions ) ->
+            let
+                stopsWithEmptyPredictions =
+                    stopsWithPredictions
+                        |> AssocList.map (\_ _ -> AssocList.empty)
+            in
+            Success <|
+                List.foldl insertPrediction stopsWithEmptyPredictions newPredictions
+
+        ( Insert newPrediction, Loading stops ) ->
+            Loading stops
+
+        ( Insert newPrediction, Success stopsWithPredictions ) ->
+            Success <|
+                insertPrediction newPrediction stopsWithPredictions
+
+        ( Remove predictionId, Loading stops ) ->
+            Loading stops
+
+        ( Remove predictionId, Success stopsWithPredictions ) ->
+            -- We don't know which stop this prediction was for
+            -- So we have to search all the stops for it.
+            Success <|
+                AssocList.map
+                    (\stop predictionsForStop ->
+                        AssocList.remove predictionId predictionsForStop
+                    )
+                    stopsWithPredictions
+
+
+insertPrediction : Prediction -> StopsWithPredictions -> StopsWithPredictions
+insertPrediction prediction stopsWithPredictions =
+    AssocList.update
+        prediction.stop
+        (\maybePredictionsForStop ->
+            case maybePredictionsForStop of
+                Nothing ->
+                    -- We got a prediction for a stop that's not on our list
+                    -- Ignore this prediction
+                    Nothing
+
+                Just predictionsForStop ->
+                    Just (AssocList.insert prediction.id prediction predictionsForStop)
+        )
+        stopsWithPredictions

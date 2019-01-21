@@ -34,7 +34,7 @@ ui model =
         ]
 
 
-viewStops : StopsWithPredictions -> List (Element msg)
+viewStops : StopsData -> List (Element msg)
 viewStops stopsWithMaybePredictions =
     case stopsWithMaybePredictions of
         Loading stops ->
