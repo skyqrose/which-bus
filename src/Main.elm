@@ -54,4 +54,9 @@ predictionStreamStop stop =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    predictionEvent PredictionEvent
+    predictionEvent
+        (\predictionJson ->
+            predictionJson
+                |> Decode.decodeValue stopPredictionDecoder
+                |> PredictionEvent
+        )

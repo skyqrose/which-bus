@@ -48,14 +48,25 @@ update msg model =
             , Cmd.none
             )
 
-        PredictionEvent json ->
-            let
-                _ =
-                    Debug.log "receivedEvent" json
-            in
-            ( model
-            , Cmd.none
-            )
+        PredictionEvent decodeResult ->
+            case decodeResult of
+                Ok stopPrediction ->
+                    let
+                        _ =
+                            Debug.log "successfully decoded" stopPrediction
+                    in
+                    ( model
+                    , Cmd.none
+                    )
+
+                Err e ->
+                    let
+                        _ =
+                            Debug.log "failed to decode" (Debug.toString e)
+                    in
+                    ( model
+                    , Cmd.none
+                    )
 
 
 setUrlQuery : String -> Url -> Url
