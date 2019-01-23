@@ -13,7 +13,7 @@ import Time
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "MBTA Stop Predictions - skyqrose"
+    { title = "Which Bus - skyqrose"
     , body =
         [ El.layout [] (ui model) ]
     }

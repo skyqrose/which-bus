@@ -1,5 +1,5 @@
 {
-  "name": "mbta-stop-predictions",
+  "name": "which-bus",
   "version": "0.0.1",
   "description": "",
   "main": "Main.elm",
