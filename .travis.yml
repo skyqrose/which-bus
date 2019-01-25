@@ -1,6 +1,6 @@
 language: elm
 elm: 0.19.0
-script: npm test
+script: npm test && npm run build
 deploy:
   provider: pages
   skip_cleanup: true
