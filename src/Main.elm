@@ -1,6 +1,6 @@
 port module Main exposing (main)
 
-import AssocList
+import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
 import Html
@@ -40,7 +40,8 @@ init flags url key =
     ( { currentTime = Time.millisToPosix 0
       , url = url
       , navigationKey = key
-      , stops = Loading stops
+      , stops = stops
+      , predictionsData = Loading
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
@@ -73,23 +74,16 @@ update msg model =
             in
             ( { model
                 | url = url
-                , stops = Loading newStops
+                , stops = newStops
+                , predictionsData = Loading
               }
             , startStream newStops
             )
 
         AddStop newStop ->
             let
-                existingStops =
-                    case model.stops of
-                        Loading stops ->
-                            stops
-
-                        Success stopsWithPredictions ->
-                            AssocList.keys stopsWithPredictions
-
                 newStops =
-                    existingStops ++ [ newStop ]
+                    model.stops ++ [ newStop ]
             in
             ( model
             , model.url
@@ -120,7 +114,7 @@ update msg model =
                             Debug.log "successfully decoded" event
                     in
                     ( { model
-                        | stops = applyStreamEvent event model.stops
+                        | predictionsData = applyStreamEvent event model.predictionsData
                       }
                     , Cmd.none
                     )
@@ -130,7 +124,9 @@ update msg model =
                         _ =
                             Debug.log "failed to decode" (Debug.toString error)
                     in
-                    ( model
+                    ( { model
+                        | predictionsData = Failure error
+                      }
                     , Cmd.none
                     )
 
@@ -178,61 +174,45 @@ subscriptions _ =
         ]
 
 
-applyStreamEvent : StreamEvent -> StopsData -> StopsData
-applyStreamEvent event stopsData =
-    case ( event, stopsData ) of
-        ( Reset newPredictions, Loading stops ) ->
-            let
-                stopsWithEmptyPredictions =
-                    stops
-                        |> List.map (\stop -> ( stop, AssocList.empty ))
-                        |> AssocList.fromList
-            in
+applyStreamEvent : StreamEvent -> PredictionsData -> PredictionsData
+applyStreamEvent event predictionsData =
+    case ( event, predictionsData ) of
+        (_ , Failure error) -> Failure error
+        ( Reset newPredictions, _ ) ->
             Success <|
-                List.foldl insertPrediction stopsWithEmptyPredictions newPredictions
+                List.foldl insertPrediction Dict.empty newPredictions
 
-        ( Reset newPredictions, Success stopsWithPredictions ) ->
-            let
-                stopsWithEmptyPredictions =
-                    stopsWithPredictions
-                        |> AssocList.map (\_ _ -> AssocList.empty)
-            in
+        ( Insert newPrediction, Loading ) ->
+            Loading
+
+        ( Insert newPrediction, Success predictionsByStop ) ->
             Success <|
-                List.foldl insertPrediction stopsWithEmptyPredictions newPredictions
+                insertPrediction newPrediction predictionsByStop
 
-        ( Insert newPrediction, Loading stops ) ->
-            Loading stops
+        ( Remove predictionId, Loading ) ->
+            Loading
 
-        ( Insert newPrediction, Success stopsWithPredictions ) ->
-            Success <|
-                insertPrediction newPrediction stopsWithPredictions
-
-        ( Remove predictionId, Loading stops ) ->
-            Loading stops
-
-        ( Remove predictionId, Success stopsWithPredictions ) ->
+        ( Remove predictionId, Success predictionsByStop ) ->
             -- We don't know which stop this prediction was for
             -- So we have to search all the stops for it.
             Success <|
-                AssocList.map
+                Dict.map
                     (\stop predictionsForStop ->
-                        AssocList.remove predictionId predictionsForStop
+                        Dict.remove predictionId predictionsForStop
                     )
-                    stopsWithPredictions
+                    predictionsByStop
 
 
-insertPrediction : Prediction -> StopsWithPredictions -> StopsWithPredictions
-insertPrediction prediction stopsWithPredictions =
-    AssocList.update
+insertPrediction : Prediction -> PredictionsByStop -> PredictionsByStop
+insertPrediction prediction predictionsByStop =
+    Dict.update
         prediction.stop
         (\maybePredictionsForStop ->
             case maybePredictionsForStop of
                 Nothing ->
-                    -- We got a prediction for a stop that's not on our list
-                    -- Ignore this prediction
-                    Nothing
+                    Just (Dict.singleton prediction.id prediction)
 
                 Just predictionsForStop ->
-                    Just (AssocList.insert prediction.id prediction predictionsForStop)
+                    Just (Dict.insert prediction.id prediction predictionsForStop)
         )
-        stopsWithPredictions
+        predictionsByStop

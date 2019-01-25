@@ -6,14 +6,14 @@ module Model exposing
     , RouteId(..)
     , Stop
     , StopId(..)
-    , StopsData(..)
-    , StopsWithPredictions
+    , PredictionsData(..)
+    , PredictionsByStop
     , StreamEvent(..)
     , encodeStop
     , streamEventDecoder
     )
 
-import AssocList
+import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
 import Iso8601
@@ -28,7 +28,8 @@ type alias Model =
     { currentTime : Time.Posix
     , url : Url
     , navigationKey : Navigation.Key
-    , stops : StopsData
+    , stops : List Stop
+    , predictionsData : PredictionsData
     , routeIdFormText : String
     , stopIdFormText : String
     }
@@ -44,17 +45,17 @@ type Msg
     | StreamEvent (Result Decode.Error StreamEvent)
 
 
-type StopsData
-    = Loading (List Stop)
-    | Success StopsWithPredictions
+type PredictionsData
+    = Loading
+    | Failure Decode.Error
+    | Success PredictionsByStop
 
-
-type alias StopsWithPredictions =
-    AssocList.Dict Stop PredictionsForStop
+type alias PredictionsByStop =
+    Dict.Dict Stop PredictionsForStop
 
 
 type alias PredictionsForStop =
-    AssocList.Dict PredictionId Prediction
+    Dict.Dict PredictionId Prediction
 
 
 type StreamEvent

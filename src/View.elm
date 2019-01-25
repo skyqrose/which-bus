@@ -1,6 +1,6 @@
 module View exposing (view)
 
-import AssocList
+import AssocList as Dict
 import Browser
 import Element as El exposing (Element)
 import Element.Border as Border
@@ -21,6 +21,14 @@ view model =
 
 ui : Model -> Element Msg
 ui model =
+    let
+        predictionsByStop =
+              (case model.predictionsData of
+                Loading -> Dict.empty
+                Failure _ -> Dict.empty
+                Success predictions -> predictions
+            )
+    in
     El.column
         [ El.padding unit
         , El.spacing unit
@@ -30,27 +38,33 @@ ui model =
             [ El.spacing unit
             , El.width El.fill
             ]
-            (viewStops model.currentTime model.stops)
+            (viewStops
+              model.currentTime
+              model.stops
+              predictionsByStop
+            )
         , addStopForm model
         ]
 
 
-viewStops : Time.Posix -> StopsData -> List (Element msg)
-viewStops currentTime stopsData =
-    case stopsData of
-        Loading stops ->
+viewStops : Time.Posix -> List Stop -> PredictionsByStop -> List (Element msg)
+viewStops currentTime stops predictionsByStop =
             List.map
-                (\stop -> viewStop currentTime stop Nothing)
+                (\stop ->
+                    viewStop
+                    currentTime
+                    stop
+                    (predictionsByStop
+                        |> Dict.get stop
+                        |> Maybe.withDefault Dict.empty
+                    )
+
+                )
                 stops
 
-        Success stopsWithPredictions ->
-            stopsWithPredictions
-                |> AssocList.map (\stop predictions -> viewStop currentTime stop (Just predictions))
-                |> AssocList.values
 
-
-viewStop : Time.Posix -> Stop -> Maybe PredictionsForStop -> Element msg
-viewStop currentTime stop maybePredictions =
+viewStop : Time.Posix -> Stop -> PredictionsForStop -> Element msg
+viewStop currentTime stop predictionsForStop =
     let
         (RouteId routeIdText) =
             stop.routeId
@@ -76,13 +90,9 @@ viewStop currentTime stop maybePredictions =
         , El.column
             [ El.alignRight
             ]
-            (case maybePredictions of
-                Nothing ->
-                    [ El.text "Loading" ]
-
-                Just predictionsForStop ->
+            (
                     predictionsForStop
-                        |> AssocList.values
+                        |> Dict.values
                         |> List.sortBy (.time >> Time.posixToMillis)
                         |> List.take 3
                         |> List.map (predictionTimeString currentTime)
