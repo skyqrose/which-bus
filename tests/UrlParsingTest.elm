@@ -1,6 +1,7 @@
 module UrlParsingTest exposing (suite)
 
 import Expect
+import Model exposing (RouteId(..), StopId(..))
 import Test exposing (Test, describe, test)
 import Url
 import Url.Parser
@@ -24,8 +25,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseStopsFromUrl
                         |> Expect.equal
-                            [ { routeId = "routeId"
-                              , stopId = "stopId"
+                            [ { routeId = RouteId "routeId"
+                              , stopId = StopId "stopId"
                               }
                             ]
             , test "doesn't take a stop with too many ids" <|
@@ -48,11 +49,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseStopsFromUrl
                         |> Expect.equal
-                            [ { routeId = "routeId1"
-                              , stopId = "stopId1"
+                            [ { routeId = RouteId "routeId1"
+                              , stopId = StopId "stopId1"
                               }
-                            , { routeId = "routeId2"
-                              , stopId = "stopId2"
+                            , { routeId = RouteId "routeId2"
+                              , stopId = StopId "stopId2"
                               }
                             ]
             , test "includes a stop even if another is badly formatted" <|
@@ -61,8 +62,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseStopsFromUrl
                         |> Expect.equal
-                            [ { routeId = "routeId"
-                              , stopId = "stopId"
+                            [ { routeId = RouteId "routeId"
+                              , stopId = StopId "stopId"
                               }
                             ]
             , test "includes a stop when there are other query params" <|
@@ -71,8 +72,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseStopsFromUrl
                         |> Expect.equal
-                            [ { routeId = "routeId"
-                              , stopId = "stopId"
+                            [ { routeId = RouteId "routeId"
+                              , stopId = StopId "stopId"
                               }
                             ]
             , test "works when the url has other stuff in it" <|
@@ -81,8 +82,8 @@ suite =
                         |> fullUrlWithQuery
                         |> UrlParsing.parseStopsFromUrl
                         |> Expect.equal
-                            [ { routeId = "routeId"
-                              , stopId = "stopId"
+                            [ { routeId = RouteId "routeId"
+                              , stopId = StopId "stopId"
                               }
                             ]
             ]
