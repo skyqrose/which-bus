@@ -1,1 +1,40 @@
-<h1>Hello</h1>
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Which Bus - skyqrose</title>
+    <script src="/js/elm.js"></script>
+</head>
+
+<body>
+    <noscript>
+        JavaScript is required for this page
+    </noscript>
+    <script>
+        var eventNames = ["reset", "add", "update", "remove"];
+        var app = Elm.Main.init();
+        var eventSource = undefined;
+        app.ports.startStreamPort.subscribe(function (url) {
+            if (eventSource !== undefined) {
+                eventSource.close();
+            }
+            eventSource = new EventSource(url);
+            for (i = 0; i < eventNames.length; i++) {
+                let eventName = eventNames[i];
+                console.log("adding " + eventName);
+                eventSource.addEventListener(eventName, function (eventData) {
+                    console.log(eventName);
+                    console.log(eventData);
+                    app.ports.streamEventPort.send({
+                        event: eventName,
+                        data: JSON.parse(eventData.data),
+                    });
+                }, false);
+            }
+            console.log("watching");
+        })
+    </script>
+</body>
+
+</html>
