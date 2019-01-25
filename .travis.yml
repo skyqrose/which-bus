@@ -8,4 +8,4 @@ deploy:
   target_branch: gh-pages
   keep_history: true
   allow_empty_commit: true
-github_token: $GITHUB_TOKEN # set on travis-ci.com
+  github_token: $GITHUB_TOKEN # set on travis-ci.com
