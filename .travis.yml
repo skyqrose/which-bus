@@ -1,3 +1,11 @@
-language: 'elm'
-elm: '0.19.0'
-script: 'npm test'
+language: elm
+elm: 0.19.0
+script: npm test
+deploy:
+  provider: pages
+  skip_cleanup: true
+  repo: skyqrose/which-bus
+  target_branch: gh-pages
+  keep_history: true
+  allow_empty_commit: true
+github_token: $GITHUB_TOKEN # set on travis-ci.com
