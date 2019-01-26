@@ -177,7 +177,9 @@ subscriptions _ =
 applyStreamEvent : StreamEvent -> PredictionsData -> PredictionsData
 applyStreamEvent event predictionsData =
     case ( event, predictionsData ) of
-        (_ , Failure error) -> Failure error
+        ( _, Failure error ) ->
+            Failure error
+
         ( Reset newPredictions, _ ) ->
             Success <|
                 List.foldl insertPrediction Dict.empty newPredictions

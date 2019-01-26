@@ -16,6 +16,7 @@
   "scripts": {
     "start": "elm-live src/Main.elm --path-to-elm node_modules/.bin/elm --open -- --debug --output=js/elm.js",
     "build": "elm make src/Main.elm --debug --output=js/elm.js",
+    "format": "elm-format .",
     "test": "elm-format --validate . && elm-test"
   },
   "author": "Sky Rose",

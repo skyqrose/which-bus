@@ -2,12 +2,12 @@ module Model exposing
     ( Model
     , Msg(..)
     , Prediction
+    , PredictionsByStop
+    , PredictionsData(..)
     , PredictionsForStop
     , RouteId(..)
     , Stop
     , StopId(..)
-    , PredictionsData(..)
-    , PredictionsByStop
     , StreamEvent(..)
     , encodeStop
     , streamEventDecoder
@@ -49,6 +49,7 @@ type PredictionsData
     = Loading
     | Failure Decode.Error
     | Success PredictionsByStop
+
 
 type alias PredictionsByStop =
     Dict.Dict Stop PredictionsForStop

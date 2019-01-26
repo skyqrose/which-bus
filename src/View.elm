@@ -23,11 +23,15 @@ ui : Model -> Element Msg
 ui model =
     let
         predictionsByStop =
-              (case model.predictionsData of
-                Loading -> Dict.empty
-                Failure _ -> Dict.empty
-                Success predictions -> predictions
-            )
+            case model.predictionsData of
+                Loading ->
+                    Dict.empty
+
+                Failure _ ->
+                    Dict.empty
+
+                Success predictions ->
+                    predictions
     in
     El.column
         [ El.padding unit
@@ -39,9 +43,9 @@ ui model =
             , El.width El.fill
             ]
             (viewStops
-              model.currentTime
-              model.stops
-              predictionsByStop
+                model.currentTime
+                model.stops
+                predictionsByStop
             )
         , addStopForm model
         ]
@@ -49,18 +53,17 @@ ui model =
 
 viewStops : Time.Posix -> List Stop -> PredictionsByStop -> List (Element msg)
 viewStops currentTime stops predictionsByStop =
-            List.map
-                (\stop ->
-                    viewStop
-                    currentTime
-                    stop
-                    (predictionsByStop
-                        |> Dict.get stop
-                        |> Maybe.withDefault Dict.empty
-                    )
-
+    List.map
+        (\stop ->
+            viewStop
+                currentTime
+                stop
+                (predictionsByStop
+                    |> Dict.get stop
+                    |> Maybe.withDefault Dict.empty
                 )
-                stops
+        )
+        stops
 
 
 viewStop : Time.Posix -> Stop -> PredictionsForStop -> Element msg
@@ -90,13 +93,12 @@ viewStop currentTime stop predictionsForStop =
         , El.column
             [ El.alignRight
             ]
-            (
-                    predictionsForStop
-                        |> Dict.values
-                        |> List.sortBy (.time >> Time.posixToMillis)
-                        |> List.take 3
-                        |> List.map (predictionTimeString currentTime)
-                        |> List.map El.text
+            (predictionsForStop
+                |> Dict.values
+                |> List.sortBy (.time >> Time.posixToMillis)
+                |> List.take 3
+                |> List.map (predictionTimeString currentTime)
+                |> List.map El.text
             )
         ]
 
