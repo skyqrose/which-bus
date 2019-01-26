@@ -2,6 +2,8 @@ _Under Construction_
 
 # Which Bus?
 
+[![Build Status](https://travis-ci.com/skyqrose/which-bus.svg?branch=master)](https://travis-ci.com/skyqrose/which-bus)
+
 MBTA transit predictions for a customizable list of stops.
 
 Intended to help you decide which route to take when you have multiple options available. For example, to help you answer the question: "Should I take the Red Line or Commuter Rail from South Station to Braintree? Commuter Rail is faster, but is there a train soon?" You could make a list that shows predictions for the Red Line, Kingston/Plymouth Line, and Middleborough/Lakeville.
