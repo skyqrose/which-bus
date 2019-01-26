@@ -5628,9 +5628,7 @@ var author$project$Main$startStream = function (stops) {
 	var url = 'https://api-v3.mbta.com/predictions' + ('?api_key=' + (api_key + ('&filter[route]=' + (route_ids + ('&filter[stop]=' + stop_ids)))));
 	return author$project$Main$startStreamPort(url);
 };
-var author$project$Model$Loading = function (a) {
-	return {$: 'Loading', a: a};
-};
+var author$project$Model$Loading = {$: 'Loading'};
 var author$project$Model$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -6477,9 +6475,10 @@ var author$project$Main$init = F3(
 			{
 				currentTime: elm$time$Time$millisToPosix(0),
 				navigationKey: key,
+				predictionsData: author$project$Model$Loading,
 				routeIdFormText: '',
 				stopIdFormText: '',
-				stops: author$project$Model$Loading(stops),
+				stops: stops,
 				url: url
 			},
 			elm$core$Platform$Cmd$batch(
@@ -7545,6 +7544,14 @@ var pzp1997$assoc_list$AssocList$insert = F3(
 				_Utils_Tuple2(key, value),
 				alteredAlist));
 	});
+var pzp1997$assoc_list$AssocList$singleton = F2(
+	function (key, value) {
+		return pzp1997$assoc_list$AssocList$D(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(key, value)
+				]));
+	});
 var pzp1997$assoc_list$AssocList$get = F2(
 	function (targetKey, _n0) {
 		get:
@@ -7603,37 +7610,29 @@ var pzp1997$assoc_list$AssocList$update = F3(
 		}
 	});
 var author$project$Main$insertPrediction = F2(
-	function (prediction, stopsWithPredictions) {
+	function (prediction, predictionsByStop) {
 		return A3(
 			pzp1997$assoc_list$AssocList$update,
 			prediction.stop,
 			function (maybePredictionsForStop) {
 				if (maybePredictionsForStop.$ === 'Nothing') {
-					return elm$core$Maybe$Nothing;
+					return elm$core$Maybe$Just(
+						A2(pzp1997$assoc_list$AssocList$singleton, prediction.id, prediction));
 				} else {
 					var predictionsForStop = maybePredictionsForStop.a;
 					return elm$core$Maybe$Just(
 						A3(pzp1997$assoc_list$AssocList$insert, prediction.id, prediction, predictionsForStop));
 				}
 			},
-			stopsWithPredictions);
+			predictionsByStop);
 	});
+var author$project$Model$Failure = function (a) {
+	return {$: 'Failure', a: a};
+};
 var author$project$Model$Success = function (a) {
 	return {$: 'Success', a: a};
 };
 var pzp1997$assoc_list$AssocList$empty = pzp1997$assoc_list$AssocList$D(_List_Nil);
-var pzp1997$assoc_list$AssocList$fromList = function (alist) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, result) {
-				var key = _n0.a;
-				var value = _n0.b;
-				return A3(pzp1997$assoc_list$AssocList$insert, key, value, result);
-			}),
-		pzp1997$assoc_list$AssocList$D(_List_Nil),
-		alist);
-};
 var pzp1997$assoc_list$AssocList$map = F2(
 	function (alter, _n0) {
 		var alist = _n0.a;
@@ -7650,63 +7649,53 @@ var pzp1997$assoc_list$AssocList$map = F2(
 				alist));
 	});
 var author$project$Main$applyStreamEvent = F2(
-	function (event, stopsData) {
-		var _n0 = _Utils_Tuple2(event, stopsData);
-		if (_n0.b.$ === 'Loading') {
-			switch (_n0.a.$) {
-				case 'Reset':
-					var newPredictions = _n0.a.a;
-					var stops = _n0.b.a;
-					var stopsWithEmptyPredictions = pzp1997$assoc_list$AssocList$fromList(
-						A2(
-							elm$core$List$map,
-							function (stop) {
-								return _Utils_Tuple2(stop, pzp1997$assoc_list$AssocList$empty);
-							},
-							stops));
-					return author$project$Model$Success(
-						A3(elm$core$List$foldl, author$project$Main$insertPrediction, stopsWithEmptyPredictions, newPredictions));
-				case 'Insert':
-					var newPrediction = _n0.a.a;
-					var stops = _n0.b.a;
-					return author$project$Model$Loading(stops);
+	function (event, predictionsData) {
+		var _n0 = _Utils_Tuple2(event, predictionsData);
+		_n0$1:
+		while (true) {
+			switch (_n0.b.$) {
+				case 'Failure':
+					var error = _n0.b.a;
+					return author$project$Model$Failure(error);
+				case 'Loading':
+					switch (_n0.a.$) {
+						case 'Reset':
+							break _n0$1;
+						case 'Insert':
+							var newPrediction = _n0.a.a;
+							var _n1 = _n0.b;
+							return author$project$Model$Loading;
+						default:
+							var predictionId = _n0.a.a;
+							var _n2 = _n0.b;
+							return author$project$Model$Loading;
+					}
 				default:
-					var predictionId = _n0.a.a;
-					var stops = _n0.b.a;
-					return author$project$Model$Loading(stops);
-			}
-		} else {
-			switch (_n0.a.$) {
-				case 'Reset':
-					var newPredictions = _n0.a.a;
-					var stopsWithPredictions = _n0.b.a;
-					var stopsWithEmptyPredictions = A2(
-						pzp1997$assoc_list$AssocList$map,
-						F2(
-							function (_n1, _n2) {
-								return pzp1997$assoc_list$AssocList$empty;
-							}),
-						stopsWithPredictions);
-					return author$project$Model$Success(
-						A3(elm$core$List$foldl, author$project$Main$insertPrediction, stopsWithEmptyPredictions, newPredictions));
-				case 'Insert':
-					var newPrediction = _n0.a.a;
-					var stopsWithPredictions = _n0.b.a;
-					return author$project$Model$Success(
-						A2(author$project$Main$insertPrediction, newPrediction, stopsWithPredictions));
-				default:
-					var predictionId = _n0.a.a;
-					var stopsWithPredictions = _n0.b.a;
-					return author$project$Model$Success(
-						A2(
-							pzp1997$assoc_list$AssocList$map,
-							F2(
-								function (stop, predictionsForStop) {
-									return A2(pzp1997$assoc_list$AssocList$remove, predictionId, predictionsForStop);
-								}),
-							stopsWithPredictions));
+					switch (_n0.a.$) {
+						case 'Reset':
+							break _n0$1;
+						case 'Insert':
+							var newPrediction = _n0.a.a;
+							var predictionsByStop = _n0.b.a;
+							return author$project$Model$Success(
+								A2(author$project$Main$insertPrediction, newPrediction, predictionsByStop));
+						default:
+							var predictionId = _n0.a.a;
+							var predictionsByStop = _n0.b.a;
+							return author$project$Model$Success(
+								A2(
+									pzp1997$assoc_list$AssocList$map,
+									F2(
+										function (stop, predictionsForStop) {
+											return A2(pzp1997$assoc_list$AssocList$remove, predictionId, predictionsForStop);
+										}),
+									predictionsByStop));
+					}
 			}
 		}
+		var newPredictions = _n0.a.a;
+		return author$project$Model$Success(
+			A3(elm$core$List$foldl, author$project$Main$insertPrediction, pzp1997$assoc_list$AssocList$empty, newPredictions));
 	});
 var elm$core$String$concat = function (strings) {
 	return A2(elm$core$String$join, '', strings);
@@ -11251,10 +11240,6 @@ var elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
-var pzp1997$assoc_list$AssocList$keys = function (_n0) {
-	var alist = _n0.a;
-	return A2(elm$core$List$map, elm$core$Tuple$first, alist);
-};
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -11274,25 +11259,12 @@ var author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{
-							stops: author$project$Model$Loading(newStops),
-							url: url
-						}),
+						{predictionsData: author$project$Model$Loading, stops: newStops, url: url}),
 					author$project$Main$startStream(newStops));
 			case 'AddStop':
 				var newStop = msg.a;
-				var existingStops = function () {
-					var _n1 = model.stops;
-					if (_n1.$ === 'Loading') {
-						var stops = _n1.a;
-						return stops;
-					} else {
-						var stopsWithPredictions = _n1.a;
-						return pzp1997$assoc_list$AssocList$keys(stopsWithPredictions);
-					}
-				}();
 				var newStops = _Utils_ap(
-					existingStops,
+					model.stops,
 					_List_fromArray(
 						[newStop]));
 				return _Utils_Tuple2(
@@ -11320,21 +11292,27 @@ var author$project$Main$update = F2(
 				var decodeResult = msg.a;
 				if (decodeResult.$ === 'Ok') {
 					var event = decodeResult.a;
-					var _n3 = A2(elm$core$Debug$log, 'successfully decoded', event);
+					var _n2 = A2(elm$core$Debug$log, 'successfully decoded', event);
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
-								stops: A2(author$project$Main$applyStreamEvent, event, model.stops)
+								predictionsData: A2(author$project$Main$applyStreamEvent, event, model.predictionsData)
 							}),
 						elm$core$Platform$Cmd$none);
 				} else {
 					var error = decodeResult.a;
-					var _n4 = A2(
+					var _n3 = A2(
 						elm$core$Debug$log,
 						'failed to decode',
 						elm$core$Debug$toString(error));
-					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								predictionsData: author$project$Model$Failure(error)
+							}),
+						elm$core$Platform$Cmd$none);
 				}
 		}
 	});
@@ -17753,7 +17731,7 @@ var pzp1997$assoc_list$AssocList$values = function (_n0) {
 	return A2(elm$core$List$map, elm$core$Tuple$second, alist);
 };
 var author$project$View$viewStop = F3(
-	function (currentTime, stop, maybePredictions) {
+	function (currentTime, stop, predictionsForStop) {
 		var _n0 = stop.stopId;
 		var stopIdText = _n0.a;
 		var _n1 = stop.routeId;
@@ -17788,63 +17766,55 @@ var author$project$View$viewStop = F3(
 					mdgriffith$elm_ui$Element$column,
 					_List_fromArray(
 						[mdgriffith$elm_ui$Element$alignRight]),
-					function () {
-						if (maybePredictions.$ === 'Nothing') {
-							return _List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$text('Loading')
-								]);
-						} else {
-							var predictionsForStop = maybePredictions.a;
-							return A2(
-								elm$core$List$map,
-								mdgriffith$elm_ui$Element$text,
+					A2(
+						elm$core$List$map,
+						mdgriffith$elm_ui$Element$text,
+						A2(
+							elm$core$List$map,
+							author$project$View$predictionTimeString(currentTime),
+							A2(
+								elm$core$List$take,
+								3,
 								A2(
-									elm$core$List$map,
-									author$project$View$predictionTimeString(currentTime),
+									elm$core$List$sortBy,
 									A2(
-										elm$core$List$take,
-										3,
-										A2(
-											elm$core$List$sortBy,
-											A2(
-												elm$core$Basics$composeR,
-												function ($) {
-													return $.time;
-												},
-												elm$time$Time$posixToMillis),
-											pzp1997$assoc_list$AssocList$values(predictionsForStop)))));
-						}
-					}())
+										elm$core$Basics$composeR,
+										function ($) {
+											return $.time;
+										},
+										elm$time$Time$posixToMillis),
+									pzp1997$assoc_list$AssocList$values(predictionsForStop))))))
 				]));
 	});
-var author$project$View$viewStops = F2(
-	function (currentTime, stopsData) {
-		if (stopsData.$ === 'Loading') {
-			var stops = stopsData.a;
-			return A2(
-				elm$core$List$map,
-				function (stop) {
-					return A3(author$project$View$viewStop, currentTime, stop, elm$core$Maybe$Nothing);
-				},
-				stops);
-		} else {
-			var stopsWithPredictions = stopsData.a;
-			return pzp1997$assoc_list$AssocList$values(
-				A2(
-					pzp1997$assoc_list$AssocList$map,
-					F2(
-						function (stop, predictions) {
-							return A3(
-								author$project$View$viewStop,
-								currentTime,
-								stop,
-								elm$core$Maybe$Just(predictions));
-						}),
-					stopsWithPredictions));
-		}
+var author$project$View$viewStops = F3(
+	function (currentTime, stops, predictionsByStop) {
+		return A2(
+			elm$core$List$map,
+			function (stop) {
+				return A3(
+					author$project$View$viewStop,
+					currentTime,
+					stop,
+					A2(
+						elm$core$Maybe$withDefault,
+						pzp1997$assoc_list$AssocList$empty,
+						A2(pzp1997$assoc_list$AssocList$get, stop, predictionsByStop)));
+			},
+			stops);
 	});
 var author$project$View$ui = function (model) {
+	var predictionsByStop = function () {
+		var _n0 = model.predictionsData;
+		switch (_n0.$) {
+			case 'Loading':
+				return pzp1997$assoc_list$AssocList$empty;
+			case 'Failure':
+				return pzp1997$assoc_list$AssocList$empty;
+			default:
+				var predictions = _n0.a;
+				return predictions;
+		}
+	}();
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
@@ -17862,7 +17832,7 @@ var author$project$View$ui = function (model) {
 						mdgriffith$elm_ui$Element$spacing(author$project$View$unit),
 						mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 					]),
-				A2(author$project$View$viewStops, model.currentTime, model.stops)),
+				A3(author$project$View$viewStops, model.currentTime, model.stops, predictionsByStop)),
 				author$project$View$addStopForm(model)
 			]));
 };
