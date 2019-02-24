@@ -11,43 +11,43 @@ import UrlParsing
 suite : Test
 suite =
     describe "UrlParsing"
-        [ describe "stopsQueryParser"
-            [ test "url without query has no stops" <|
+        [ describe "selectionsQueryParser"
+            [ test "url without query has no selections" <|
                 \_ ->
                     Nothing
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
-            , test "parses one stop" <|
+            , test "parses one selection" <|
                 \_ ->
                     Just "stop=routeId,stopId"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
                               }
                             ]
-            , test "doesn't take a stop with too many ids" <|
+            , test "doesn't take a selection with too many ids" <|
                 \_ ->
                     Just "stop=one,two,three"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
-            , test "doesn't take a stop with too few ids" <|
+            , test "doesn't take a selection with too few ids" <|
                 \_ ->
                     Just "stop=one"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
-            , test "takes multiple stops" <|
+            , test "takes multiple selections" <|
                 \_ ->
                     Just "stop=routeId1,stopId1&stop=routeId2,stopId2"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId1"
                               , stopId = StopId "stopId1"
@@ -56,21 +56,21 @@ suite =
                               , stopId = StopId "stopId2"
                               }
                             ]
-            , test "includes a stop even if another is badly formatted" <|
+            , test "includes a selection even if another is badly formatted" <|
                 \_ ->
                     Just "stop=one,two,three&stop=routeId,stopId"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
                               }
                             ]
-            , test "includes a stop when there are other query params" <|
+            , test "includes a selection when there are other query params" <|
                 \_ ->
                     Just "other=irrelevant&stop=routeId,stopId"
                         |> urlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
@@ -80,7 +80,7 @@ suite =
                 \_ ->
                     Just "stop=routeId,stopId"
                         |> fullUrlWithQuery
-                        |> UrlParsing.parseStopsFromUrl
+                        |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"

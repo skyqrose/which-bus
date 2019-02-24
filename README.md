@@ -8,9 +8,11 @@ MBTA transit predictions for a customizable list of stops.
 
 Intended to help you decide which route to take when you have multiple options available. For example, to help you answer the question: "Should I take the Red Line or Commuter Rail from South Station to Braintree? Commuter Rail is faster, but is there a train soon?" You could make a list that shows predictions for the Red Line, Kingston/Plymouth Line, and Middleborough/Lakeville.
 
-Enter the route id and stop id for each stop that you want predictions at. These are the internal ids given by the API, which may be different than the human-facing names. If the stop has a parent stop (e.g. subway stops), then you must use the child stop id for the specific platform you want, not the parent id for the whole station.
+Enter the route id and stop id for each selection that you want predictions at. These are the internal ids given by the API, which may be different than the human-facing names.
 
-The list of stops is saved as query parameters in the url, so you can bookmark useful lists.
+If the stop has a parent stop (e.g. subway stops), then you must use the child stop id for the specific platform you want, not the parent id for the whole station.
+
+The list of selections is saved as query parameters in the url, so you can bookmark useful lists.
 
 ## Technical Details
 

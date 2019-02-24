@@ -1,9 +1,9 @@
-module UrlParsing exposing (parseStopsFromUrl, setStopsInUrl)
+module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
 import Model
     exposing
         ( RouteId(..)
-        , Stop
+        , Selection
         , StopId(..)
         )
 import Url
@@ -11,26 +11,26 @@ import Url.Parser
 import Url.Parser.Query
 
 
-parseStopsFromUrl : Url.Url -> List Stop
-parseStopsFromUrl url =
+parseSelectionsFromUrl : Url.Url -> List Selection
+parseSelectionsFromUrl url =
     -- To avoid having to deal with path parsing, remove the path.
     { url | path = "/" }
-        |> Url.Parser.parse stopsUrlParser
+        |> Url.Parser.parse selectionsUrlParser
         |> Maybe.withDefault []
 
 
-stopsUrlParser : Url.Parser.Parser (List Stop -> a) a
-stopsUrlParser =
-    Url.Parser.query stopsQueryParser
+selectionsUrlParser : Url.Parser.Parser (List Selection -> a) a
+selectionsUrlParser =
+    Url.Parser.query selectionsQueryParser
 
 
-stopsQueryParser : Url.Parser.Query.Parser (List Stop)
-stopsQueryParser =
-    Url.Parser.Query.custom "stop" (List.filterMap parseStop)
+selectionsQueryParser : Url.Parser.Query.Parser (List Selection)
+selectionsQueryParser =
+    Url.Parser.Query.custom "stop" (List.filterMap parseSelection)
 
 
-parseStop : String -> Maybe Stop
-parseStop queryValue =
+parseSelection : String -> Maybe Selection
+parseSelection queryValue =
     case String.split "," queryValue of
         [ routeId, stopId ] ->
             Just
@@ -42,25 +42,25 @@ parseStop queryValue =
             Nothing
 
 
-setStopsInUrl : List Stop -> Url.Url -> Url.Url
-setStopsInUrl stops url =
+setSelectionsInUrl : List Selection -> Url.Url -> Url.Url
+setSelectionsInUrl selections url =
     let
         queryParams =
-            stops
-                |> List.map encodeStopAsQueryParam
+            selections
+                |> List.map encodeSelectionAsQueryParam
                 |> String.join "&"
     in
     { url | query = Just queryParams }
 
 
-encodeStopAsQueryParam : Stop -> String
-encodeStopAsQueryParam stop =
+encodeSelectionAsQueryParam : Selection -> String
+encodeSelectionAsQueryParam selection =
     let
         (RouteId routeId) =
-            stop.routeId
+            selection.routeId
 
         (StopId stopId) =
-            stop.stopId
+            selection.stopId
     in
     String.concat
         [ "stop="

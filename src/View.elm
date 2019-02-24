@@ -22,7 +22,7 @@ view model =
 ui : Model -> Element Msg
 ui model =
     let
-        predictionsByStop =
+        predictionsBySelection =
             case model.predictionsData of
                 Loading ->
                     Dict.empty
@@ -42,38 +42,38 @@ ui model =
             [ El.spacing unit
             , El.width El.fill
             ]
-            (viewStops
+            (viewSelections
                 model.currentTime
-                model.stops
-                predictionsByStop
+                model.selections
+                predictionsBySelection
             )
-        , addStopForm model
+        , addSelectionForm model
         ]
 
 
-viewStops : Time.Posix -> List Stop -> PredictionsByStop -> List (Element msg)
-viewStops currentTime stops predictionsByStop =
+viewSelections : Time.Posix -> List Selection -> PredictionsBySelection -> List (Element msg)
+viewSelections currentTime selections predictionsBySelection =
     List.map
-        (\stop ->
-            viewStop
+        (\selection ->
+            viewSelection
                 currentTime
-                stop
-                (predictionsByStop
-                    |> Dict.get stop
+                selection
+                (predictionsBySelection
+                    |> Dict.get selection
                     |> Maybe.withDefault Dict.empty
                 )
         )
-        stops
+        selections
 
 
-viewStop : Time.Posix -> Stop -> PredictionsForStop -> Element msg
-viewStop currentTime stop predictionsForStop =
+viewSelection : Time.Posix -> Selection -> PredictionsForSelection -> Element msg
+viewSelection currentTime selection predictionsForSelection =
     let
         (RouteId routeIdText) =
-            stop.routeId
+            selection.routeId
 
         (StopId stopIdText) =
-            stop.stopId
+            selection.stopId
     in
     El.row
         [ El.width El.fill
@@ -93,7 +93,7 @@ viewStop currentTime stop predictionsForStop =
         , El.column
             [ El.alignRight
             ]
-            (predictionsForStop
+            (predictionsForSelection
                 |> Dict.values
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
@@ -125,8 +125,8 @@ predictionTimeString currentTime prediction =
     displayMins ++ ":" ++ displaySecs
 
 
-addStopForm : Model -> Element Msg
-addStopForm model =
+addSelectionForm : Model -> Element Msg
+addSelectionForm model =
     El.column
         [ El.spacing unit
         ]
@@ -145,7 +145,7 @@ addStopForm model =
         , Input.button []
             { onPress =
                 Just
-                    (AddStop
+                    (AddSelection
                         { routeId = RouteId model.routeIdFormText
                         , stopId = StopId model.stopIdFormText
                         }

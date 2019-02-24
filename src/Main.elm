@@ -34,20 +34,20 @@ main =
 init : Decode.Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
-        stops =
-            UrlParsing.parseStopsFromUrl url
+        selections =
+            UrlParsing.parseSelectionsFromUrl url
     in
     ( { currentTime = Time.millisToPosix 0
       , url = url
       , navigationKey = key
-      , stops = stops
+      , selections = selections
       , predictionsData = Loading
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
-        , startStream stops
+        , startStream selections
         ]
     )
 
@@ -69,25 +69,25 @@ update msg model =
 
         OnUrlChange url ->
             let
-                newStops =
-                    UrlParsing.parseStopsFromUrl url
+                newSelections =
+                    UrlParsing.parseSelectionsFromUrl url
             in
             ( { model
                 | url = url
-                , stops = newStops
+                , selections = newSelections
                 , predictionsData = Loading
               }
-            , startStream newStops
+            , startStream newSelections
             )
 
-        AddStop newStop ->
+        AddSelection newSelection ->
             let
-                newStops =
-                    model.stops ++ [ newStop ]
+                newSelections =
+                    model.selections ++ [ newSelection ]
             in
             ( model
             , model.url
-                |> UrlParsing.setStopsInUrl newStops
+                |> UrlParsing.setSelectionsInUrl newSelections
                 |> Url.toString
                 |> Navigation.pushUrl model.navigationKey
             )
@@ -131,20 +131,20 @@ update msg model =
                     )
 
 
-startStream : List Stop -> Cmd Msg
-startStream stops =
+startStream : List Selection -> Cmd Msg
+startStream selections =
     let
         api_key =
             "3a6d67c08111426d8617a30340a9fad3"
 
         route_ids =
-            stops
+            selections
                 |> List.map .routeId
                 |> List.map (\(RouteId routeId) -> routeId)
                 |> String.join ","
 
         stop_ids =
-            stops
+            selections
                 |> List.map .stopId
                 |> List.map (\(StopId stopId) -> stopId)
                 |> String.join ","
@@ -187,34 +187,34 @@ applyStreamEvent event predictionsData =
         ( Insert newPrediction, Loading ) ->
             Loading
 
-        ( Insert newPrediction, Success predictionsByStop ) ->
+        ( Insert newPrediction, Success predictionsBySelection ) ->
             Success <|
-                insertPrediction newPrediction predictionsByStop
+                insertPrediction newPrediction predictionsBySelection
 
         ( Remove predictionId, Loading ) ->
             Loading
 
-        ( Remove predictionId, Success predictionsByStop ) ->
-            -- We don't know which stop this prediction was for
-            -- So we have to search all the stops for it.
+        ( Remove predictionId, Success predictionsBySelection ) ->
+            -- We don't know which selection this prediction was for
+            -- So we have to search all the selections for it.
             Success <|
                 Dict.map
-                    (\stop predictionsForStop ->
-                        Dict.remove predictionId predictionsForStop
+                    (\selection predictionsForSelection ->
+                        Dict.remove predictionId predictionsForSelection
                     )
-                    predictionsByStop
+                    predictionsBySelection
 
 
-insertPrediction : Prediction -> PredictionsByStop -> PredictionsByStop
-insertPrediction prediction predictionsByStop =
+insertPrediction : Prediction -> PredictionsBySelection -> PredictionsBySelection
+insertPrediction prediction predictionsBySelection =
     Dict.update
-        prediction.stop
-        (\maybePredictionsForStop ->
-            case maybePredictionsForStop of
+        prediction.selection
+        (\maybePredictionsForSelection ->
+            case maybePredictionsForSelection of
                 Nothing ->
                     Just (Dict.singleton prediction.id prediction)
 
-                Just predictionsForStop ->
-                    Just (Dict.insert prediction.id prediction predictionsForStop)
+                Just predictionsForSelection ->
+                    Just (Dict.insert prediction.id prediction predictionsForSelection)
         )
-        predictionsByStop
+        predictionsBySelection
