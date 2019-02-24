@@ -1,6 +1,6 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
-import Model
+import Data
     exposing
         ( RouteId(..)
         , Selection

@@ -3,6 +3,7 @@ port module Main exposing (main)
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
+import Data exposing (..)
 import Html
 import Json.Decode as Decode
 import Model exposing (..)

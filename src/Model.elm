@@ -1,13 +1,9 @@
 module Model exposing
     ( Model
     , Msg(..)
-    , Prediction
     , PredictionsBySelection
     , PredictionsData(..)
     , PredictionsForSelection
-    , RouteId(..)
-    , Selection
-    , StopId(..)
     , StreamEvent(..)
     , encodeSelection
     , streamEventDecoder
@@ -16,6 +12,7 @@ module Model exposing
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
+import Data exposing (..)
 import Iso8601
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
@@ -63,31 +60,6 @@ type StreamEvent
     = Reset (List Prediction)
     | Insert Prediction
     | Remove PredictionId
-
-
-type alias Prediction =
-    { id : PredictionId
-    , time : Time.Posix
-    , selection : Selection
-    }
-
-
-type alias Selection =
-    { routeId : RouteId
-    , stopId : StopId
-    }
-
-
-type RouteId
-    = RouteId String
-
-
-type StopId
-    = StopId String
-
-
-type PredictionId
-    = PredictionId String
 
 
 encodeSelection : Selection -> Json.Encode.Value

@@ -2,6 +2,7 @@ module View exposing (view)
 
 import AssocList as Dict
 import Browser
+import Data exposing (..)
 import Element as El exposing (Element)
 import Element.Border as Border
 import Element.Font as Font

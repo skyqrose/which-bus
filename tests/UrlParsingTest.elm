@@ -1,7 +1,7 @@
 module UrlParsingTest exposing (suite)
 
+import Data exposing (RouteId(..), StopId(..))
 import Expect
-import Model exposing (RouteId(..), StopId(..))
 import Test exposing (Test, describe, test)
 import Url
 import Url.Parser
