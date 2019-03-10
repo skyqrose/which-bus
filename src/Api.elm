@@ -1,6 +1,7 @@
 port module Api exposing
     ( ApiData
     , ApiResult(..)
+    , Error(..)
     , Msg
     , init
     , predictionsForSelection
@@ -24,8 +25,13 @@ port streamEventPort : (Decode.Value -> msg) -> Sub msg
 
 type ApiResult
     = Loading
-    | Failure Decode.Error
+    | Failure Error
     | Success ApiData
+
+
+type Error
+    = DecodeError Decode.Error
+    | BadOrder String
 
 
 type alias ApiData =
@@ -86,39 +92,34 @@ subscriptions msg =
 
 update : Msg -> ApiResult -> ApiResult
 update eventDecodeResult apiResult =
-    let
-        _ =
-            case eventDecodeResult of
-                Ok event ->
-                    Debug.log "successfully decoded" (Ok event)
-
-                Err error ->
-                    Debug.log "failed to decode" (Err error)
-    in
     case ( eventDecodeResult, apiResult ) of
         ( _, Failure error ) ->
             Failure error
 
         ( Err decodeError, _ ) ->
-            Failure decodeError
+            Failure (DecodeError decodeError)
 
         ( Ok (Reset newPredictions), _ ) ->
             Success <|
                 List.foldl insertPrediction Dict.empty newPredictions
 
         ( Ok (Insert newPrediction), Loading ) ->
-            Loading
+            Failure (BadOrder "Insert while Loading")
+
+        ( Ok (Remove predictionId), Loading ) ->
+            Failure (BadOrder "Remove while Loading")
 
         ( Ok (Insert newPrediction), Success apiData ) ->
             Success <|
                 insertPrediction newPrediction apiData
 
-        ( Ok (Remove predictionId), Loading ) ->
-            Loading
-
         ( Ok (Remove predictionId), Success apiData ) ->
-            Success <|
-                Dict.remove predictionId apiData
+            if Dict.member predictionId apiData then
+                Success <|
+                    Dict.remove predictionId apiData
+
+            else
+                Failure (BadOrder "Remove unknown id")
 
 
 insertPrediction : Prediction -> ApiData -> ApiData

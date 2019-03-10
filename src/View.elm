@@ -23,51 +23,50 @@ view model =
 
 ui : Model -> Element Msg
 ui model =
-    let
-        predictionsBySelection =
-            case model.apiResult of
-                Api.Loading ->
-                    Dict.empty
-
-                Api.Failure _ ->
-                    Dict.empty
-
-                Api.Success apiData ->
-                    apiData
-    in
     El.column
         [ El.padding unit
         , El.spacing unit
         ]
-        [ El.text "Stops"
-        , El.column
-            [ El.spacing unit
-            , El.width El.fill
-            ]
-            (viewSelections
-                model.currentTime
-                model.selections
-                predictionsBySelection
-            )
-        , addSelectionForm model
-        ]
+        (case model.apiResult of
+            Api.Loading ->
+                [ El.text "Loading..."
+                , addSelectionForm model
+                ]
 
+            Api.Failure error ->
+                [ El.text "Error"
+                , El.text (Debug.toString error)
+                ]
 
-viewSelections : Time.Posix -> List Selection -> Api.ApiData -> List (Element msg)
-viewSelections currentTime selections apiData =
-    List.map
-        (\selection ->
-            viewSelection
-                currentTime
-                selection
-                (Api.predictionsForSelection selection apiData)
+            Api.Success apiData ->
+                [ El.text "Stops"
+                , viewSelections
+                    model.currentTime
+                    model.selections
+                    apiData
+                , addSelectionForm model
+                ]
         )
-        selections
 
 
-viewSelection : Time.Posix -> Selection -> List Prediction -> Element msg
-viewSelection currentTime selection predictions =
+viewSelections : Time.Posix -> List Selection -> Api.ApiData -> Element msg
+viewSelections currentTime selections apiData =
+    El.column
+        [ El.spacing unit
+        , El.width El.fill
+        ]
+        (List.map
+            (viewSelection currentTime apiData)
+            selections
+        )
+
+
+viewSelection : Time.Posix -> Api.ApiData -> Selection -> Element msg
+viewSelection currentTime apiData selection =
     let
+        predictions =
+            Api.predictionsForSelection selection apiData
+
         (RouteId routeIdText) =
             selection.routeId
 
