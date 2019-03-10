@@ -1,6 +1,6 @@
 module View exposing (view)
 
-import Api exposing (..)
+import Api
 import AssocList as Dict
 import Browser
 import Data exposing (..)
@@ -25,15 +25,15 @@ ui : Model -> Element Msg
 ui model =
     let
         predictionsBySelection =
-            case model.predictionsData of
-                Loading ->
+            case model.apiResult of
+                Api.Loading ->
                     Dict.empty
 
-                Failure _ ->
+                Api.Failure _ ->
                     Dict.empty
 
-                Success predictions ->
-                    predictions
+                Api.Success apiData ->
+                    apiData
     in
     El.column
         [ El.padding unit
@@ -53,7 +53,7 @@ ui model =
         ]
 
 
-viewSelections : Time.Posix -> List Selection -> PredictionsBySelection -> List (Element msg)
+viewSelections : Time.Posix -> List Selection -> Api.PredictionsBySelection -> List (Element msg)
 viewSelections currentTime selections predictionsBySelection =
     List.map
         (\selection ->
@@ -68,7 +68,7 @@ viewSelections currentTime selections predictionsBySelection =
         selections
 
 
-viewSelection : Time.Posix -> Selection -> PredictionsForSelection -> Element msg
+viewSelection : Time.Posix -> Selection -> Api.PredictionsForSelection -> Element msg
 viewSelection currentTime selection predictionsForSelection =
     let
         (RouteId routeIdText) =

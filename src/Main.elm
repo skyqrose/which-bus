@@ -1,6 +1,6 @@
 port module Main exposing (main)
 
-import Api exposing (..)
+import Api
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
@@ -13,12 +13,6 @@ import Time
 import Url exposing (Url)
 import UrlParsing
 import View exposing (view)
-
-
-port startStreamPort : String -> Cmd msg
-
-
-port streamEventPort : (Decode.Value -> msg) -> Sub msg
 
 
 main : Program Decode.Value Model Msg
@@ -38,18 +32,21 @@ init flags url key =
     let
         selections =
             UrlParsing.parseSelectionsFromUrl url
+
+        ( initApiResult, initApiCmd ) =
+            Api.init selections
     in
     ( { currentTime = Time.millisToPosix 0
       , url = url
       , navigationKey = key
       , selections = selections
-      , predictionsData = Loading
+      , apiResult = initApiResult
       , routeIdFormText = ""
       , stopIdFormText = ""
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
-        , startStream selections
+        , initApiCmd
         ]
     )
 
@@ -73,13 +70,16 @@ update msg model =
             let
                 newSelections =
                     UrlParsing.parseSelectionsFromUrl url
+
+                ( initApiResult, initApiCmd ) =
+                    Api.init newSelections
             in
             ( { model
                 | url = url
                 , selections = newSelections
-                , predictionsData = Loading
+                , apiResult = initApiResult
               }
-            , startStream newSelections
+            , initApiCmd
             )
 
         AddSelection newSelection ->
@@ -108,115 +108,17 @@ update msg model =
             , Cmd.none
             )
 
-        StreamEvent decodeResult ->
-            case decodeResult of
-                Ok event ->
-                    let
-                        _ =
-                            Debug.log "successfully decoded" event
-                    in
-                    ( { model
-                        | predictionsData = applyStreamEvent event model.predictionsData
-                      }
-                    , Cmd.none
-                    )
-
-                Err error ->
-                    let
-                        _ =
-                            Debug.log "failed to decode" (Debug.toString error)
-                    in
-                    ( { model
-                        | predictionsData = Failure error
-                      }
-                    , Cmd.none
-                    )
-
-
-startStream : List Selection -> Cmd Msg
-startStream selections =
-    let
-        api_key =
-            "3a6d67c08111426d8617a30340a9fad3"
-
-        route_ids =
-            selections
-                |> List.map .routeId
-                |> List.map (\(RouteId routeId) -> routeId)
-                |> String.join ","
-
-        stop_ids =
-            selections
-                |> List.map .stopId
-                |> List.map (\(StopId stopId) -> stopId)
-                |> String.join ","
-
-        url =
-            "https://api-v3.mbta.com/predictions"
-                ++ "?api_key="
-                ++ api_key
-                ++ "&filter[route]="
-                ++ route_ids
-                ++ "&filter[stop]="
-                ++ stop_ids
-    in
-    startStreamPort url
+        ApiMsg apiMsg ->
+            ( { model
+                | apiResult = Api.update apiMsg model.apiResult
+              }
+            , Cmd.none
+            )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Time.every 1000 Tick
-        , streamEventPort
-            (\json ->
-                json
-                    |> Decode.decodeValue streamEventDecoder
-                    |> StreamEvent
-            )
+        , Api.subscriptions ApiMsg
         ]
-
-
-applyStreamEvent : StreamEvent -> PredictionsData -> PredictionsData
-applyStreamEvent event predictionsData =
-    case ( event, predictionsData ) of
-        ( _, Failure error ) ->
-            Failure error
-
-        ( Reset newPredictions, _ ) ->
-            Success <|
-                List.foldl insertPrediction Dict.empty newPredictions
-
-        ( Insert newPrediction, Loading ) ->
-            Loading
-
-        ( Insert newPrediction, Success predictionsBySelection ) ->
-            Success <|
-                insertPrediction newPrediction predictionsBySelection
-
-        ( Remove predictionId, Loading ) ->
-            Loading
-
-        ( Remove predictionId, Success predictionsBySelection ) ->
-            -- We don't know which selection this prediction was for
-            -- So we have to search all the selections for it.
-            Success <|
-                Dict.map
-                    (\selection predictionsForSelection ->
-                        Dict.remove predictionId predictionsForSelection
-                    )
-                    predictionsBySelection
-
-
-insertPrediction : Prediction -> PredictionsBySelection -> PredictionsBySelection
-insertPrediction prediction predictionsBySelection =
-    Dict.update
-        prediction.selection
-        (\maybePredictionsForSelection ->
-            case maybePredictionsForSelection of
-                Nothing ->
-                    Just (Dict.singleton prediction.id prediction)
-
-                Just predictionsForSelection ->
-                    Just (Dict.insert prediction.id prediction predictionsForSelection)
-        )
-        predictionsBySelection

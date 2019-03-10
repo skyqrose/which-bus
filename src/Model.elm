@@ -3,7 +3,7 @@ module Model exposing
     , Msg(..)
     )
 
-import Api exposing (..)
+import Api
 import Browser
 import Browser.Navigation as Navigation
 import Data exposing (..)
@@ -17,7 +17,7 @@ type alias Model =
     , url : Url
     , navigationKey : Navigation.Key
     , selections : List Selection
-    , predictionsData : PredictionsData
+    , apiResult : Api.ApiResult
     , routeIdFormText : String
     , stopIdFormText : String
     }
@@ -30,4 +30,4 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
-    | StreamEvent (Result Decode.Error StreamEvent)
+    | ApiMsg Api.Msg
