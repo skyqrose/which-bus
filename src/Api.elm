@@ -2,9 +2,8 @@ port module Api exposing
     ( ApiData
     , ApiResult(..)
     , Msg
-    , PredictionsBySelection
-    , PredictionsForSelection
     , init
+    , predictionsForSelection
     , subscriptions
     , update
     )
@@ -30,19 +29,11 @@ type ApiResult
 
 
 type alias ApiData =
-    PredictionsBySelection
+    Dict.Dict PredictionId Prediction
 
 
 type alias Msg =
     Result Decode.Error StreamEvent
-
-
-type alias PredictionsBySelection =
-    Dict.Dict Selection PredictionsForSelection
-
-
-type alias PredictionsForSelection =
-    Dict.Dict PredictionId Prediction
 
 
 type StreamEvent
@@ -94,67 +85,52 @@ subscriptions msg =
 
 
 update : Msg -> ApiResult -> ApiResult
-update decodeResult apiResult =
-    case decodeResult of
-        Ok event ->
-            let
-                _ =
-                    Debug.log "successfully decoded" event
-            in
-            applyStreamEvent event apiResult
+update eventDecodeResult apiResult =
+    let
+        _ =
+            case eventDecodeResult of
+                Ok event ->
+                    Debug.log "successfully decoded" (Ok event)
 
-        Err error ->
-            let
-                _ =
-                    Debug.log "failed to decode" (Debug.toString error)
-            in
-            Failure error
-
-
-applyStreamEvent : StreamEvent -> ApiResult -> ApiResult
-applyStreamEvent event apiResult =
-    case ( event, apiResult ) of
+                Err error ->
+                    Debug.log "failed to decode" (Err error)
+    in
+    case ( eventDecodeResult, apiResult ) of
         ( _, Failure error ) ->
             Failure error
 
-        ( Reset newPredictions, _ ) ->
+        ( Err decodeError, _ ) ->
+            Failure decodeError
+
+        ( Ok (Reset newPredictions), _ ) ->
             Success <|
                 List.foldl insertPrediction Dict.empty newPredictions
 
-        ( Insert newPrediction, Loading ) ->
+        ( Ok (Insert newPrediction), Loading ) ->
             Loading
 
-        ( Insert newPrediction, Success predictionsBySelection ) ->
+        ( Ok (Insert newPrediction), Success apiData ) ->
             Success <|
-                insertPrediction newPrediction predictionsBySelection
+                insertPrediction newPrediction apiData
 
-        ( Remove predictionId, Loading ) ->
+        ( Ok (Remove predictionId), Loading ) ->
             Loading
 
-        ( Remove predictionId, Success predictionsBySelection ) ->
-            -- We don't know which selection this prediction was for
-            -- So we have to search all the selections for it.
+        ( Ok (Remove predictionId), Success apiData ) ->
             Success <|
-                Dict.map
-                    (\selection predictionsForSelection ->
-                        Dict.remove predictionId predictionsForSelection
-                    )
-                    predictionsBySelection
+                Dict.remove predictionId apiData
 
 
-insertPrediction : Prediction -> PredictionsBySelection -> PredictionsBySelection
-insertPrediction prediction predictionsBySelection =
-    Dict.update
-        prediction.selection
-        (\maybePredictionsForSelection ->
-            case maybePredictionsForSelection of
-                Nothing ->
-                    Just (Dict.singleton prediction.id prediction)
+insertPrediction : Prediction -> ApiData -> ApiData
+insertPrediction prediction predictionsDict =
+    Dict.insert prediction.id prediction predictionsDict
 
-                Just predictionsForSelection ->
-                    Just (Dict.insert prediction.id prediction predictionsForSelection)
-        )
-        predictionsBySelection
+
+predictionsForSelection : Selection -> ApiData -> List Prediction
+predictionsForSelection selection apiData =
+    apiData
+        |> Dict.values
+        |> List.filter (\prediction -> prediction.selection == selection)
 
 
 

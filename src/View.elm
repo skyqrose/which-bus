@@ -53,23 +53,20 @@ ui model =
         ]
 
 
-viewSelections : Time.Posix -> List Selection -> Api.PredictionsBySelection -> List (Element msg)
-viewSelections currentTime selections predictionsBySelection =
+viewSelections : Time.Posix -> List Selection -> Api.ApiData -> List (Element msg)
+viewSelections currentTime selections apiData =
     List.map
         (\selection ->
             viewSelection
                 currentTime
                 selection
-                (predictionsBySelection
-                    |> Dict.get selection
-                    |> Maybe.withDefault Dict.empty
-                )
+                (Api.predictionsForSelection selection apiData)
         )
         selections
 
 
-viewSelection : Time.Posix -> Selection -> Api.PredictionsForSelection -> Element msg
-viewSelection currentTime selection predictionsForSelection =
+viewSelection : Time.Posix -> Selection -> List Prediction -> Element msg
+viewSelection currentTime selection predictions =
     let
         (RouteId routeIdText) =
             selection.routeId
@@ -95,8 +92,7 @@ viewSelection currentTime selection predictionsForSelection =
         , El.column
             [ El.alignRight
             ]
-            (predictionsForSelection
-                |> Dict.values
+            (predictions
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
                 |> List.map (predictionTimeString currentTime)
