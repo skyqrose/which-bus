@@ -1,5 +1,6 @@
 module View exposing (view)
 
+import Api exposing (..)
 import AssocList as Dict
 import Browser
 import Data exposing (..)

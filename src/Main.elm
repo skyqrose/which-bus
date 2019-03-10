@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Api exposing (..)
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
