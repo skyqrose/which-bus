@@ -39,6 +39,7 @@ type Error
 type alias ApiData =
     { predictions : Dict.Dict PredictionId Prediction
     , trips : Dict.Dict TripId Trip
+    , stops : Dict.Dict StopId Stop
     }
 
 
@@ -55,11 +56,13 @@ type StreamEvent
 type ResourceId
     = ResourcePredictionId PredictionId
     | ResourceTripId TripId
+    | ResourceStopId StopId
 
 
 type Resource
     = ResourcePrediction Prediction
     | ResourceTrip Trip
+    | ResourceStop Stop
 
 
 type PredictionId
@@ -82,6 +85,12 @@ type TripId
 type alias Trip =
     { id : TripId
     , headsign : String
+    }
+
+
+type alias Stop =
+    { id : StopId
+    , parentStation : Maybe StopId
     }
 
 
@@ -118,6 +127,7 @@ emptyData : ApiData
 emptyData =
     { predictions = Dict.empty
     , trips = Dict.empty
+    , stops = Dict.empty
     }
 
 
@@ -142,6 +152,7 @@ startStream selections =
                 [ ( "filter[route]", routeIds )
                 , ( "filter[stop]", stopIds )
                 , ( "include", "trip" )
+                , ( "include", "stop" )
                 ]
     in
     startStreamPort url
@@ -199,6 +210,17 @@ update eventDecodeResult apiResult =
                     else
                         Failure (BadOrder "Remove unknown trip id")
 
+                ResourceStopId stopId ->
+                    if Dict.member stopId apiData.stops then
+                        Success <|
+                            { apiData
+                                | stops =
+                                    Dict.remove stopId apiData.stops
+                            }
+
+                    else
+                        Failure (BadOrder "Remove unknown stop id")
+
 
 insertResource : Resource -> ApiData -> ApiData
 insertResource resource apiData =
@@ -213,6 +235,12 @@ insertResource resource apiData =
             { apiData
                 | trips =
                     Dict.insert trip.id trip apiData.trips
+            }
+
+        ResourceStop stop ->
+            { apiData
+                | stops =
+                    Dict.insert stop.id stop apiData.stops
             }
 
 
@@ -295,6 +323,9 @@ resourceIdDecoder =
                     "trip" ->
                         Decode.succeed (ResourceTripId (TripId id))
 
+                    "stop" ->
+                        Decode.succeed (ResourceStopId (StopId id))
+
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
             )
@@ -312,28 +343,58 @@ resourceDecoder =
                     "trip" ->
                         Decode.map ResourceTrip tripDecoder
 
+                    "stop" ->
+                        Decode.map ResourceStop stopDecoder
+
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
             )
 
 
+predictionIdDecoder : Decode.Decoder PredictionId
+predictionIdDecoder =
+    Decode.map PredictionId Decode.string
+
+
+tripIdDecoder : Decode.Decoder TripId
+tripIdDecoder =
+    Decode.map TripId Decode.string
+
+
+stopIdDecoder : Decode.Decoder StopId
+stopIdDecoder =
+    Decode.map StopId Decode.string
+
+
+routeIdDecoder : Decode.Decoder RouteId
+routeIdDecoder =
+    Decode.map RouteId Decode.string
+
+
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     Decode.succeed Prediction
-        |> Pipeline.required "id" (Decode.map PredictionId Decode.string)
+        |> Pipeline.required "id" predictionIdDecoder
         |> Pipeline.custom
             (Decode.oneOf
                 [ Decode.at [ "attributes", "arrival_time" ] Iso8601.decoder
                 , Decode.at [ "attributes", "departure_time" ] Iso8601.decoder
                 ]
             )
-        |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
-        |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] (Decode.map StopId Decode.string)
-        |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] (Decode.map TripId Decode.string)
+        |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] routeIdDecoder
+        |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] stopIdDecoder
+        |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] tripIdDecoder
 
 
 tripDecoder : Decode.Decoder Trip
 tripDecoder =
     Decode.succeed Trip
-        |> Pipeline.required "id" (Decode.map TripId Decode.string)
+        |> Pipeline.required "id" tripIdDecoder
         |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
+
+
+stopDecoder : Decode.Decoder Stop
+stopDecoder =
+    Decode.succeed Stop
+        |> Pipeline.required "id" stopIdDecoder
+        |> Pipeline.optionalAt [ "relationships", "parent_station", "data", "id" ] (Decode.map Just stopIdDecoder) Nothing
