@@ -16,6 +16,7 @@ import Iso8601
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
+import Time
 
 
 port startStreamPort : String -> Cmd msg
@@ -47,6 +48,17 @@ type StreamEvent
     = Reset (List Prediction)
     | Insert Prediction
     | Remove PredictionId
+
+
+type PredictionId
+    = PredictionId String
+
+
+type alias Prediction =
+    { id : PredictionId
+    , time : Time.Posix
+    , selection : Selection
+    }
 
 
 makeUrl : String -> List ( String, String ) -> String
@@ -145,11 +157,16 @@ insertPrediction prediction predictionsDict =
     Dict.insert prediction.id prediction predictionsDict
 
 
-predictionsForSelection : Selection -> ApiData -> List Prediction
+predictionsForSelection : Selection -> ApiData -> List ShownPrediction
 predictionsForSelection selection apiData =
     apiData
         |> Dict.values
         |> List.filter (\prediction -> prediction.selection == selection)
+        |> List.map
+            (\prediction ->
+                { time = prediction.time
+                }
+            )
 
 
 

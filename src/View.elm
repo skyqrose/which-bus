@@ -106,7 +106,7 @@ viewSelection currentTime stopNames apiData selection =
         ]
 
 
-predictionTimeString : Time.Posix -> Prediction -> String
+predictionTimeString : Time.Posix -> ShownPrediction -> String
 predictionTimeString currentTime prediction =
     let
         differenceMillis =

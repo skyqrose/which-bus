@@ -1,8 +1,7 @@
 module Data exposing
-    ( Prediction
-    , PredictionId(..)
-    , RouteId(..)
+    ( RouteId(..)
     , Selection
+    , ShownPrediction
     , StopId(..)
     )
 
@@ -17,18 +16,12 @@ type StopId
     = StopId String
 
 
-type PredictionId
-    = PredictionId String
-
-
 type alias Selection =
     { routeId : RouteId
     , stopId : StopId
     }
 
 
-type alias Prediction =
-    { id : PredictionId
-    , time : Time.Posix
-    , selection : Selection
+type alias ShownPrediction =
+    { time : Time.Posix
     }
