@@ -43,26 +43,27 @@ ui model =
                 , viewSelections
                     model.currentTime
                     model.selections
+                    model.stopNames
                     apiData
                 , addSelectionForm model
                 ]
         )
 
 
-viewSelections : Time.Posix -> List Selection -> Api.ApiData -> Element msg
-viewSelections currentTime selections apiData =
+viewSelections : Time.Posix -> List Selection -> StopNames -> Api.ApiData -> Element msg
+viewSelections currentTime selections stopNames apiData =
     El.column
         [ El.spacing unit
         , El.width El.fill
         ]
         (List.map
-            (viewSelection currentTime apiData)
+            (viewSelection currentTime stopNames apiData)
             selections
         )
 
 
-viewSelection : Time.Posix -> Api.ApiData -> Selection -> Element msg
-viewSelection currentTime apiData selection =
+viewSelection : Time.Posix -> StopNames -> Api.ApiData -> Selection -> Element msg
+viewSelection currentTime stopNames apiData selection =
     let
         predictions =
             Api.predictionsForSelection selection apiData
@@ -72,6 +73,11 @@ viewSelection currentTime apiData selection =
 
         (StopId stopIdText) =
             selection.stopId
+
+        stopName =
+            stopNames
+                |> Dict.get selection.stopId
+                |> Maybe.withDefault stopIdText
     in
     El.row
         [ El.width El.fill
@@ -86,7 +92,7 @@ viewSelection currentTime apiData selection =
             , El.el
                 [ Font.size fontSmall
                 ]
-                (El.text stopIdText)
+                (El.text stopName)
             ]
         , El.column
             [ El.alignRight

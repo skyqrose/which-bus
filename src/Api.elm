@@ -4,6 +4,7 @@ port module Api exposing
     , Error(..)
     , Msg
     , init
+    , makeUrl
     , predictionsForSelection
     , subscriptions
     , update
@@ -48,6 +49,28 @@ type StreamEvent
     | Remove PredictionId
 
 
+makeUrl : String -> List ( String, String ) -> String
+makeUrl path params =
+    let
+        base =
+            "https://api-v3.mbta.com/"
+
+        api_key =
+            "3a6d67c08111426d8617a30340a9fad3"
+
+        paramsWithKey =
+            ( "api_key", api_key ) :: params
+    in
+    String.concat
+        [ base
+        , path
+        , "?"
+        , paramsWithKey
+            |> List.map (\( param, value ) -> param ++ "=" ++ value)
+            |> String.join "&"
+        ]
+
+
 init : List Selection -> ( ApiResult, Cmd msg )
 init selections =
     ( Loading
@@ -58,9 +81,6 @@ init selections =
 startStream : List Selection -> Cmd msg
 startStream selections =
     let
-        api_key =
-            "3a6d67c08111426d8617a30340a9fad3"
-
         route_ids =
             selections
                 |> List.map .routeId
@@ -74,13 +94,11 @@ startStream selections =
                 |> String.join ","
 
         url =
-            "https://api-v3.mbta.com/predictions"
-                ++ "?api_key="
-                ++ api_key
-                ++ "&filter[route]="
-                ++ route_ids
-                ++ "&filter[stop]="
-                ++ stop_ids
+            makeUrl
+                "predictions"
+                [ ( "filter[route]", route_ids )
+                , ( "filter[stop]", stop_ids )
+                ]
     in
     startStreamPort url
 

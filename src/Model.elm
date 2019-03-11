@@ -1,12 +1,15 @@
 module Model exposing
     ( Model
     , Msg(..)
+    , StopNames
     )
 
 import Api
+import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
 import Data exposing (..)
+import Http
 import Json.Decode as Decode
 import Time
 import Url exposing (Url)
@@ -17,9 +20,10 @@ type alias Model =
     , url : Url
     , navigationKey : Navigation.Key
     , selections : List Selection
-    , apiResult : Api.ApiResult
     , routeIdFormText : String
     , stopIdFormText : String
+    , stopNames : StopNames
+    , apiResult : Api.ApiResult
     }
 
 
@@ -30,4 +34,9 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
+    | ReceiveStopNames (Result Http.Error StopNames)
     | ApiMsg Api.Msg
+
+
+type alias StopNames =
+    Dict.Dict StopId String

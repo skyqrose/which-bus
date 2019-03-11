@@ -6,7 +6,8 @@ import Browser
 import Browser.Navigation as Navigation
 import Data exposing (..)
 import Html
-import Json.Decode as Decode
+import Http
+import Json.Decode as Decode exposing (Decoder)
 import Model exposing (..)
 import Task
 import Time
@@ -40,13 +41,15 @@ init flags url key =
       , url = url
       , navigationKey = key
       , selections = selections
-      , apiResult = initApiResult
       , routeIdFormText = ""
       , stopIdFormText = ""
+      , stopNames = Dict.empty
+      , apiResult = initApiResult
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
         , initApiCmd
+        , fetchStopNames selections
         ]
     )
 
@@ -79,7 +82,10 @@ update msg model =
                 , selections = newSelections
                 , apiResult = initApiResult
               }
-            , initApiCmd
+            , Cmd.batch
+                [ initApiCmd
+                , fetchStopNames newSelections
+                ]
             )
 
         AddSelection newSelection ->
@@ -108,6 +114,13 @@ update msg model =
             , Cmd.none
             )
 
+        ReceiveStopNames result ->
+            ( { model
+                | stopNames = Result.withDefault Dict.empty result
+              }
+            , Cmd.none
+            )
+
         ApiMsg apiMsg ->
             ( { model
                 | apiResult = Api.update apiMsg model.apiResult
@@ -122,3 +135,36 @@ subscriptions _ =
         [ Time.every 1000 Tick
         , Api.subscriptions ApiMsg
         ]
+
+
+fetchStopNames : List Selection -> Cmd Msg
+fetchStopNames selections =
+    let
+        stopIds =
+            selections
+                |> List.map .stopId
+                |> List.map (\(StopId stopId) -> stopId)
+                |> String.join ","
+
+        url =
+            Api.makeUrl "stops" [ ( "filter[id]", stopIds ) ]
+    in
+    Http.get url stopNamesDecoder
+        |> Http.send ReceiveStopNames
+
+
+stopNamesDecoder : Decoder StopNames
+stopNamesDecoder =
+    Decode.map2
+        Tuple.pair
+        (Decode.at [ "id" ] (Decode.map StopId Decode.string))
+        (Decode.at [ "attributes", "name" ] Decode.string)
+        |> Decode.list
+        |> Decode.at [ "data" ]
+        |> Decode.map
+            (\namesList ->
+                List.foldl
+                    (\( id, name ) -> Dict.insert id name)
+                    Dict.empty
+                    namesList
+            )
