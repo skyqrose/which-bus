@@ -69,7 +69,8 @@ type PredictionId
 type alias Prediction =
     { id : PredictionId
     , time : Time.Posix
-    , selection : Selection
+    , routeId : RouteId
+    , stopId : StopId
     , tripId : TripId
     }
 
@@ -219,7 +220,8 @@ predictionsForSelection : Selection -> ApiData -> List ShownPrediction
 predictionsForSelection selection apiData =
     apiData.predictions
         |> Dict.values
-        |> List.filter (\prediction -> prediction.selection == selection)
+        |> List.filter (\prediction -> prediction.routeId == selection.routeId)
+        |> List.filter (\prediction -> prediction.stopId == selection.stopId)
         |> List.map
             (\prediction ->
                 { time = prediction.time
@@ -325,11 +327,8 @@ predictionDecoder =
                 , Decode.at [ "attributes", "departure_time" ] Iso8601.decoder
                 ]
             )
-        |> Pipeline.custom
-            (Decode.succeed Selection
-                |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
-                |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] (Decode.map StopId Decode.string)
-            )
+        |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
+        |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] (Decode.map StopId Decode.string)
         |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] (Decode.map TripId Decode.string)
 
 
