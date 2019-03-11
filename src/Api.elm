@@ -37,7 +37,9 @@ type Error
 
 
 type alias ApiData =
-    Dict.Dict PredictionId Prediction
+    { predictions : Dict.Dict PredictionId Prediction
+    , trips : Dict.Dict TripId Trip
+    }
 
 
 type alias Msg =
@@ -45,9 +47,19 @@ type alias Msg =
 
 
 type StreamEvent
-    = Reset (List Prediction)
-    | Insert Prediction
-    | Remove PredictionId
+    = Reset (List Resource)
+    | Insert Resource
+    | Remove ResourceId
+
+
+type ResourceId
+    = ResourcePredictionId PredictionId
+    | ResourceTripId TripId
+
+
+type Resource
+    = ResourcePrediction Prediction
+    | ResourceTrip Trip
 
 
 type PredictionId
@@ -58,6 +70,17 @@ type alias Prediction =
     { id : PredictionId
     , time : Time.Posix
     , selection : Selection
+    , tripId : TripId
+    }
+
+
+type TripId
+    = TripId String
+
+
+type alias Trip =
+    { id : TripId
+    , headsign : String
     }
 
 
@@ -90,6 +113,13 @@ init selections =
     )
 
 
+emptyData : ApiData
+emptyData =
+    { predictions = Dict.empty
+    , trips = Dict.empty
+    }
+
+
 startStream : List Selection -> Cmd msg
 startStream selections =
     let
@@ -110,6 +140,7 @@ startStream selections =
                 "predictions"
                 [ ( "filter[route]", routeIds )
                 , ( "filter[stop]", stopIds )
+                , ( "include", "trip" )
                 ]
     in
     startStreamPort url
@@ -129,42 +160,73 @@ update eventDecodeResult apiResult =
         ( Err decodeError, _ ) ->
             Failure (DecodeError decodeError)
 
-        ( Ok (Reset newPredictions), _ ) ->
+        ( Ok (Reset newResources), _ ) ->
             Success <|
-                List.foldl insertPrediction Dict.empty newPredictions
+                List.foldl insertResource emptyData newResources
 
-        ( Ok (Insert newPrediction), Loading ) ->
+        ( Ok (Insert _), Loading ) ->
             Failure (BadOrder "Insert while Loading")
 
-        ( Ok (Remove predictionId), Loading ) ->
+        ( Ok (Remove _), Loading ) ->
             Failure (BadOrder "Remove while Loading")
 
-        ( Ok (Insert newPrediction), Success apiData ) ->
+        ( Ok (Insert newResource), Success apiData ) ->
             Success <|
-                insertPrediction newPrediction apiData
+                insertResource newResource apiData
 
-        ( Ok (Remove predictionId), Success apiData ) ->
-            if Dict.member predictionId apiData then
-                Success <|
-                    Dict.remove predictionId apiData
+        ( Ok (Remove resourceId), Success apiData ) ->
+            case resourceId of
+                ResourcePredictionId predictionId ->
+                    if Dict.member predictionId apiData.predictions then
+                        Success <|
+                            { apiData
+                                | predictions =
+                                    Dict.remove predictionId apiData.predictions
+                            }
 
-            else
-                Failure (BadOrder "Remove unknown id")
+                    else
+                        Failure (BadOrder "Remove unknown prediction id")
+
+                ResourceTripId tripId ->
+                    if Dict.member tripId apiData.trips then
+                        Success <|
+                            { apiData
+                                | trips =
+                                    Dict.remove tripId apiData.trips
+                            }
+
+                    else
+                        Failure (BadOrder "Remove unknown trip id")
 
 
-insertPrediction : Prediction -> ApiData -> ApiData
-insertPrediction prediction predictionsDict =
-    Dict.insert prediction.id prediction predictionsDict
+insertResource : Resource -> ApiData -> ApiData
+insertResource resource apiData =
+    case resource of
+        ResourcePrediction prediction ->
+            { apiData
+                | predictions =
+                    Dict.insert prediction.id prediction apiData.predictions
+            }
+
+        ResourceTrip trip ->
+            { apiData
+                | trips =
+                    Dict.insert trip.id trip apiData.trips
+            }
 
 
 predictionsForSelection : Selection -> ApiData -> List ShownPrediction
 predictionsForSelection selection apiData =
-    apiData
+    apiData.predictions
         |> Dict.values
         |> List.filter (\prediction -> prediction.selection == selection)
         |> List.map
             (\prediction ->
                 { time = prediction.time
+                , tripHeadsign =
+                    apiData.trips
+                        |> Dict.get prediction.tripId
+                        |> Maybe.map .headsign
                 }
             )
 
@@ -201,19 +263,56 @@ eventDataDecoder : String -> Decode.Decoder StreamEvent
 eventDataDecoder eventName =
     case eventName of
         "reset" ->
-            Decode.map Reset (Decode.list predictionDecoder)
+            Decode.map Reset (Decode.list resourceDecoder)
 
         "add" ->
-            Decode.map Insert predictionDecoder
+            Decode.map Insert resourceDecoder
 
         "update" ->
-            Decode.map Insert predictionDecoder
+            Decode.map Insert resourceDecoder
 
         "remove" ->
-            Decode.map Remove (Decode.map PredictionId Decode.string)
+            Decode.map Remove resourceIdDecoder
 
         _ ->
             Decode.fail ("unrecognized event name " ++ eventName)
+
+
+resourceIdDecoder : Decode.Decoder ResourceId
+resourceIdDecoder =
+    Decode.map2
+        Tuple.pair
+        (Decode.at [ "type" ] Decode.string)
+        (Decode.at [ "id" ] Decode.string)
+        |> Decode.andThen
+            (\( typeString, id ) ->
+                case typeString of
+                    "prediction" ->
+                        Decode.succeed (ResourcePredictionId (PredictionId id))
+
+                    "trip" ->
+                        Decode.succeed (ResourceTripId (TripId id))
+
+                    otherType ->
+                        Decode.fail ("unrecognized type " ++ otherType)
+            )
+
+
+resourceDecoder : Decode.Decoder Resource
+resourceDecoder =
+    Decode.at [ "type" ] Decode.string
+        |> Decode.andThen
+            (\typeString ->
+                case typeString of
+                    "prediction" ->
+                        Decode.map ResourcePrediction predictionDecoder
+
+                    "trip" ->
+                        Decode.map ResourceTrip tripDecoder
+
+                    otherType ->
+                        Decode.fail ("unrecognized type " ++ otherType)
+            )
 
 
 predictionDecoder : Decode.Decoder Prediction
@@ -231,3 +330,11 @@ predictionDecoder =
                 |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] (Decode.map RouteId Decode.string)
                 |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] (Decode.map StopId Decode.string)
             )
+        |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] (Decode.map TripId Decode.string)
+
+
+tripDecoder : Decode.Decoder Trip
+tripDecoder =
+    Decode.succeed Trip
+        |> Pipeline.required "id" (Decode.map TripId Decode.string)
+        |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
