@@ -55,11 +55,11 @@ makeUrl path params =
         base =
             "https://api-v3.mbta.com/"
 
-        api_key =
+        apiKey =
             "3a6d67c08111426d8617a30340a9fad3"
 
         paramsWithKey =
-            ( "api_key", api_key ) :: params
+            ( "api_key", apiKey ) :: params
     in
     String.concat
         [ base
@@ -81,13 +81,13 @@ init selections =
 startStream : List Selection -> Cmd msg
 startStream selections =
     let
-        route_ids =
+        routeIds =
             selections
                 |> List.map .routeId
                 |> List.map (\(RouteId routeId) -> routeId)
                 |> String.join ","
 
-        stop_ids =
+        stopIds =
             selections
                 |> List.map .stopId
                 |> List.map (\(StopId stopId) -> stopId)
@@ -96,8 +96,8 @@ startStream selections =
         url =
             makeUrl
                 "predictions"
-                [ ( "filter[route]", route_ids )
-                , ( "filter[stop]", stop_ids )
+                [ ( "filter[route]", routeIds )
+                , ( "filter[stop]", stopIds )
                 ]
     in
     startStreamPort url
