@@ -251,6 +251,7 @@ predictionsForSelection apiData selection =
         |> Dict.values
         |> List.filter (\prediction -> prediction.routeId == selection.routeId)
         |> List.filter (predictionMatchesStop apiData selection.stopId)
+        |> List.filter (predictionMatchesDirection selection.direction)
         |> List.map
             (\prediction ->
                 { time = prediction.time
@@ -272,6 +273,16 @@ predictionMatchesStop apiData queriedStop prediction =
             in
             predictionParentStation == Just queriedStop
            )
+
+
+predictionMatchesDirection : Maybe Direction -> Prediction -> Bool
+predictionMatchesDirection selectionDirection prediction =
+    case selectionDirection of
+        Nothing ->
+            True
+
+        Just direction ->
+            prediction.direction == direction
 
 
 
