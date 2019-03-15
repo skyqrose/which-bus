@@ -50,7 +50,7 @@ ui model =
         )
 
 
-viewSelections : Time.Posix -> List Selection -> StopNames -> Api.ApiData -> Element msg
+viewSelections : Time.Posix -> List Selection -> StopNames -> Api.ApiData -> Element Msg
 viewSelections currentTime selections stopNames apiData =
     El.column
         [ El.spacing unit
@@ -62,12 +62,21 @@ viewSelections currentTime selections stopNames apiData =
         )
 
 
-viewSelection : Time.Posix -> StopNames -> Api.ApiData -> Selection -> Element msg
+viewSelection : Time.Posix -> StopNames -> Api.ApiData -> Selection -> Element Msg
 viewSelection currentTime stopNames apiData selection =
-    let
-        predictions =
-            Api.predictionsForSelection selection apiData
+    El.column
+        [ El.width El.fill
+        , Border.width 1
+        , Border.rounded 4
+        ]
+        [ selectionHeading stopNames selection
+        , viewPredictions currentTime apiData selection
+        ]
 
+
+selectionHeading : StopNames -> Selection -> Element Msg
+selectionHeading stopNames selection =
+    let
         (RouteId routeIdText) =
             selection.routeId
 
@@ -79,31 +88,43 @@ viewSelection currentTime stopNames apiData selection =
                 |> Dict.get selection.stopId
                 |> Maybe.withDefault stopIdText
     in
-    El.row
-        [ El.width El.fill
-        , Border.width 1
-        , Border.rounded 4
-        , El.padding unit
+    El.column
+        [ El.padding unit
+        , El.width El.fill
+        , Border.widthEach
+            { bottom = 1
+            , left = 0
+            , right = 0
+            , top = 0
+            }
         ]
-        [ El.column
-            [ El.alignLeft
+        [ El.text routeIdText
+        , El.el
+            [ Font.size fontSmall
             ]
-            [ El.text routeIdText
-            , El.el
-                [ Font.size fontSmall
-                ]
-                (El.text stopName)
-            ]
-        , El.column
-            [ El.alignRight
-            ]
-            (predictions
+            (El.text stopName)
+        ]
+
+
+viewPredictions : Time.Posix -> Api.ApiData -> Selection -> Element msg
+viewPredictions currentTime apiData selection =
+    let
+        predictions =
+            Api.predictionsForSelection selection apiData
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
+    in
+    El.column
+        [ El.padding unit
+        ]
+        (if List.isEmpty predictions then
+            [ El.text "---" ]
+
+         else
+            predictions
                 |> List.map (predictionTimeString currentTime)
                 |> List.map El.text
-            )
-        ]
+        )
 
 
 predictionTimeString : Time.Posix -> ShownPrediction -> String
