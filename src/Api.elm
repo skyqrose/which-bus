@@ -74,6 +74,7 @@ type alias Prediction =
     , time : Time.Posix
     , routeId : RouteId
     , stopId : StopId
+    , direction : Direction
     , tripId : TripId
     }
 
@@ -383,6 +384,23 @@ routeIdDecoder =
     Decode.map RouteId Decode.string
 
 
+directionDecoder : Decode.Decoder Direction
+directionDecoder =
+    Decode.int
+        |> Decode.andThen
+            (\x ->
+                case x of
+                    0 ->
+                        Decode.succeed Zero
+
+                    1 ->
+                        Decode.succeed One
+
+                    _ ->
+                        Decode.fail ("unrecognized direction_id " ++ String.fromInt x)
+            )
+
+
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     Decode.succeed Prediction
@@ -395,6 +413,7 @@ predictionDecoder =
             )
         |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] routeIdDecoder
         |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] stopIdDecoder
+        |> Pipeline.requiredAt [ "attributes", "direction_id" ] directionDecoder
         |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] tripIdDecoder
 
 
