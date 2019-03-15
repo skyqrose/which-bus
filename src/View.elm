@@ -83,6 +83,17 @@ selectionHeading stopNames selection =
         (StopId stopIdText) =
             selection.stopId
 
+        directionText =
+            case selection.direction of
+                Nothing ->
+                    ""
+
+                Just Zero ->
+                    " - 0"
+
+                Just One ->
+                    " - 1"
+
         stopName =
             stopNames
                 |> Dict.get selection.stopId
@@ -98,11 +109,11 @@ selectionHeading stopNames selection =
             , top = 0
             }
         ]
-        [ El.text routeIdText
-        , El.el
-            [ Font.size fontSmall
+        [ El.row []
+            [ El.text routeIdText
+            , El.el [ Font.size fontSmall ] (El.text directionText)
             ]
-            (El.text stopName)
+        , El.el [ Font.size fontSmall ] (El.text stopName)
         ]
 
 
