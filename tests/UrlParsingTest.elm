@@ -1,6 +1,6 @@
 module UrlParsingTest exposing (suite)
 
-import Data exposing (RouteId(..), StopId(..))
+import Data exposing (..)
 import Expect
 import Test exposing (Test, describe, test)
 import Url
@@ -19,7 +19,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
-            , test "parses one selection" <|
+            , test "parses a selection without a direction" <|
                 \_ ->
                     Just "stop=routeId,stopId"
                         |> urlWithQuery
@@ -27,11 +27,30 @@ suite =
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
+                              , direction = Nothing
                               }
                             ]
+            , test "parses a selection with a direction" <|
+                \_ ->
+                    Just "stop=routeId,stopId,1"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeId = RouteId "routeId"
+                              , stopId = StopId "stopId"
+                              , direction = Just One
+                              }
+                            ]
+            , test "doesn't take a selection with a bad direction id" <|
+                \_ ->
+                    Just "stop=one,two,x"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            []
             , test "doesn't take a selection with too many ids" <|
                 \_ ->
-                    Just "stop=one,two,three"
+                    Just "stop=one,two,three,four"
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
@@ -45,15 +64,17 @@ suite =
                             []
             , test "takes multiple selections" <|
                 \_ ->
-                    Just "stop=routeId1,stopId1&stop=routeId2,stopId2"
+                    Just "stop=routeId1,stopId1&stop=routeId2,stopId2,0"
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeId = RouteId "routeId1"
                               , stopId = StopId "stopId1"
+                              , direction = Nothing
                               }
                             , { routeId = RouteId "routeId2"
                               , stopId = StopId "stopId2"
+                              , direction = Just Zero
                               }
                             ]
             , test "includes a selection even if another is badly formatted" <|
@@ -64,6 +85,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
+                              , direction = Nothing
                               }
                             ]
             , test "includes a selection when there are other query params" <|
@@ -74,6 +96,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
+                              , direction = Nothing
                               }
                             ]
             , test "works when the url has other stuff in it" <|
@@ -84,6 +107,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = RouteId "routeId"
                               , stopId = StopId "stopId"
+                              , direction = Nothing
                               }
                             ]
             ]
@@ -109,15 +133,4 @@ fullUrlWithQuery query =
     , path = ""
     , query = query
     , fragment = Just "fragment"
-    }
-
-
-xfullUrlWithQuery : Maybe String -> Url.Url
-xfullUrlWithQuery query =
-    { protocol = Url.Http
-    , host = "www.example.com"
-    , port_ = Just 80
-    , path = "/path"
-    , query = query
-    , fragment = Just "#fragment"
     }

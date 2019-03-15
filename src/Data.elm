@@ -1,5 +1,6 @@
 module Data exposing
-    ( RouteId(..)
+    ( Direction(..)
+    , RouteId(..)
     , Selection
     , ShownPrediction
     , StopId(..)
@@ -16,9 +17,15 @@ type StopId
     = StopId String
 
 
+type Direction
+    = Zero
+    | One
+
+
 type alias Selection =
     { routeId : RouteId
     , stopId : StopId
+    , direction : Maybe Direction
     }
 
 

@@ -166,12 +166,23 @@ addSelectionForm model =
             , placeholder = Nothing
             , label = label "Stop Id"
             }
+        , Input.radioRow []
+            { onChange = TypeDirection
+            , options =
+                [ Input.option Nothing (El.text "None")
+                , Input.option (Just Zero) (El.text "0")
+                , Input.option (Just One) (El.text "1")
+                ]
+            , selected = Just model.directionFormValue
+            , label = label "Direction Id"
+            }
         , Input.button []
             { onPress =
                 Just
                     (AddSelection
                         { routeId = RouteId model.routeIdFormText
                         , stopId = StopId model.stopIdFormText
+                        , direction = model.directionFormValue
                         }
                     )
             , label = El.text "Add Stop"

@@ -1,11 +1,6 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
-import Data
-    exposing
-        ( RouteId(..)
-        , Selection
-        , StopId(..)
-        )
+import Data exposing (..)
 import Url
 import Url.Parser
 import Url.Parser.Query
@@ -36,6 +31,21 @@ parseSelection queryValue =
             Just
                 { routeId = RouteId routeId
                 , stopId = StopId stopId
+                , direction = Nothing
+                }
+
+        [ routeId, stopId, "0" ] ->
+            Just
+                { routeId = RouteId routeId
+                , stopId = StopId stopId
+                , direction = Just Zero
+                }
+
+        [ routeId, stopId, "1" ] ->
+            Just
+                { routeId = RouteId routeId
+                , stopId = StopId stopId
+                , direction = Just One
                 }
 
         _ ->
@@ -61,10 +71,22 @@ encodeSelectionAsQueryParam selection =
 
         (StopId stopId) =
             selection.stopId
+
+        direction =
+            case selection.direction of
+                Nothing ->
+                    ""
+
+                Just Zero ->
+                    ",0"
+
+                Just One ->
+                    ",1"
     in
     String.concat
         [ "stop="
         , routeId
         , ","
         , stopId
+        , direction
         ]

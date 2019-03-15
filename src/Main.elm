@@ -43,6 +43,7 @@ init flags url key =
       , selections = selections
       , routeIdFormText = ""
       , stopIdFormText = ""
+      , directionFormValue = Nothing
       , stopNames = Dict.empty
       , apiResult = initApiResult
       }
@@ -110,6 +111,13 @@ update msg model =
         TypeStopId text ->
             ( { model
                 | stopIdFormText = text
+              }
+            , Cmd.none
+            )
+
+        TypeDirection direction ->
+            ( { model
+                | directionFormValue = direction
               }
             , Cmd.none
             )
