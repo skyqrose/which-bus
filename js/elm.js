@@ -6674,23 +6674,63 @@ var author$project$Main$fetchStopNames = function (selections) {
 var author$project$Model$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
+var author$project$Data$One = {$: 'One'};
 var author$project$Data$RouteId = function (a) {
 	return {$: 'RouteId', a: a};
 };
+var author$project$Data$Zero = {$: 'Zero'};
 var author$project$UrlParsing$parseSelection = function (queryValue) {
 	var _n0 = A2(elm$core$String$split, ',', queryValue);
-	if ((_n0.b && _n0.b.b) && (!_n0.b.b.b)) {
-		var routeId = _n0.a;
-		var _n1 = _n0.b;
-		var stopId = _n1.a;
-		return elm$core$Maybe$Just(
-			{
-				routeId: author$project$Data$RouteId(routeId),
-				stopId: author$project$Data$StopId(stopId)
-			});
-	} else {
-		return elm$core$Maybe$Nothing;
+	_n0$3:
+	while (true) {
+		if (_n0.b && _n0.b.b) {
+			if (!_n0.b.b.b) {
+				var routeId = _n0.a;
+				var _n1 = _n0.b;
+				var stopId = _n1.a;
+				return elm$core$Maybe$Just(
+					{
+						direction: elm$core$Maybe$Nothing,
+						routeId: author$project$Data$RouteId(routeId),
+						stopId: author$project$Data$StopId(stopId)
+					});
+			} else {
+				if (!_n0.b.b.b.b) {
+					switch (_n0.b.b.a) {
+						case '0':
+							var routeId = _n0.a;
+							var _n2 = _n0.b;
+							var stopId = _n2.a;
+							var _n3 = _n2.b;
+							return elm$core$Maybe$Just(
+								{
+									direction: elm$core$Maybe$Just(author$project$Data$Zero),
+									routeId: author$project$Data$RouteId(routeId),
+									stopId: author$project$Data$StopId(stopId)
+								});
+						case '1':
+							var routeId = _n0.a;
+							var _n4 = _n0.b;
+							var stopId = _n4.a;
+							var _n5 = _n4.b;
+							return elm$core$Maybe$Just(
+								{
+									direction: elm$core$Maybe$Just(author$project$Data$One),
+									routeId: author$project$Data$RouteId(routeId),
+									stopId: author$project$Data$StopId(stopId)
+								});
+						default:
+							break _n0$3;
+					}
+				} else {
+					break _n0$3;
+				}
+			}
+		} else {
+			break _n0$3;
+		}
 	}
+	return elm$core$Maybe$Nothing;
 };
 var elm$core$List$maybeCons = F3(
 	function (f, mx, xs) {
@@ -6926,6 +6966,7 @@ var author$project$Main$init = F3(
 			{
 				apiResult: initApiResult,
 				currentTime: elm$time$Time$millisToPosix(0),
+				directionFormValue: elm$core$Maybe$Nothing,
 				navigationKey: key,
 				routeIdFormText: '',
 				selections: selections,
@@ -6974,10 +7015,28 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt = F3(
 			A2(elm$json$Json$Decode$at, path, valDecoder),
 			decoder);
 	});
-var author$project$Api$Prediction = F5(
-	function (id, time, routeId, stopId, tripId) {
-		return {id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId};
+var author$project$Api$Prediction = F6(
+	function (id, time, routeId, stopId, direction, tripId) {
+		return {direction: direction, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId};
 	});
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$fail = _Json_fail;
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var author$project$Api$directionDecoder = A2(
+	elm$json$Json$Decode$andThen,
+	function (x) {
+		switch (x) {
+			case 0:
+				return elm$json$Json$Decode$succeed(author$project$Data$Zero);
+			case 1:
+				return elm$json$Json$Decode$succeed(author$project$Data$One);
+			default:
+				return elm$json$Json$Decode$fail(
+					'unrecognized direction_id ' + elm$core$String$fromInt(x));
+		}
+	},
+	elm$json$Json$Decode$int);
 var author$project$Api$PredictionId = function (a) {
 	return {$: 'PredictionId', a: a};
 };
@@ -6989,9 +7048,6 @@ var author$project$Api$TripId = function (a) {
 };
 var author$project$Api$tripIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$TripId, elm$json$Json$Decode$string);
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$fail = _Json_fail;
 var elm$parser$Parser$deadEndsToString = function (deadEnds) {
 	return 'TODO deadEndsToString';
 };
@@ -7632,34 +7688,39 @@ var author$project$Api$predictionDecoder = A3(
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 		_List_fromArray(
-			['relationships', 'stop', 'data', 'id']),
-		author$project$Api$stopIdDecoder,
+			['attributes', 'direction_id']),
+		author$project$Api$directionDecoder,
 		A3(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 			_List_fromArray(
-				['relationships', 'route', 'data', 'id']),
-			author$project$Api$routeIdDecoder,
-			A2(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-				elm$json$Json$Decode$oneOf(
-					_List_fromArray(
-						[
-							A2(
-							elm$json$Json$Decode$at,
-							_List_fromArray(
-								['attributes', 'arrival_time']),
-							rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
-							A2(
-							elm$json$Json$Decode$at,
-							_List_fromArray(
-								['attributes', 'departure_time']),
-							rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)
-						])),
-				A3(
-					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-					'id',
-					author$project$Api$predictionIdDecoder,
-					elm$json$Json$Decode$succeed(author$project$Api$Prediction))))));
+				['relationships', 'stop', 'data', 'id']),
+			author$project$Api$stopIdDecoder,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+				_List_fromArray(
+					['relationships', 'route', 'data', 'id']),
+				author$project$Api$routeIdDecoder,
+				A2(
+					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+					elm$json$Json$Decode$oneOf(
+						_List_fromArray(
+							[
+								A2(
+								elm$json$Json$Decode$at,
+								_List_fromArray(
+									['attributes', 'arrival_time']),
+								rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
+								A2(
+								elm$json$Json$Decode$at,
+								_List_fromArray(
+									['attributes', 'departure_time']),
+								rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)
+							])),
+					A3(
+						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+						'id',
+						author$project$Api$predictionIdDecoder,
+						elm$json$Json$Decode$succeed(author$project$Api$Prediction)))))));
 var elm$json$Json$Decode$decodeValue = _Json_run;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$value = _Json_decodeValue;
@@ -8260,13 +8321,27 @@ var author$project$Api$update = F2(
 		return author$project$Api$Failure(error);
 	});
 var author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
+	var direction = function () {
+		var _n2 = selection.direction;
+		if (_n2.$ === 'Nothing') {
+			return '';
+		} else {
+			if (_n2.a.$ === 'Zero') {
+				var _n3 = _n2.a;
+				return ',0';
+			} else {
+				var _n4 = _n2.a;
+				return ',1';
+			}
+		}
+	}();
 	var _n0 = selection.stopId;
 	var stopId = _n0.a;
 	var _n1 = selection.routeId;
 	var routeId = _n1.a;
 	return elm$core$String$concat(
 		_List_fromArray(
-			['stop=', routeId, ',', stopId]));
+			['stop=', routeId, ',', stopId, direction]));
 };
 var author$project$UrlParsing$setSelectionsInUrl = F2(
 	function (selections, url) {
@@ -11861,6 +11936,13 @@ var author$project$Main$update = F2(
 						model,
 						{stopIdFormText: text}),
 					elm$core$Platform$Cmd$none);
+			case 'TypeDirection':
+				var direction = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{directionFormValue: direction}),
+					elm$core$Platform$Cmd$none);
 			case 'ReceiveStopNames':
 				var result = msg.a;
 				return _Utils_Tuple2(
@@ -11889,6 +11971,9 @@ var author$project$Model$OnUrlRequest = function (a) {
 };
 var author$project$Model$AddSelection = function (a) {
 	return {$: 'AddSelection', a: a};
+};
+var author$project$Model$TypeDirection = function (a) {
+	return {$: 'TypeDirection', a: a};
 };
 var author$project$Model$TypeRouteId = function (a) {
 	return {$: 'TypeRouteId', a: a};
@@ -17185,58 +17270,15 @@ var mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
-var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
-	return {$: 'TextInputNode', a: a};
-};
-var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
-var elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 'MayStopPropagation', a: a};
-};
-var elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			elm$virtual_dom$VirtualDom$on,
-			event,
-			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var elm$html$Html$Events$targetValue = A2(
-	elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	elm$json$Json$Decode$string);
-var elm$html$Html$Events$onInput = function (tagger) {
-	return A2(
-		elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			elm$json$Json$Decode$map,
-			elm$html$Html$Events$alwaysStop,
-			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
-};
-var mdgriffith$elm_ui$Internal$Flag$transparency = mdgriffith$elm_ui$Internal$Flag$flag(0);
-var mdgriffith$elm_ui$Internal$Model$Transparency = F2(
+var mdgriffith$elm_ui$Element$Input$Option = F2(
 	function (a, b) {
-		return {$: 'Transparency', a: a, b: b};
+		return {$: 'Option', a: a, b: b};
 	});
-var mdgriffith$elm_ui$Element$alpha = function (o) {
-	var transparency = function (x) {
-		return 1 - x;
-	}(
-		A2(
-			elm$core$Basics$min,
-			1.0,
-			A2(elm$core$Basics$max, 0.0, o)));
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$transparency,
-		A2(
-			mdgriffith$elm_ui$Internal$Model$Transparency,
-			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
-			transparency));
+var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
 };
+var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
+var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
 var mdgriffith$elm_ui$Element$el = F2(
 	function (attrs, child) {
 		return A4(
@@ -17258,53 +17300,40 @@ var mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
 	return {$: 'Fill', a: a};
 };
 var mdgriffith$elm_ui$Element$fill = mdgriffith$elm_ui$Internal$Model$Fill(1);
-var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
-var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
-	function (a, b) {
-		return {$: 'Nearby', a: a, b: b};
-	});
-var mdgriffith$elm_ui$Element$inFront = function (element) {
-	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
+var mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
+var mdgriffith$elm_ui$Element$none = mdgriffith$elm_ui$Internal$Model$Empty;
+var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
 };
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Internal$Model$paddingName = F4(
-	function (top, right, bottom, left) {
-		return 'pad-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left)))))));
-	});
-var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
-	var top = _n0.top;
-	var right = _n0.right;
-	var bottom = _n0.bottom;
-	var left = _n0.left;
-	return (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) ? A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(top),
-			top,
-			top,
-			top,
-			top)) : A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			A4(mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
-			top,
-			right,
-			bottom,
-			left));
-};
+var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
 var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
 	function (a, b, c, d) {
 		return {$: 'Rgba', a: a, b: b, c: c, d: d};
 	});
-var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
+var mdgriffith$elm_ui$Element$rgb = F3(
+	function (r, g, b) {
+		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+	});
+var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
+var mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
 var mdgriffith$elm_ui$Internal$Model$Colored = F3(
 	function (a, b, c) {
@@ -17338,23 +17367,111 @@ var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'border-color',
 			clr));
 };
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
 		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
 };
-var mdgriffith$elm_ui$Element$Input$Padding = F4(
-	function (a, b, c, d) {
-		return {$: 'Padding', a: a, b: b, c: c, d: d};
+var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
 	});
-var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
+var mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
+var mdgriffith$elm_ui$Element$Input$white = A3(mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
+var mdgriffith$elm_ui$Element$Input$defaultRadioOption = F2(
+	function (optionLabel, status) {
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$spacing(10),
+					mdgriffith$elm_ui$Element$alignLeft,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(
+							mdgriffith$elm_ui$Element$px(14)),
+							mdgriffith$elm_ui$Element$height(
+							mdgriffith$elm_ui$Element$px(14)),
+							mdgriffith$elm_ui$Element$Background$color(mdgriffith$elm_ui$Element$Input$white),
+							mdgriffith$elm_ui$Element$Border$rounded(7),
+							function () {
+							if (status.$ === 'Selected') {
+								return mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
+							} else {
+								return mdgriffith$elm_ui$Internal$Model$NoAttribute;
+							}
+						}(),
+							mdgriffith$elm_ui$Element$Border$width(
+							function () {
+								switch (status.$) {
+									case 'Idle':
+										return 1;
+									case 'Focused':
+										return 1;
+									default:
+										return 5;
+								}
+							}()),
+							mdgriffith$elm_ui$Element$Border$color(
+							function () {
+								switch (status.$) {
+									case 'Idle':
+										return A3(mdgriffith$elm_ui$Element$rgb, 208 / 255, 208 / 255, 208 / 255);
+									case 'Focused':
+										return A3(mdgriffith$elm_ui$Element$rgb, 208 / 255, 208 / 255, 208 / 255);
+									default:
+										return A3(mdgriffith$elm_ui$Element$rgb, 59 / 255, 153 / 255, 252 / 255);
+								}
+							}())
+						]),
+					mdgriffith$elm_ui$Element$none),
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Internal$Model$htmlClass('unfocusable')
+						]),
+					optionLabel)
+				]));
+	});
+var mdgriffith$elm_ui$Element$Input$option = F2(
+	function (val, txt) {
+		return A2(
+			mdgriffith$elm_ui$Element$Input$Option,
+			val,
+			mdgriffith$elm_ui$Element$Input$defaultRadioOption(txt));
+	});
+var mdgriffith$elm_ui$Element$Input$Row = {$: 'Row'};
+var elm$html$Html$Attributes$attribute = elm$virtual_dom$VirtualDom$attribute;
+var mdgriffith$elm_ui$Element$Input$AfterFound = {$: 'AfterFound'};
+var mdgriffith$elm_ui$Element$Input$BeforeFound = {$: 'BeforeFound'};
+var mdgriffith$elm_ui$Element$Input$Idle = {$: 'Idle'};
+var mdgriffith$elm_ui$Element$Input$NotFound = {$: 'NotFound'};
+var mdgriffith$elm_ui$Element$Input$Selected = {$: 'Selected'};
 var mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 	function (attrs, label, input) {
 		if (label.$ === 'HiddenLabel') {
@@ -17419,78 +17536,22 @@ var mdgriffith$elm_ui$Element$Input$applyLabel = F3(
 			}
 		}
 	});
-var elm$html$Html$Attributes$attribute = elm$virtual_dom$VirtualDom$attribute;
-var mdgriffith$elm_ui$Element$Input$autofill = A2(
-	elm$core$Basics$composeL,
-	mdgriffith$elm_ui$Internal$Model$Attr,
-	elm$html$Html$Attributes$attribute('autocomplete'));
-var mdgriffith$elm_ui$Element$rgb = F3(
-	function (r, g, b) {
-		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+var mdgriffith$elm_ui$Element$Input$column = F2(
+	function (attributes, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asColumn,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
+				A2(
+					elm$core$List$cons,
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					attributes)),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var mdgriffith$elm_ui$Element$Input$charcoal = A3(mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
-};
-var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
-var mdgriffith$elm_ui$Element$Input$darkGrey = A3(mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
-var mdgriffith$elm_ui$Element$paddingXY = F2(
-	function (x, y) {
-		return _Utils_eq(x, y) ? A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				'p-' + elm$core$String$fromInt(x),
-				x,
-				x,
-				x,
-				x)) : A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				'p-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y))),
-				y,
-				x,
-				y,
-				x));
-	});
-var mdgriffith$elm_ui$Element$Input$defaultTextPadding = A2(mdgriffith$elm_ui$Element$paddingXY, 12, 12);
-var mdgriffith$elm_ui$Element$Input$white = A3(mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
-var mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
-	[
-		mdgriffith$elm_ui$Element$Input$defaultTextPadding,
-		mdgriffith$elm_ui$Element$Border$rounded(3),
-		mdgriffith$elm_ui$Element$Border$color(mdgriffith$elm_ui$Element$Input$darkGrey),
-		mdgriffith$elm_ui$Element$Background$color(mdgriffith$elm_ui$Element$Input$white),
-		mdgriffith$elm_ui$Element$Border$width(1),
-		mdgriffith$elm_ui$Element$spacing(3),
-		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-	]);
+var mdgriffith$elm_ui$Element$Input$downArrow = 'ArrowDown';
 var mdgriffith$elm_ui$Internal$Model$Label = function (a) {
 	return {$: 'Label', a: a};
 };
@@ -17503,72 +17564,40 @@ var mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute = function (label) {
 		return mdgriffith$elm_ui$Internal$Model$NoAttribute;
 	}
 };
-var mdgriffith$elm_ui$Element$Input$inheritablePlaceholderAttributes = function (attr) {
-	_n0$3:
-	while (true) {
-		if (attr.$ === 'StyleClass') {
-			switch (attr.b.$) {
-				case 'PaddingStyle':
-					var _n1 = attr.b;
-					return true;
-				case 'BorderWidth':
-					var _n2 = attr.b;
-					return true;
-				case 'Transform':
-					return true;
-				default:
-					break _n0$3;
-			}
+var mdgriffith$elm_ui$Element$Input$leftArrow = 'ArrowLeft';
+var mdgriffith$elm_ui$Element$Input$onKeyLookup = function (lookup) {
+	var decode = function (code) {
+		var _n0 = lookup(code);
+		if (_n0.$ === 'Nothing') {
+			return elm$json$Json$Decode$fail('No key matched');
 		} else {
-			break _n0$3;
+			var msg = _n0.a;
+			return elm$json$Json$Decode$succeed(msg);
 		}
-	}
-	return false;
+	};
+	var isKey = A2(
+		elm$json$Json$Decode$andThen,
+		decode,
+		A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
+	return mdgriffith$elm_ui$Internal$Model$Attr(
+		A2(elm$html$Html$Events$on, 'keyup', isKey));
 };
-var mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
-	if (label.$ === 'HiddenLabel') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var elm$html$Html$Attributes$spellcheck = elm$html$Html$Attributes$boolProperty('spellcheck');
-var mdgriffith$elm_ui$Element$Input$spellcheck = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$spellcheck);
-var elm$core$String$lines = _String_lines;
-var mdgriffith$elm_ui$Internal$Flag$heightTextAreaContent = mdgriffith$elm_ui$Internal$Flag$flag(47);
-var mdgriffith$elm_ui$Element$Input$textHeightContent = F4(
-	function (textValue, spacing, maybePadding, maybeBorder) {
-		var topBottom = function (_n0) {
-			var t = _n0.a;
-			var b = _n0.c;
-			return t + b;
-		};
-		var newlineCount = function (x) {
-			return (x < 1) ? 1 : x;
-		}(
-			elm$core$List$length(
-				elm$core$String$lines(textValue)));
-		var additionalSpacing = (((newlineCount - 1) * spacing) + A2(
-			elm$core$Maybe$withDefault,
-			0,
-			A2(elm$core$Maybe$map, topBottom, maybePadding))) + A2(
-			elm$core$Maybe$withDefault,
-			0,
-			A2(elm$core$Maybe$map, topBottom, maybeBorder));
-		var heightValue = function (count) {
-			return 'calc(' + (elm$core$String$fromInt(count) + ('em + ' + (elm$core$String$fromInt(additionalSpacing) + 'px) !important')));
-		};
-		return A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$heightTextAreaContent,
-			A3(
-				mdgriffith$elm_ui$Internal$Model$Single,
-				'textarea-height-' + elm$core$String$fromInt(newlineCount),
-				'height',
-				heightValue(newlineCount)));
+var mdgriffith$elm_ui$Element$Input$rightArrow = 'ArrowRight';
+var mdgriffith$elm_ui$Element$Input$row = F2(
+	function (attributes, children) {
+		return A4(
+			mdgriffith$elm_ui$Internal$Model$element,
+			mdgriffith$elm_ui$Internal$Model$asRow,
+			mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				elm$core$List$cons,
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+				attributes),
+			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
-var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
-var mdgriffith$elm_ui$Element$Input$value = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$value);
+var mdgriffith$elm_ui$Element$Input$space = ' ';
+var mdgriffith$elm_ui$Element$Input$tabindex = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$tabindex);
+var mdgriffith$elm_ui$Element$Input$upArrow = 'ArrowUp';
 var mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
 var mdgriffith$elm_ui$Element$Region$announce = mdgriffith$elm_ui$Internal$Model$Describe(mdgriffith$elm_ui$Internal$Model$LivePolite);
 var mdgriffith$elm_ui$Internal$Model$filter = function (attrs) {
@@ -17645,6 +17674,417 @@ var mdgriffith$elm_ui$Internal$Model$get = F2(
 			_List_Nil,
 			mdgriffith$elm_ui$Internal$Model$filter(attrs));
 	});
+var mdgriffith$elm_ui$Element$Input$radioHelper = F3(
+	function (orientation, attrs, input) {
+		var track = F2(
+			function (opt, _n14) {
+				var found = _n14.a;
+				var prev = _n14.b;
+				var nxt = _n14.c;
+				var val = opt.a;
+				switch (found.$) {
+					case 'NotFound':
+						return _Utils_eq(
+							elm$core$Maybe$Just(val),
+							input.selected) ? _Utils_Tuple3(mdgriffith$elm_ui$Element$Input$BeforeFound, prev, nxt) : _Utils_Tuple3(found, val, nxt);
+					case 'BeforeFound':
+						return _Utils_Tuple3(mdgriffith$elm_ui$Element$Input$AfterFound, prev, val);
+					default:
+						return _Utils_Tuple3(found, prev, nxt);
+				}
+			});
+		var renderOption = function (_n11) {
+			var val = _n11.a;
+			var view = _n11.b;
+			var status = _Utils_eq(
+				elm$core$Maybe$Just(val),
+				input.selected) ? mdgriffith$elm_ui$Element$Input$Selected : mdgriffith$elm_ui$Element$Input$Idle;
+			return A2(
+				mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$pointer,
+						function () {
+						if (orientation.$ === 'Row') {
+							return mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink);
+						} else {
+							return mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill);
+						}
+					}(),
+						mdgriffith$elm_ui$Element$Events$onClick(
+						input.onChange(val)),
+						function () {
+						if (status.$ === 'Selected') {
+							return mdgriffith$elm_ui$Internal$Model$Attr(
+								A2(elm$html$Html$Attributes$attribute, 'aria-checked', 'true'));
+						} else {
+							return mdgriffith$elm_ui$Internal$Model$Attr(
+								A2(elm$html$Html$Attributes$attribute, 'aria-checked', 'false'));
+						}
+					}(),
+						mdgriffith$elm_ui$Internal$Model$Attr(
+						A2(elm$html$Html$Attributes$attribute, 'role', 'radio'))
+					]),
+				view(status));
+		};
+		var prevNext = function () {
+			var _n5 = input.options;
+			if (!_n5.b) {
+				return elm$core$Maybe$Nothing;
+			} else {
+				var _n6 = _n5.a;
+				var val = _n6.a;
+				return function (_n7) {
+					var found = _n7.a;
+					var b = _n7.b;
+					var a = _n7.c;
+					switch (found.$) {
+						case 'NotFound':
+							return elm$core$Maybe$Just(
+								_Utils_Tuple2(b, val));
+						case 'BeforeFound':
+							return elm$core$Maybe$Just(
+								_Utils_Tuple2(b, val));
+						default:
+							return elm$core$Maybe$Just(
+								_Utils_Tuple2(b, a));
+					}
+				}(
+					A3(
+						elm$core$List$foldl,
+						track,
+						_Utils_Tuple3(mdgriffith$elm_ui$Element$Input$NotFound, val, val),
+						input.options));
+			}
+		}();
+		var optionArea = function () {
+			if (orientation.$ === 'Row') {
+				return A2(
+					mdgriffith$elm_ui$Element$Input$row,
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(input.label),
+						attrs),
+					A2(elm$core$List$map, renderOption, input.options));
+			} else {
+				return A2(
+					mdgriffith$elm_ui$Element$Input$column,
+					A2(
+						elm$core$List$cons,
+						mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(input.label),
+						attrs),
+					A2(elm$core$List$map, renderOption, input.options));
+			}
+		}();
+		var events = A2(
+			mdgriffith$elm_ui$Internal$Model$get,
+			attrs,
+			function (attr) {
+				_n3$3:
+				while (true) {
+					switch (attr.$) {
+						case 'Width':
+							if (attr.a.$ === 'Fill') {
+								return true;
+							} else {
+								break _n3$3;
+							}
+						case 'Height':
+							if (attr.a.$ === 'Fill') {
+								return true;
+							} else {
+								break _n3$3;
+							}
+						case 'Attr':
+							return true;
+						default:
+							break _n3$3;
+					}
+				}
+				return false;
+			});
+		return A3(
+			mdgriffith$elm_ui$Element$Input$applyLabel,
+			_Utils_ap(
+				A2(
+					elm$core$List$filterMap,
+					elm$core$Basics$identity,
+					_List_fromArray(
+						[
+							elm$core$Maybe$Just(mdgriffith$elm_ui$Element$alignLeft),
+							elm$core$Maybe$Just(
+							mdgriffith$elm_ui$Element$Input$tabindex(0)),
+							elm$core$Maybe$Just(
+							mdgriffith$elm_ui$Internal$Model$htmlClass('focus')),
+							elm$core$Maybe$Just(mdgriffith$elm_ui$Element$Region$announce),
+							elm$core$Maybe$Just(
+							mdgriffith$elm_ui$Internal$Model$Attr(
+								A2(elm$html$Html$Attributes$attribute, 'role', 'radiogroup'))),
+							function () {
+							if (prevNext.$ === 'Nothing') {
+								return elm$core$Maybe$Nothing;
+							} else {
+								var _n1 = prevNext.a;
+								var prev = _n1.a;
+								var next = _n1.b;
+								return elm$core$Maybe$Just(
+									mdgriffith$elm_ui$Element$Input$onKeyLookup(
+										function (code) {
+											if (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$leftArrow)) {
+												return elm$core$Maybe$Just(
+													input.onChange(prev));
+											} else {
+												if (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$upArrow)) {
+													return elm$core$Maybe$Just(
+														input.onChange(prev));
+												} else {
+													if (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$rightArrow)) {
+														return elm$core$Maybe$Just(
+															input.onChange(next));
+													} else {
+														if (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$downArrow)) {
+															return elm$core$Maybe$Just(
+																input.onChange(next));
+														} else {
+															if (_Utils_eq(code, mdgriffith$elm_ui$Element$Input$space)) {
+																var _n2 = input.selected;
+																if (_n2.$ === 'Nothing') {
+																	return elm$core$Maybe$Just(
+																		input.onChange(prev));
+																} else {
+																	return elm$core$Maybe$Nothing;
+																}
+															} else {
+																return elm$core$Maybe$Nothing;
+															}
+														}
+													}
+												}
+											}
+										}));
+							}
+						}()
+						])),
+				events),
+			input.label,
+			optionArea);
+	});
+var mdgriffith$elm_ui$Element$Input$radioRow = mdgriffith$elm_ui$Element$Input$radioHelper(mdgriffith$elm_ui$Element$Input$Row);
+var mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
+	return {$: 'TextInputNode', a: a};
+};
+var elm$html$Html$Attributes$type_ = elm$html$Html$Attributes$stringProperty('type');
+var elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			elm$virtual_dom$VirtualDom$on,
+			event,
+			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var elm$html$Html$Events$targetValue = A2(
+	elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	elm$json$Json$Decode$string);
+var elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			elm$json$Json$Decode$map,
+			elm$html$Html$Events$alwaysStop,
+			A2(elm$json$Json$Decode$map, tagger, elm$html$Html$Events$targetValue)));
+};
+var mdgriffith$elm_ui$Internal$Flag$transparency = mdgriffith$elm_ui$Internal$Flag$flag(0);
+var mdgriffith$elm_ui$Internal$Model$Transparency = F2(
+	function (a, b) {
+		return {$: 'Transparency', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$alpha = function (o) {
+	var transparency = function (x) {
+		return 1 - x;
+	}(
+		A2(
+			elm$core$Basics$min,
+			1.0,
+			A2(elm$core$Basics$max, 0.0, o)));
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2(
+			mdgriffith$elm_ui$Internal$Model$Transparency,
+			'transparency-' + mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
+			transparency));
+};
+var mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+	function (a, b) {
+		return {$: 'Nearby', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
+};
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Internal$Model$paddingName = F4(
+	function (top, right, bottom, left) {
+		return 'pad-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left)))))));
+	});
+var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
+	var top = _n0.top;
+	var right = _n0.right;
+	var bottom = _n0.bottom;
+	var left = _n0.left;
+	return (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) ? A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(top),
+			top,
+			top,
+			top,
+			top)) : A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			A4(mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
+			top,
+			right,
+			bottom,
+			left));
+};
+var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
+var mdgriffith$elm_ui$Element$Input$Padding = F4(
+	function (a, b, c, d) {
+		return {$: 'Padding', a: a, b: b, c: c, d: d};
+	});
+var mdgriffith$elm_ui$Element$Input$autofill = A2(
+	elm$core$Basics$composeL,
+	mdgriffith$elm_ui$Internal$Model$Attr,
+	elm$html$Html$Attributes$attribute('autocomplete'));
+var mdgriffith$elm_ui$Element$Input$charcoal = A3(mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
+var mdgriffith$elm_ui$Element$Input$darkGrey = A3(mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
+var mdgriffith$elm_ui$Element$paddingXY = F2(
+	function (x, y) {
+		return _Utils_eq(x, y) ? A2(
+			mdgriffith$elm_ui$Internal$Model$StyleClass,
+			mdgriffith$elm_ui$Internal$Flag$padding,
+			A5(
+				mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+				'p-' + elm$core$String$fromInt(x),
+				x,
+				x,
+				x,
+				x)) : A2(
+			mdgriffith$elm_ui$Internal$Model$StyleClass,
+			mdgriffith$elm_ui$Internal$Flag$padding,
+			A5(
+				mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+				'p-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y))),
+				y,
+				x,
+				y,
+				x));
+	});
+var mdgriffith$elm_ui$Element$Input$defaultTextPadding = A2(mdgriffith$elm_ui$Element$paddingXY, 12, 12);
+var mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$Input$defaultTextPadding,
+		mdgriffith$elm_ui$Element$Border$rounded(3),
+		mdgriffith$elm_ui$Element$Border$color(mdgriffith$elm_ui$Element$Input$darkGrey),
+		mdgriffith$elm_ui$Element$Background$color(mdgriffith$elm_ui$Element$Input$white),
+		mdgriffith$elm_ui$Element$Border$width(1),
+		mdgriffith$elm_ui$Element$spacing(3),
+		mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+	]);
+var mdgriffith$elm_ui$Element$Input$inheritablePlaceholderAttributes = function (attr) {
+	_n0$3:
+	while (true) {
+		if (attr.$ === 'StyleClass') {
+			switch (attr.b.$) {
+				case 'PaddingStyle':
+					var _n1 = attr.b;
+					return true;
+				case 'BorderWidth':
+					var _n2 = attr.b;
+					return true;
+				case 'Transform':
+					return true;
+				default:
+					break _n0$3;
+			}
+		} else {
+			break _n0$3;
+		}
+	}
+	return false;
+};
+var mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
+	if (label.$ === 'HiddenLabel') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var elm$html$Html$Attributes$spellcheck = elm$html$Html$Attributes$boolProperty('spellcheck');
+var mdgriffith$elm_ui$Element$Input$spellcheck = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$spellcheck);
+var elm$core$String$lines = _String_lines;
+var mdgriffith$elm_ui$Internal$Flag$heightTextAreaContent = mdgriffith$elm_ui$Internal$Flag$flag(47);
+var mdgriffith$elm_ui$Element$Input$textHeightContent = F4(
+	function (textValue, spacing, maybePadding, maybeBorder) {
+		var topBottom = function (_n0) {
+			var t = _n0.a;
+			var b = _n0.c;
+			return t + b;
+		};
+		var newlineCount = function (x) {
+			return (x < 1) ? 1 : x;
+		}(
+			elm$core$List$length(
+				elm$core$String$lines(textValue)));
+		var additionalSpacing = (((newlineCount - 1) * spacing) + A2(
+			elm$core$Maybe$withDefault,
+			0,
+			A2(elm$core$Maybe$map, topBottom, maybePadding))) + A2(
+			elm$core$Maybe$withDefault,
+			0,
+			A2(elm$core$Maybe$map, topBottom, maybeBorder));
+		var heightValue = function (count) {
+			return 'calc(' + (elm$core$String$fromInt(count) + ('em + ' + (elm$core$String$fromInt(additionalSpacing) + 'px) !important')));
+		};
+		return A2(
+			mdgriffith$elm_ui$Internal$Model$StyleClass,
+			mdgriffith$elm_ui$Internal$Flag$heightTextAreaContent,
+			A3(
+				mdgriffith$elm_ui$Internal$Model$Single,
+				'textarea-height-' + elm$core$String$fromInt(newlineCount),
+				'height',
+				heightValue(newlineCount)));
+	});
+var elm$html$Html$Attributes$value = elm$html$Html$Attributes$stringProperty('value');
+var mdgriffith$elm_ui$Element$Input$value = A2(elm$core$Basics$composeL, mdgriffith$elm_ui$Internal$Model$Attr, elm$html$Html$Attributes$value);
 var mdgriffith$elm_ui$Internal$Model$isContent = function (len) {
 	isContent:
 	while (true) {
@@ -18052,6 +18492,29 @@ var author$project$View$addSelectionForm = function (model) {
 					text: model.stopIdFormText
 				}),
 				A2(
+				mdgriffith$elm_ui$Element$Input$radioRow,
+				_List_Nil,
+				{
+					label: author$project$View$label('Direction Id'),
+					onChange: author$project$Model$TypeDirection,
+					options: _List_fromArray(
+						[
+							A2(
+							mdgriffith$elm_ui$Element$Input$option,
+							elm$core$Maybe$Nothing,
+							mdgriffith$elm_ui$Element$text('None')),
+							A2(
+							mdgriffith$elm_ui$Element$Input$option,
+							elm$core$Maybe$Just(author$project$Data$Zero),
+							mdgriffith$elm_ui$Element$text('0')),
+							A2(
+							mdgriffith$elm_ui$Element$Input$option,
+							elm$core$Maybe$Just(author$project$Data$One),
+							mdgriffith$elm_ui$Element$text('1'))
+						]),
+					selected: elm$core$Maybe$Just(model.directionFormValue)
+				}),
+				A2(
 				mdgriffith$elm_ui$Element$Input$button,
 				_List_Nil,
 				{
@@ -18059,18 +18522,161 @@ var author$project$View$addSelectionForm = function (model) {
 					onPress: elm$core$Maybe$Just(
 						author$project$Model$AddSelection(
 							{
+								direction: model.directionFormValue,
 								routeId: author$project$Data$RouteId(model.routeIdFormText),
 								stopId: author$project$Data$StopId(model.stopIdFormText)
 							}))
 				})
 			]));
 };
+var author$project$View$fontSmall = 14;
+var mdgriffith$elm_ui$Element$padding = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
+};
+var mdgriffith$elm_ui$Element$Border$widthXY = F2(
+	function (x, y) {
+		return A2(
+			mdgriffith$elm_ui$Internal$Model$StyleClass,
+			mdgriffith$elm_ui$Internal$Flag$borderWidth,
+			A5(
+				mdgriffith$elm_ui$Internal$Model$BorderWidth,
+				'b-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y))),
+				y,
+				x,
+				y,
+				x));
+	});
+var mdgriffith$elm_ui$Element$Border$widthEach = function (_n0) {
+	var bottom = _n0.bottom;
+	var top = _n0.top;
+	var left = _n0.left;
+	var right = _n0.right;
+	return (_Utils_eq(top, bottom) && _Utils_eq(left, right)) ? (_Utils_eq(top, right) ? mdgriffith$elm_ui$Element$Border$width(top) : A2(mdgriffith$elm_ui$Element$Border$widthXY, left, top)) : A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left))))))),
+			top,
+			right,
+			bottom,
+			left));
+};
+var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
+var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
+	return {$: 'FontSize', a: a};
+};
+var mdgriffith$elm_ui$Element$Font$size = function (i) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontSize,
+		mdgriffith$elm_ui$Internal$Model$FontSize(i));
+};
+var author$project$View$selectionHeading = F2(
+	function (stopNames, selection) {
+		var directionText = function () {
+			var _n2 = selection.direction;
+			if (_n2.$ === 'Nothing') {
+				return '';
+			} else {
+				if (_n2.a.$ === 'Zero') {
+					var _n3 = _n2.a;
+					return ' - 0';
+				} else {
+					var _n4 = _n2.a;
+					return ' - 1';
+				}
+			}
+		}();
+		var _n0 = selection.stopId;
+		var stopIdText = _n0.a;
+		var stopName = A2(
+			elm$core$Maybe$withDefault,
+			stopIdText,
+			A2(pzp1997$assoc_list$AssocList$get, selection.stopId, stopNames));
+		var _n1 = selection.routeId;
+		var routeIdText = _n1.a;
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$padding(author$project$View$unit),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
+					mdgriffith$elm_ui$Element$Border$widthEach(
+					{bottom: 1, left: 0, right: 0, top: 0})
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$row,
+					_List_Nil,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$text(routeIdText),
+							A2(
+							mdgriffith$elm_ui$Element$el,
+							_List_fromArray(
+								[
+									mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
+								]),
+							mdgriffith$elm_ui$Element$text(directionText))
+						])),
+					A2(
+					mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
+						]),
+					mdgriffith$elm_ui$Element$text(stopName))
+				]));
+	});
+var author$project$Api$predictionMatchesDirection = F2(
+	function (selectionDirection, prediction) {
+		if (selectionDirection.$ === 'Nothing') {
+			return true;
+		} else {
+			var direction = selectionDirection.a;
+			return _Utils_eq(prediction.direction, direction);
+		}
+	});
+var elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var author$project$Api$predictionMatchesStop = F3(
+	function (apiData, queriedStop, prediction) {
+		return _Utils_eq(prediction.stopId, queriedStop) || function () {
+			var predictionParentStation = A2(
+				elm$core$Maybe$andThen,
+				function ($) {
+					return $.parentStation;
+				},
+				A2(pzp1997$assoc_list$AssocList$get, prediction.stopId, apiData.stops));
+			return _Utils_eq(
+				predictionParentStation,
+				elm$core$Maybe$Just(queriedStop));
+		}();
+	});
 var pzp1997$assoc_list$AssocList$values = function (_n0) {
 	var alist = _n0.a;
 	return A2(elm$core$List$map, elm$core$Tuple$second, alist);
 };
 var author$project$Api$predictionsForSelection = F2(
-	function (selection, apiData) {
+	function (apiData, selection) {
 		return A2(
 			elm$core$List$map,
 			function (prediction) {
@@ -18086,17 +18692,17 @@ var author$project$Api$predictionsForSelection = F2(
 			},
 			A2(
 				elm$core$List$filter,
-				function (prediction) {
-					return _Utils_eq(prediction.stopId, selection.stopId);
-				},
+				author$project$Api$predictionMatchesDirection(selection.direction),
 				A2(
 					elm$core$List$filter,
-					function (prediction) {
-						return _Utils_eq(prediction.routeId, selection.routeId);
-					},
-					pzp1997$assoc_list$AssocList$values(apiData.predictions))));
+					A2(author$project$Api$predictionMatchesStop, apiData, selection.stopId),
+					A2(
+						elm$core$List$filter,
+						function (prediction) {
+							return _Utils_eq(prediction.routeId, selection.routeId);
+						},
+						pzp1997$assoc_list$AssocList$values(apiData.predictions)))));
 	});
-var author$project$View$fontSmall = 14;
 var elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
@@ -18134,14 +18740,15 @@ var author$project$View$predictionTimeString = F2(
 	function (currentTime, prediction) {
 		var differenceMillis = elm$time$Time$posixToMillis(prediction.time) - elm$time$Time$posixToMillis(currentTime);
 		var differenceSecs = (differenceMillis / 1000) | 0;
-		var displayMins = elm$core$String$fromInt((differenceSecs / 60) | 0);
+		var sign = (differenceSecs < 0) ? '-' : '';
+		var absSecs = elm$core$Basics$abs(differenceSecs);
+		var displayMins = elm$core$String$fromInt((absSecs / 60) | 0);
 		var displaySecs = A3(
 			elm$core$String$padLeft,
 			2,
 			_Utils_chr('0'),
-			elm$core$String$fromInt(
-				elm$core$Basics$abs(differenceSecs % 60)));
-		return displayMins + (':' + displaySecs);
+			elm$core$String$fromInt(absSecs % 60));
+		return sign + (displayMins + (':' + displaySecs));
 	});
 var elm$core$List$sortBy = _List_sortBy;
 var elm$core$List$takeReverse = F3(
@@ -18270,112 +18877,51 @@ var elm$core$List$take = F2(
 	function (n, list) {
 		return A3(elm$core$List$takeFast, 0, n, list);
 	});
-var mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$Left = {$: 'Left'};
-var mdgriffith$elm_ui$Element$alignLeft = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Left);
-var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
-};
-var mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asRow,
-			mdgriffith$elm_ui$Internal$Model$div,
+var author$project$View$viewPredictions = F3(
+	function (currentTime, apiData, selection) {
+		var predictions = A2(
+			elm$core$List$take,
+			3,
 			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				elm$core$List$sortBy,
 				A2(
-					elm$core$List$cons,
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$shrink),
-					A2(
-						elm$core$List$cons,
-						mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+					elm$core$Basics$composeR,
+					function ($) {
+						return $.time;
+					},
+					elm$time$Time$posixToMillis),
+				A2(author$project$Api$predictionsForSelection, apiData, selection)));
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$padding(author$project$View$unit)
+				]),
+			elm$core$List$isEmpty(predictions) ? _List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$text('---')
+				]) : A2(
+				elm$core$List$map,
+				mdgriffith$elm_ui$Element$text,
+				A2(
+					elm$core$List$map,
+					author$project$View$predictionTimeString(currentTime),
+					predictions)));
 	});
-var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
-var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
-	return {$: 'FontSize', a: a};
-};
-var mdgriffith$elm_ui$Element$Font$size = function (i) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontSize,
-		mdgriffith$elm_ui$Internal$Model$FontSize(i));
-};
 var author$project$View$viewSelection = F4(
 	function (currentTime, stopNames, apiData, selection) {
-		var predictions = A2(author$project$Api$predictionsForSelection, selection, apiData);
-		var _n0 = selection.stopId;
-		var stopIdText = _n0.a;
-		var stopName = A2(
-			elm$core$Maybe$withDefault,
-			stopIdText,
-			A2(pzp1997$assoc_list$AssocList$get, selection.stopId, stopNames));
-		var _n1 = selection.routeId;
-		var routeIdText = _n1.a;
 		return A2(
-			mdgriffith$elm_ui$Element$row,
+			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$Border$rounded(4),
-					mdgriffith$elm_ui$Element$padding(author$project$View$unit)
+					mdgriffith$elm_ui$Element$Border$rounded(4)
 				]),
 			_List_fromArray(
 				[
-					A2(
-					mdgriffith$elm_ui$Element$column,
-					_List_fromArray(
-						[mdgriffith$elm_ui$Element$alignLeft]),
-					_List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$text(routeIdText),
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
-								]),
-							mdgriffith$elm_ui$Element$text(stopName))
-						])),
-					A2(
-					mdgriffith$elm_ui$Element$column,
-					_List_fromArray(
-						[mdgriffith$elm_ui$Element$alignRight]),
-					A2(
-						elm$core$List$map,
-						mdgriffith$elm_ui$Element$text,
-						A2(
-							elm$core$List$map,
-							author$project$View$predictionTimeString(currentTime),
-							A2(
-								elm$core$List$take,
-								3,
-								A2(
-									elm$core$List$sortBy,
-									A2(
-										elm$core$Basics$composeR,
-										function ($) {
-											return $.time;
-										},
-										elm$time$Time$posixToMillis),
-									predictions)))))
+					A2(author$project$View$selectionHeading, stopNames, selection),
+					A3(author$project$View$viewPredictions, currentTime, apiData, selection)
 				]));
 	});
 var author$project$View$viewSelections = F4(
@@ -18696,4 +19242,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.StreamEvent"},"Data.Selection":{"args":[],"type":"{ routeId : Data.RouteId, stopId : Data.StopId }"},"Model.StopNames":{"args":[],"type":"AssocList.Dict Data.StopId String.String"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Http.Response":{"args":["body"],"type":"{ url : String.String, status : { code : Basics.Int, message : String.String }, headers : Dict.Dict String.String String.String, body : body }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Prediction":{"args":[],"type":"{ id : Api.PredictionId, time : Time.Posix, routeId : Data.RouteId, stopId : Data.StopId, tripId : Api.TripId }"},"Api.Stop":{"args":[],"type":"{ id : Data.StopId, parentStation : Maybe.Maybe Data.StopId }"},"Api.Trip":{"args":[],"type":"{ id : Api.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"ReceiveStopNames":["Result.Result Http.Error Model.StopNames"],"ApiMsg":["Api.Msg"]}},"Api.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Resource"],"Insert":["Api.Resource"],"Remove":["Api.ResourceId"]}},"Data.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Data.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Http.Response String.String"],"BadPayload":["String.String","Http.Response String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Api.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Prediction"],"ResourceTrip":["Api.Trip"],"ResourceStop":["Api.Stop"]}},"Api.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.PredictionId"],"ResourceTripId":["Api.TripId"],"ResourceStopId":["Data.StopId"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"List.List":{"args":["a"],"tags":{}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.StreamEvent"},"Data.Selection":{"args":[],"type":"{ routeId : Data.RouteId, stopId : Data.StopId, direction : Maybe.Maybe Data.Direction }"},"Model.StopNames":{"args":[],"type":"AssocList.Dict Data.StopId String.String"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Http.Response":{"args":["body"],"type":"{ url : String.String, status : { code : Basics.Int, message : String.String }, headers : Dict.Dict String.String String.String, body : body }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Prediction":{"args":[],"type":"{ id : Api.PredictionId, time : Time.Posix, routeId : Data.RouteId, stopId : Data.StopId, direction : Data.Direction, tripId : Api.TripId }"},"Api.Stop":{"args":[],"type":"{ id : Data.StopId, parentStation : Maybe.Maybe Data.StopId }"},"Api.Trip":{"args":[],"type":"{ id : Api.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Data.Direction"],"ReceiveStopNames":["Result.Result Http.Error Model.StopNames"],"ApiMsg":["Api.Msg"]}},"Api.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Resource"],"Insert":["Api.Resource"],"Remove":["Api.ResourceId"]}},"Data.Direction":{"args":[],"tags":{"Zero":[],"One":[]}},"Data.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Data.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Http.Response String.String"],"BadPayload":["String.String","Http.Response String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Api.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Prediction"],"ResourceTrip":["Api.Trip"],"ResourceStop":["Api.Stop"]}},"Api.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.PredictionId"],"ResourceTripId":["Api.TripId"],"ResourceStopId":["Data.StopId"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"List.List":{"args":["a"],"tags":{}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
