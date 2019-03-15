@@ -110,7 +110,7 @@ viewPredictions : Time.Posix -> Api.ApiData -> Selection -> Element msg
 viewPredictions currentTime apiData selection =
     let
         predictions =
-            Api.predictionsForSelection selection apiData
+            Api.predictionsForSelection apiData selection
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
     in

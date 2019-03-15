@@ -244,12 +244,12 @@ insertResource resource apiData =
             }
 
 
-predictionsForSelection : Selection -> ApiData -> List ShownPrediction
-predictionsForSelection selection apiData =
+predictionsForSelection : ApiData -> Selection -> List ShownPrediction
+predictionsForSelection apiData selection =
     apiData.predictions
         |> Dict.values
         |> List.filter (\prediction -> prediction.routeId == selection.routeId)
-        |> List.filter (\prediction -> prediction.stopId == selection.stopId)
+        |> List.filter (predictionMatchesStop apiData selection.stopId)
         |> List.map
             (\prediction ->
                 { time = prediction.time
@@ -259,6 +259,18 @@ predictionsForSelection selection apiData =
                         |> Maybe.map .headsign
                 }
             )
+
+
+predictionMatchesStop : ApiData -> StopId -> Prediction -> Bool
+predictionMatchesStop apiData queriedStop prediction =
+    (prediction.stopId == queriedStop)
+        || (let
+                predictionParentStation =
+                    Dict.get prediction.stopId apiData.stops
+                        |> Maybe.andThen .parentStation
+            in
+            predictionParentStation == Just queriedStop
+           )
 
 
 

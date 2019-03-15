@@ -10,8 +10,6 @@ Intended to help you decide which route to take when you have multiple options a
 
 Enter the route id and stop id for each selection that you want predictions at. These are the internal ids given by the API, which may be different than the human-facing names.
 
-If the stop has a parent stop (e.g. subway stops), then you must use the child stop id for the specific platform you want, not the parent id for the whole station.
-
 The list of selections is saved as query parameters in the url, so you can bookmark useful lists.
 
 ## Technical Details
