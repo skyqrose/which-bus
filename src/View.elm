@@ -147,17 +147,26 @@ predictionTimeString currentTime prediction =
         differenceSecs =
             differenceMillis // 1000
 
+        absSecs =
+            abs differenceSecs
+
+        sign =
+            if differenceSecs < 0 then
+                "-"
+
+            else
+                ""
+
         displayMins =
-            String.fromInt (differenceSecs // 60)
+            String.fromInt (absSecs // 60)
 
         displaySecs =
-            differenceSecs
+            absSecs
                 |> remainderBy 60
-                |> abs
                 |> String.fromInt
                 |> String.padLeft 2 '0'
     in
-    displayMins ++ ":" ++ displaySecs
+    sign ++ displayMins ++ ":" ++ displaySecs
 
 
 addSelectionForm : Model -> Element Msg
