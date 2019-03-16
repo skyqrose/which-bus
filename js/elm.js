@@ -5853,8 +5853,7 @@ var author$project$Api$Stream$startStream = function (selections) {
 			[
 				_Utils_Tuple2('filter[route]', routeIds),
 				_Utils_Tuple2('filter[stop]', stopIds),
-				_Utils_Tuple2('include', 'trip'),
-				_Utils_Tuple2('include', 'stop')
+				_Utils_Tuple2('include', 'stop,trip')
 			]));
 	return author$project$Api$Stream$startStreamPort(url);
 };
