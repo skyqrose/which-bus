@@ -19404,13 +19404,32 @@ var mdgriffith$elm_ui$Element$layoutWith = F3(
 	});
 var mdgriffith$elm_ui$Element$layout = mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
+var mdgriffith$elm_ui$Element$Font$family = function (families) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontFamily,
+		A2(
+			mdgriffith$elm_ui$Internal$Model$FontFamily,
+			A3(elm$core$List$foldl, mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'ff-', families),
+			families));
+};
+var mdgriffith$elm_ui$Element$Font$sansSerif = mdgriffith$elm_ui$Internal$Model$SansSerif;
+var mdgriffith$elm_ui$Element$Font$typeface = mdgriffith$elm_ui$Internal$Model$Typeface;
 var author$project$View$view = function (model) {
 	return {
 		body: _List_fromArray(
 			[
 				A2(
 				mdgriffith$elm_ui$Element$layout,
-				_List_Nil,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Font$family(
+						_List_fromArray(
+							[
+								mdgriffith$elm_ui$Element$Font$typeface('Inter'),
+								mdgriffith$elm_ui$Element$Font$sansSerif
+							]))
+					]),
 				author$project$View$ui(model))
 			]),
 		title: 'Which Bus - skyqrose'
