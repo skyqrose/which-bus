@@ -1,5 +1,5 @@
 module Api.Decoders exposing
-    ( directionDecoder
+    ( directionIdDecoder
     , predictionDecoder
     , predictionIdDecoder
     , resourceDecoder
@@ -80,17 +80,17 @@ routeIdDecoder =
     Decode.map RouteId Decode.string
 
 
-directionDecoder : Decode.Decoder Direction
-directionDecoder =
+directionIdDecoder : Decode.Decoder DirectionId
+directionIdDecoder =
     Decode.int
         |> Decode.andThen
             (\x ->
                 case x of
                     0 ->
-                        Decode.succeed Zero
+                        Decode.succeed D0
 
                     1 ->
-                        Decode.succeed One
+                        Decode.succeed D1
 
                     _ ->
                         Decode.fail ("unrecognized direction_id " ++ String.fromInt x)
@@ -109,7 +109,7 @@ predictionDecoder =
             )
         |> Pipeline.requiredAt [ "relationships", "route", "data", "id" ] routeIdDecoder
         |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] stopIdDecoder
-        |> Pipeline.requiredAt [ "attributes", "direction_id" ] directionDecoder
+        |> Pipeline.requiredAt [ "attributes", "direction_id" ] directionIdDecoder
         |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] tripIdDecoder
 
 

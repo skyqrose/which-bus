@@ -32,21 +32,21 @@ parseSelection queryValue =
             Just
                 { routeId = Api.RouteId routeId
                 , stopId = Api.StopId stopId
-                , direction = Nothing
+                , directionId = Nothing
                 }
 
         [ routeId, stopId, "0" ] ->
             Just
                 { routeId = Api.RouteId routeId
                 , stopId = Api.StopId stopId
-                , direction = Just Api.Zero
+                , directionId = Just Api.D0
                 }
 
         [ routeId, stopId, "1" ] ->
             Just
                 { routeId = Api.RouteId routeId
                 , stopId = Api.StopId stopId
-                , direction = Just Api.One
+                , directionId = Just Api.D1
                 }
 
         _ ->
@@ -73,15 +73,15 @@ encodeSelectionAsQueryParam selection =
         (Api.StopId stopId) =
             selection.stopId
 
-        direction =
-            case selection.direction of
+        directionId =
+            case selection.directionId of
                 Nothing ->
                     ""
 
-                Just Api.Zero ->
+                Just Api.D0 ->
                     ",0"
 
-                Just Api.One ->
+                Just Api.D1 ->
                     ",1"
     in
     String.concat
@@ -89,5 +89,5 @@ encodeSelectionAsQueryParam selection =
         , routeId
         , ","
         , stopId
-        , direction
+        , directionId
         ]

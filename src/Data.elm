@@ -10,7 +10,7 @@ import Time
 type alias Selection =
     { routeId : Api.RouteId
     , stopId : Api.StopId
-    , direction : Maybe Api.Direction
+    , directionId : Maybe Api.DirectionId
     }
 
 

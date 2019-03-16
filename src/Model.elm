@@ -23,7 +23,7 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
-    , directionFormValue : Maybe Api.Direction
+    , directionIdFormValue : Maybe Api.DirectionId
     , stopNames : StopNames
     , apiResult : Api.Stream.ApiResult
     }
@@ -36,7 +36,7 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
-    | TypeDirection (Maybe Api.Direction)
+    | TypeDirection (Maybe Api.DirectionId)
     | ReceiveStopNames (Result Http.Error StopNames)
     | ApiMsg Api.Stream.Msg
 

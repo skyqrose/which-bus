@@ -1,5 +1,5 @@
 module Api.Types exposing
-    ( Direction(..)
+    ( DirectionId(..)
     , Prediction
     , PredictionId(..)
     , Resource(..)
@@ -38,9 +38,9 @@ type StopId
     = StopId String
 
 
-type Direction
-    = Zero
-    | One
+type DirectionId
+    = D0
+    | D1
 
 
 type alias Prediction =
@@ -48,7 +48,7 @@ type alias Prediction =
     , time : Time.Posix
     , routeId : RouteId
     , stopId : StopId
-    , direction : Direction
+    , directionId : DirectionId
     , tripId : TripId
     }
 

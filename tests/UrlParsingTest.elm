@@ -20,7 +20,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
-            , test "parses a selection without a direction" <|
+            , test "parses a selection without a directionId" <|
                 \_ ->
                     Just "stop=routeId,stopId"
                         |> urlWithQuery
@@ -28,10 +28,10 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId"
                               , stopId = Api.StopId "stopId"
-                              , direction = Nothing
+                              , directionId = Nothing
                               }
                             ]
-            , test "parses a selection with a direction" <|
+            , test "parses a selection with a directionId" <|
                 \_ ->
                     Just "stop=routeId,stopId,1"
                         |> urlWithQuery
@@ -39,10 +39,10 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId"
                               , stopId = Api.StopId "stopId"
-                              , direction = Just Api.One
+                              , directionId = Just Api.D1
                               }
                             ]
-            , test "doesn't take a selection with a bad direction id" <|
+            , test "doesn't take a selection with a bad directionId" <|
                 \_ ->
                     Just "stop=one,two,x"
                         |> urlWithQuery
@@ -71,11 +71,11 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId1"
                               , stopId = Api.StopId "stopId1"
-                              , direction = Nothing
+                              , directionId = Nothing
                               }
                             , { routeId = Api.RouteId "routeId2"
                               , stopId = Api.StopId "stopId2"
-                              , direction = Just Api.Zero
+                              , directionId = Just Api.D0
                               }
                             ]
             , test "includes a selection even if another is badly formatted" <|
@@ -86,7 +86,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId"
                               , stopId = Api.StopId "stopId"
-                              , direction = Nothing
+                              , directionId = Nothing
                               }
                             ]
             , test "includes a selection when there are other query params" <|
@@ -97,7 +97,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId"
                               , stopId = Api.StopId "stopId"
-                              , direction = Nothing
+                              , directionId = Nothing
                               }
                             ]
             , test "works when the url has other stuff in it" <|
@@ -108,7 +108,7 @@ suite =
                         |> Expect.equal
                             [ { routeId = Api.RouteId "routeId"
                               , stopId = Api.StopId "stopId"
-                              , direction = Nothing
+                              , directionId = Nothing
                               }
                             ]
             ]

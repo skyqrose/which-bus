@@ -85,14 +85,14 @@ selectionHeading stopNames selection =
             selection.stopId
 
         directionText =
-            case selection.direction of
+            case selection.directionId of
                 Nothing ->
                     ""
 
-                Just Api.Zero ->
+                Just Api.D0 ->
                     " - 0"
 
-                Just Api.One ->
+                Just Api.D1 ->
                     " - 1"
 
         stopName =
@@ -191,10 +191,10 @@ addSelectionForm model =
             { onChange = TypeDirection
             , options =
                 [ Input.option Nothing (El.text "None")
-                , Input.option (Just Api.Zero) (El.text "0")
-                , Input.option (Just Api.One) (El.text "1")
+                , Input.option (Just Api.D0) (El.text "0")
+                , Input.option (Just Api.D1) (El.text "1")
                 ]
-            , selected = Just model.directionFormValue
+            , selected = Just model.directionIdFormValue
             , label = label "Direction Id"
             }
         , Input.button []
@@ -203,7 +203,7 @@ addSelectionForm model =
                     (AddSelection
                         { routeId = Api.RouteId model.routeIdFormText
                         , stopId = Api.StopId model.stopIdFormText
-                        , direction = model.directionFormValue
+                        , directionId = model.directionIdFormValue
                         }
                     )
             , label = El.text "Add Stop"
