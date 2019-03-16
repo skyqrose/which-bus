@@ -20,5 +20,10 @@ getStops msg stopIds =
     in
     Http.get
         { url = url
-        , expect = Http.expectJson msg (Decode.list Api.Decoders.stopDecoder)
+        , expect =
+            Http.expectJson msg
+                (Api.Decoders.stopDecoder
+                    |> Decode.list
+                    |> Decode.at [ "data" ]
+                )
         }
