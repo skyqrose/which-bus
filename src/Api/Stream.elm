@@ -87,8 +87,7 @@ startStream selections =
                 "predictions"
                 [ ( "filter[route]", routeIds )
                 , ( "filter[stop]", stopIds )
-                , ( "include", "trip" )
-                , ( "include", "stop" )
+                , ( "include", "stop,trip" )
                 ]
     in
     startStreamPort url
