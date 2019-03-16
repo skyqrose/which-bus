@@ -1,6 +1,8 @@
 port module Main exposing (main)
 
-import Api
+import Api.Stream
+import Api.Types as Api
+import Api.Url
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
@@ -35,7 +37,7 @@ init flags url key =
             UrlParsing.parseSelectionsFromUrl url
 
         ( initApiResult, initApiCmd ) =
-            Api.init selections
+            Api.Stream.init selections
     in
     ( { currentTime = Time.millisToPosix 0
       , url = url
@@ -76,7 +78,7 @@ update msg model =
                     UrlParsing.parseSelectionsFromUrl url
 
                 ( initApiResult, initApiCmd ) =
-                    Api.init newSelections
+                    Api.Stream.init newSelections
             in
             ( { model
                 | url = url
@@ -131,7 +133,7 @@ update msg model =
 
         ApiMsg apiMsg ->
             ( { model
-                | apiResult = Api.update apiMsg model.apiResult
+                | apiResult = Api.Stream.update apiMsg model.apiResult
               }
             , Cmd.none
             )
@@ -141,7 +143,7 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Time.every 1000 Tick
-        , Api.subscriptions ApiMsg
+        , Api.Stream.subscriptions ApiMsg
         ]
 
 
@@ -151,11 +153,11 @@ fetchStopNames selections =
         stopIds =
             selections
                 |> List.map .stopId
-                |> List.map (\(StopId stopId) -> stopId)
+                |> List.map (\(Api.StopId stopId) -> stopId)
                 |> String.join ","
 
         url =
-            Api.makeUrl "stops" [ ( "filter[id]", stopIds ) ]
+            Api.Url.url "stops" [ ( "filter[id]", stopIds ) ]
     in
     Http.get url stopNamesDecoder
         |> Http.send ReceiveStopNames
@@ -165,7 +167,7 @@ stopNamesDecoder : Decoder StopNames
 stopNamesDecoder =
     Decode.map2
         Tuple.pair
-        (Decode.at [ "id" ] (Decode.map StopId Decode.string))
+        (Decode.at [ "id" ] (Decode.map Api.StopId Decode.string))
         (Decode.at [ "attributes", "name" ] Decode.string)
         |> Decode.list
         |> Decode.at [ "data" ]

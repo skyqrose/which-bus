@@ -1,31 +1,16 @@
 module Data exposing
-    ( Direction(..)
-    , RouteId(..)
-    , Selection
+    ( Selection
     , ShownPrediction
-    , StopId(..)
     )
 
+import Api.Types as Api
 import Time
 
 
-type RouteId
-    = RouteId String
-
-
-type StopId
-    = StopId String
-
-
-type Direction
-    = Zero
-    | One
-
-
 type alias Selection =
-    { routeId : RouteId
-    , stopId : StopId
-    , direction : Maybe Direction
+    { routeId : Api.RouteId
+    , stopId : Api.StopId
+    , direction : Maybe Api.Direction
     }
 
 

@@ -1,6 +1,7 @@
 module View exposing (view)
 
-import Api
+import Api.Stream
+import Api.Types as Api
 import AssocList as Dict
 import Browser
 import Data exposing (..)
@@ -28,17 +29,17 @@ ui model =
         , El.spacing unit
         ]
         (case model.apiResult of
-            Api.Loading ->
+            Api.Stream.Loading ->
                 [ El.text "Loading..."
                 , addSelectionForm model
                 ]
 
-            Api.Failure error ->
+            Api.Stream.Failure error ->
                 [ El.text "Error"
                 , El.text (Debug.toString error)
                 ]
 
-            Api.Success apiData ->
+            Api.Stream.Success apiData ->
                 [ El.text "Stops"
                 , viewSelections
                     model.currentTime
@@ -50,7 +51,7 @@ ui model =
         )
 
 
-viewSelections : Time.Posix -> List Selection -> StopNames -> Api.ApiData -> Element Msg
+viewSelections : Time.Posix -> List Selection -> StopNames -> Api.Stream.ApiData -> Element Msg
 viewSelections currentTime selections stopNames apiData =
     El.column
         [ El.spacing unit
@@ -62,7 +63,7 @@ viewSelections currentTime selections stopNames apiData =
         )
 
 
-viewSelection : Time.Posix -> StopNames -> Api.ApiData -> Selection -> Element Msg
+viewSelection : Time.Posix -> StopNames -> Api.Stream.ApiData -> Selection -> Element Msg
 viewSelection currentTime stopNames apiData selection =
     El.column
         [ El.width El.fill
@@ -77,10 +78,10 @@ viewSelection currentTime stopNames apiData selection =
 selectionHeading : StopNames -> Selection -> Element Msg
 selectionHeading stopNames selection =
     let
-        (RouteId routeIdText) =
+        (Api.RouteId routeIdText) =
             selection.routeId
 
-        (StopId stopIdText) =
+        (Api.StopId stopIdText) =
             selection.stopId
 
         directionText =
@@ -88,10 +89,10 @@ selectionHeading stopNames selection =
                 Nothing ->
                     ""
 
-                Just Zero ->
+                Just Api.Zero ->
                     " - 0"
 
-                Just One ->
+                Just Api.One ->
                     " - 1"
 
         stopName =
@@ -117,11 +118,11 @@ selectionHeading stopNames selection =
         ]
 
 
-viewPredictions : Time.Posix -> Api.ApiData -> Selection -> Element msg
+viewPredictions : Time.Posix -> Api.Stream.ApiData -> Selection -> Element msg
 viewPredictions currentTime apiData selection =
     let
         predictions =
-            Api.predictionsForSelection apiData selection
+            Api.Stream.predictionsForSelection apiData selection
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
     in
@@ -190,8 +191,8 @@ addSelectionForm model =
             { onChange = TypeDirection
             , options =
                 [ Input.option Nothing (El.text "None")
-                , Input.option (Just Zero) (El.text "0")
-                , Input.option (Just One) (El.text "1")
+                , Input.option (Just Api.Zero) (El.text "0")
+                , Input.option (Just Api.One) (El.text "1")
                 ]
             , selected = Just model.directionFormValue
             , label = label "Direction Id"
@@ -200,8 +201,8 @@ addSelectionForm model =
             { onPress =
                 Just
                     (AddSelection
-                        { routeId = RouteId model.routeIdFormText
-                        , stopId = StopId model.stopIdFormText
+                        { routeId = Api.RouteId model.routeIdFormText
+                        , stopId = Api.StopId model.stopIdFormText
                         , direction = model.directionFormValue
                         }
                     )

@@ -4,7 +4,8 @@ module Model exposing
     , StopNames
     )
 
-import Api
+import Api.Stream
+import Api.Types as Api
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
@@ -22,9 +23,9 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
-    , directionFormValue : Maybe Direction
+    , directionFormValue : Maybe Api.Direction
     , stopNames : StopNames
-    , apiResult : Api.ApiResult
+    , apiResult : Api.Stream.ApiResult
     }
 
 
@@ -35,10 +36,10 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
-    | TypeDirection (Maybe Direction)
+    | TypeDirection (Maybe Api.Direction)
     | ReceiveStopNames (Result Http.Error StopNames)
-    | ApiMsg Api.Msg
+    | ApiMsg Api.Stream.Msg
 
 
 type alias StopNames =
-    Dict.Dict StopId String
+    Dict.Dict Api.StopId String

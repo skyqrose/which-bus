@@ -1,5 +1,6 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
+import Api.Types as Api
 import Data exposing (..)
 import Url
 import Url.Parser
@@ -29,23 +30,23 @@ parseSelection queryValue =
     case String.split "," queryValue of
         [ routeId, stopId ] ->
             Just
-                { routeId = RouteId routeId
-                , stopId = StopId stopId
+                { routeId = Api.RouteId routeId
+                , stopId = Api.StopId stopId
                 , direction = Nothing
                 }
 
         [ routeId, stopId, "0" ] ->
             Just
-                { routeId = RouteId routeId
-                , stopId = StopId stopId
-                , direction = Just Zero
+                { routeId = Api.RouteId routeId
+                , stopId = Api.StopId stopId
+                , direction = Just Api.Zero
                 }
 
         [ routeId, stopId, "1" ] ->
             Just
-                { routeId = RouteId routeId
-                , stopId = StopId stopId
-                , direction = Just One
+                { routeId = Api.RouteId routeId
+                , stopId = Api.StopId stopId
+                , direction = Just Api.One
                 }
 
         _ ->
@@ -66,10 +67,10 @@ setSelectionsInUrl selections url =
 encodeSelectionAsQueryParam : Selection -> String
 encodeSelectionAsQueryParam selection =
     let
-        (RouteId routeId) =
+        (Api.RouteId routeId) =
             selection.routeId
 
-        (StopId stopId) =
+        (Api.StopId stopId) =
             selection.stopId
 
         direction =
@@ -77,10 +78,10 @@ encodeSelectionAsQueryParam selection =
                 Nothing ->
                     ""
 
-                Just Zero ->
+                Just Api.Zero ->
                     ",0"
 
-                Just One ->
+                Just Api.One ->
                     ",1"
     in
     String.concat
