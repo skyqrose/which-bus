@@ -18,7 +18,14 @@ view : Model -> Browser.Document Msg
 view model =
     { title = "Which Bus - skyqrose"
     , body =
-        [ El.layout [] (ui model) ]
+        [ El.layout
+            [ Font.family
+                [ Font.typeface "Inter"
+                , Font.sansSerif
+                ]
+            ]
+            (ui model)
+        ]
     }
 
 
