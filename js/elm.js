@@ -80,6 +80,271 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEBUG mode. Follow the advice at https://elm-lang.org/0.19.0/optimize for better performance and smaller assets.');
 
 
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
+	}));
+});
+
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = elm$core$Set$toList(x);
+		y = elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -232,87 +497,6 @@ var _JsArray_appendN = F3(function(n, dest, source)
 
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
 // LOG
 
 var _Debug_log_UNUSED = F2(function(tag, value)
@@ -449,6 +633,16 @@ function _Debug_toAnsiString(ansi, value)
 		return _Debug_ctorColor(ansi, tag) + output;
 	}
 
+	if (typeof DataView === 'function' && value instanceof DataView)
+	{
+		return _Debug_stringColor(ansi, '<' + value.byteLength + ' bytes>');
+	}
+
+	if (typeof File === 'function' && value instanceof File)
+	{
+		return _Debug_internalColor(ansi, '<' + value.name + '>');
+	}
+
 	if (typeof value === 'object')
 	{
 		var output = [];
@@ -517,6 +711,10 @@ function _Debug_internalColor(ansi, string)
 	return ansi ? '\x1b[94m' + string + '\x1b[0m' : string;
 }
 
+function _Debug_toHexDigit(n)
+{
+	return String.fromCharCode(n < 10 ? 48 + n : 55 + n);
+}
 
 
 // CRASH
@@ -595,190 +793,6 @@ function _Debug_regionToString(region)
 
 
 
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = elm$core$Set$toList(x);
-		y = elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (!x.$)
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
 // MATH
 
 var _Basics_add = F2(function(a, b) { return a + b; });
@@ -836,6 +850,53 @@ function _Basics_not(bool) { return !bool; }
 var _Basics_and = F2(function(a, b) { return a && b; });
 var _Basics_or  = F2(function(a, b) { return a || b; });
 var _Basics_xor = F2(function(a, b) { return a !== b; });
+
+
+
+function _Char_toCode(char)
+{
+	var code = char.charCodeAt(0);
+	if (0xD800 <= code && code <= 0xDBFF)
+	{
+		return (code - 0xD800) * 0x400 + char.charCodeAt(1) - 0xDC00 + 0x10000
+	}
+	return code;
+}
+
+function _Char_fromCode(code)
+{
+	return _Utils_chr(
+		(code < 0 || 0x10FFFF < code)
+			? '\uFFFD'
+			:
+		(code <= 0xFFFF)
+			? String.fromCharCode(code)
+			:
+		(code -= 0x10000,
+			String.fromCharCode(Math.floor(code / 0x400) + 0xD800, code % 0x400 + 0xDC00)
+		)
+	);
+}
+
+function _Char_toUpper(char)
+{
+	return _Utils_chr(char.toUpperCase());
+}
+
+function _Char_toLower(char)
+{
+	return _Utils_chr(char.toLowerCase());
+}
+
+function _Char_toLocaleUpper(char)
+{
+	return _Utils_chr(char.toLocaleUpperCase());
+}
+
+function _Char_toLocaleLower(char)
+{
+	return _Utils_chr(char.toLocaleLowerCase());
+}
 
 
 
@@ -1151,55 +1212,6 @@ function _String_fromList(chars)
 
 
 
-function _Char_toCode(char)
-{
-	var code = char.charCodeAt(0);
-	if (0xD800 <= code && code <= 0xDBFF)
-	{
-		return (code - 0xD800) * 0x400 + char.charCodeAt(1) - 0xDC00 + 0x10000
-	}
-	return code;
-}
-
-function _Char_fromCode(code)
-{
-	return _Utils_chr(
-		(code < 0 || 0x10FFFF < code)
-			? '\uFFFD'
-			:
-		(code <= 0xFFFF)
-			? String.fromCharCode(code)
-			:
-		(code -= 0x10000,
-			String.fromCharCode(Math.floor(code / 0x400) + 0xD800)
-			+
-			String.fromCharCode(code % 0x400 + 0xDC00)
-		)
-	);
-}
-
-function _Char_toUpper(char)
-{
-	return _Utils_chr(char.toUpperCase());
-}
-
-function _Char_toLower(char)
-{
-	return _Utils_chr(char.toLowerCase());
-}
-
-function _Char_toLocaleUpper(char)
-{
-	return _Utils_chr(char.toLocaleUpperCase());
-}
-
-function _Char_toLocaleLower(char)
-{
-	return _Utils_chr(char.toLocaleLowerCase());
-}
-
-
-
 /**/
 function _Json_errorToString(error)
 {
@@ -1226,21 +1238,56 @@ function _Json_fail(msg)
 	};
 }
 
-var _Json_decodeInt = { $: 2 };
-var _Json_decodeBool = { $: 3 };
-var _Json_decodeFloat = { $: 4 };
-var _Json_decodeValue = { $: 5 };
-var _Json_decodeString = { $: 6 };
+function _Json_decodePrim(decoder)
+{
+	return { $: 2, b: decoder };
+}
 
-function _Json_decodeList(decoder) { return { $: 7, b: decoder }; }
-function _Json_decodeArray(decoder) { return { $: 8, b: decoder }; }
+var _Json_decodeInt = _Json_decodePrim(function(value) {
+	return (typeof value !== 'number')
+		? _Json_expecting('an INT', value)
+		:
+	(-2147483647 < value && value < 2147483647 && (value | 0) === value)
+		? elm$core$Result$Ok(value)
+		:
+	(isFinite(value) && !(value % 1))
+		? elm$core$Result$Ok(value)
+		: _Json_expecting('an INT', value);
+});
 
-function _Json_decodeNull(value) { return { $: 9, c: value }; }
+var _Json_decodeBool = _Json_decodePrim(function(value) {
+	return (typeof value === 'boolean')
+		? elm$core$Result$Ok(value)
+		: _Json_expecting('a BOOL', value);
+});
+
+var _Json_decodeFloat = _Json_decodePrim(function(value) {
+	return (typeof value === 'number')
+		? elm$core$Result$Ok(value)
+		: _Json_expecting('a FLOAT', value);
+});
+
+var _Json_decodeValue = _Json_decodePrim(function(value) {
+	return elm$core$Result$Ok(_Json_wrap(value));
+});
+
+var _Json_decodeString = _Json_decodePrim(function(value) {
+	return (typeof value === 'string')
+		? elm$core$Result$Ok(value)
+		: (value instanceof String)
+			? elm$core$Result$Ok(value + '')
+			: _Json_expecting('a STRING', value);
+});
+
+function _Json_decodeList(decoder) { return { $: 3, b: decoder }; }
+function _Json_decodeArray(decoder) { return { $: 4, b: decoder }; }
+
+function _Json_decodeNull(value) { return { $: 5, c: value }; }
 
 var _Json_decodeField = F2(function(field, decoder)
 {
 	return {
-		$: 10,
+		$: 6,
 		d: field,
 		b: decoder
 	};
@@ -1249,7 +1296,7 @@ var _Json_decodeField = F2(function(field, decoder)
 var _Json_decodeIndex = F2(function(index, decoder)
 {
 	return {
-		$: 11,
+		$: 7,
 		e: index,
 		b: decoder
 	};
@@ -1258,7 +1305,7 @@ var _Json_decodeIndex = F2(function(index, decoder)
 function _Json_decodeKeyValuePairs(decoder)
 {
 	return {
-		$: 12,
+		$: 8,
 		b: decoder
 	};
 }
@@ -1266,7 +1313,7 @@ function _Json_decodeKeyValuePairs(decoder)
 function _Json_mapMany(f, decoders)
 {
 	return {
-		$: 13,
+		$: 9,
 		f: f,
 		g: decoders
 	};
@@ -1275,7 +1322,7 @@ function _Json_mapMany(f, decoders)
 var _Json_andThen = F2(function(callback, decoder)
 {
 	return {
-		$: 14,
+		$: 10,
 		b: decoder,
 		h: callback
 	};
@@ -1284,7 +1331,7 @@ var _Json_andThen = F2(function(callback, decoder)
 function _Json_oneOf(decoders)
 {
 	return {
-		$: 15,
+		$: 11,
 		g: decoders
 	};
 }
@@ -1357,61 +1404,29 @@ function _Json_runHelp(decoder, value)
 {
 	switch (decoder.$)
 	{
-		case 3:
-			return (typeof value === 'boolean')
-				? elm$core$Result$Ok(value)
-				: _Json_expecting('a BOOL', value);
-
 		case 2:
-			if (typeof value !== 'number') {
-				return _Json_expecting('an INT', value);
-			}
+			return decoder.b(value);
 
-			if (-2147483647 < value && value < 2147483647 && (value | 0) === value) {
-				return elm$core$Result$Ok(value);
-			}
-
-			if (isFinite(value) && !(value % 1)) {
-				return elm$core$Result$Ok(value);
-			}
-
-			return _Json_expecting('an INT', value);
-
-		case 4:
-			return (typeof value === 'number')
-				? elm$core$Result$Ok(value)
-				: _Json_expecting('a FLOAT', value);
-
-		case 6:
-			return (typeof value === 'string')
-				? elm$core$Result$Ok(value)
-				: (value instanceof String)
-					? elm$core$Result$Ok(value + '')
-					: _Json_expecting('a STRING', value);
-
-		case 9:
+		case 5:
 			return (value === null)
 				? elm$core$Result$Ok(decoder.c)
 				: _Json_expecting('null', value);
 
-		case 5:
-			return elm$core$Result$Ok(_Json_wrap(value));
-
-		case 7:
-			if (!Array.isArray(value))
+		case 3:
+			if (!_Json_isArray(value))
 			{
 				return _Json_expecting('a LIST', value);
 			}
 			return _Json_runArrayDecoder(decoder.b, value, _List_fromArray);
 
-		case 8:
-			if (!Array.isArray(value))
+		case 4:
+			if (!_Json_isArray(value))
 			{
 				return _Json_expecting('an ARRAY', value);
 			}
 			return _Json_runArrayDecoder(decoder.b, value, _Json_toElmArray);
 
-		case 10:
+		case 6:
 			var field = decoder.d;
 			if (typeof value !== 'object' || value === null || !(field in value))
 			{
@@ -1420,9 +1435,9 @@ function _Json_runHelp(decoder, value)
 			var result = _Json_runHelp(decoder.b, value[field]);
 			return (elm$core$Result$isOk(result)) ? result : elm$core$Result$Err(A2(elm$json$Json$Decode$Field, field, result.a));
 
-		case 11:
+		case 7:
 			var index = decoder.e;
-			if (!Array.isArray(value))
+			if (!_Json_isArray(value))
 			{
 				return _Json_expecting('an ARRAY', value);
 			}
@@ -1433,8 +1448,8 @@ function _Json_runHelp(decoder, value)
 			var result = _Json_runHelp(decoder.b, value[index]);
 			return (elm$core$Result$isOk(result)) ? result : elm$core$Result$Err(A2(elm$json$Json$Decode$Index, index, result.a));
 
-		case 12:
-			if (typeof value !== 'object' || value === null || Array.isArray(value))
+		case 8:
+			if (typeof value !== 'object' || value === null || _Json_isArray(value))
 			{
 				return _Json_expecting('an OBJECT', value);
 			}
@@ -1455,7 +1470,7 @@ function _Json_runHelp(decoder, value)
 			}
 			return elm$core$Result$Ok(elm$core$List$reverse(keyValuePairs));
 
-		case 13:
+		case 9:
 			var answer = decoder.f;
 			var decoders = decoder.g;
 			for (var i = 0; i < decoders.length; i++)
@@ -1469,13 +1484,13 @@ function _Json_runHelp(decoder, value)
 			}
 			return elm$core$Result$Ok(answer);
 
-		case 14:
+		case 10:
 			var result = _Json_runHelp(decoder.b, value);
 			return (!elm$core$Result$isOk(result))
 				? result
 				: _Json_runHelp(decoder.h(result.a), value);
 
-		case 15:
+		case 11:
 			var errors = _List_Nil;
 			for (var temp = decoder.g; temp.b; temp = temp.b) // WHILE_CONS
 			{
@@ -1512,6 +1527,11 @@ function _Json_runArrayDecoder(decoder, value, toElmValue)
 	return elm$core$Result$Ok(toElmValue(array));
 }
 
+function _Json_isArray(value)
+{
+	return Array.isArray(value) || (typeof FileList !== 'undefined' && value instanceof FileList);
+}
+
 function _Json_toElmArray(array)
 {
 	return A2(elm$core$Array$initialize, array.length, function(i) { return array[i]; });
@@ -1543,34 +1563,30 @@ function _Json_equality(x, y)
 		case 1:
 			return x.a === y.a;
 
-		case 3:
 		case 2:
-		case 4:
-		case 6:
-		case 5:
-			return true;
+			return x.b === y.b;
 
-		case 9:
+		case 5:
 			return x.c === y.c;
 
-		case 7:
+		case 3:
+		case 4:
 		case 8:
-		case 12:
 			return _Json_equality(x.b, y.b);
 
-		case 10:
+		case 6:
 			return x.d === y.d && _Json_equality(x.b, y.b);
 
-		case 11:
+		case 7:
 			return x.e === y.e && _Json_equality(x.b, y.b);
 
-		case 13:
+		case 9:
 			return x.f === y.f && _Json_listEquality(x.g, y.g);
 
-		case 14:
+		case 10:
 			return x.h === y.h && _Json_equality(x.b, y.b);
 
-		case 15:
+		case 11:
 			return _Json_listEquality(x.g, y.g);
 	}
 }
@@ -1815,188 +1831,6 @@ function _Scheduler_step(proc)
 			proc.f = proc.f.d;
 		}
 	}
-}
-
-
-
-// SEND REQUEST
-
-var _Http_toTask = F2(function(request, maybeProgress)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var xhr = new XMLHttpRequest();
-
-		_Http_configureProgress(xhr, maybeProgress);
-
-		xhr.addEventListener('error', function() {
-			callback(_Scheduler_fail(elm$http$Http$NetworkError));
-		});
-		xhr.addEventListener('timeout', function() {
-			callback(_Scheduler_fail(elm$http$Http$Timeout));
-		});
-		xhr.addEventListener('load', function() {
-			callback(_Http_handleResponse(xhr, request.expect.a));
-		});
-
-		try
-		{
-			xhr.open(request.method, request.url, true);
-		}
-		catch (e)
-		{
-			return callback(_Scheduler_fail(elm$http$Http$BadUrl(request.url)));
-		}
-
-		_Http_configureRequest(xhr, request);
-
-		var body = request.body;
-		xhr.send(elm$http$Http$Internal$isStringBody(body)
-			? (xhr.setRequestHeader('Content-Type', body.a), body.b)
-			: body.a
-		);
-
-		return function() { xhr.abort(); };
-	});
-});
-
-function _Http_configureProgress(xhr, maybeProgress)
-{
-	if (!elm$core$Maybe$isJust(maybeProgress))
-	{
-		return;
-	}
-
-	xhr.addEventListener('progress', function(event) {
-		if (!event.lengthComputable)
-		{
-			return;
-		}
-		_Scheduler_rawSpawn(maybeProgress.a({
-			bytes: event.loaded,
-			bytesExpected: event.total
-		}));
-	});
-}
-
-function _Http_configureRequest(xhr, request)
-{
-	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
-	{
-		xhr.setRequestHeader(headers.a.a, headers.a.b);
-	}
-
-	xhr.responseType = request.expect.b;
-	xhr.withCredentials = request.withCredentials;
-
-	elm$core$Maybe$isJust(request.timeout) && (xhr.timeout = request.timeout.a);
-}
-
-
-// RESPONSES
-
-function _Http_handleResponse(xhr, responseToResult)
-{
-	var response = _Http_toResponse(xhr);
-
-	if (xhr.status < 200 || 300 <= xhr.status)
-	{
-		response.body = xhr.responseText;
-		return _Scheduler_fail(elm$http$Http$BadStatus(response));
-	}
-
-	var result = responseToResult(response);
-
-	if (elm$core$Result$isOk(result))
-	{
-		return _Scheduler_succeed(result.a);
-	}
-	else
-	{
-		response.body = xhr.responseText;
-		return _Scheduler_fail(A2(elm$http$Http$BadPayload, result.a, response));
-	}
-}
-
-function _Http_toResponse(xhr)
-{
-	return {
-		url: xhr.responseURL,
-		status: { code: xhr.status, message: xhr.statusText },
-		headers: _Http_parseHeaders(xhr.getAllResponseHeaders()),
-		body: xhr.response
-	};
-}
-
-function _Http_parseHeaders(rawHeaders)
-{
-	var headers = elm$core$Dict$empty;
-
-	if (!rawHeaders)
-	{
-		return headers;
-	}
-
-	var headerPairs = rawHeaders.split('\u000d\u000a');
-	for (var i = headerPairs.length; i--; )
-	{
-		var headerPair = headerPairs[i];
-		var index = headerPair.indexOf('\u003a\u0020');
-		if (index > 0)
-		{
-			var key = headerPair.substring(0, index);
-			var value = headerPair.substring(index + 2);
-
-			headers = A3(elm$core$Dict$update, key, function(oldValue) {
-				return elm$core$Maybe$Just(elm$core$Maybe$isJust(oldValue)
-					? value + ', ' + oldValue.a
-					: value
-				);
-			}, headers);
-		}
-	}
-
-	return headers;
-}
-
-
-// EXPECTORS
-
-function _Http_expectStringResponse(responseToResult)
-{
-	return {
-		$: 0,
-		b: 'text',
-		a: responseToResult
-	};
-}
-
-var _Http_mapExpect = F2(function(func, expect)
-{
-	return {
-		$: 0,
-		b: expect.b,
-		a: function(response) {
-			var convertedResponse = expect.a(response);
-			return A2(elm$core$Result$map, func, convertedResponse);
-		}
-	};
-});
-
-
-// BODY
-
-function _Http_multipart(parts)
-{
-
-
-	for (var formData = new FormData(); parts.b; parts = parts.b) // WHILE_CONS
-	{
-		var part = parts.a;
-		formData.append(part.a, part.b);
-	}
-
-	return elm$http$Http$Internal$FormDataBody(formData);
 }
 
 
@@ -2478,6 +2312,181 @@ function _Platform_mergeExportsDebug(moduleName, obj, exports)
 	}
 }
 
+
+
+// SEND REQUEST
+
+var _Http_toTask = F3(function(router, toTask, request)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		function done(response) {
+			callback(toTask(request.expect.a(response)));
+		}
+
+		var xhr = new XMLHttpRequest();
+		xhr.addEventListener('error', function() { done(elm$http$Http$NetworkError_); });
+		xhr.addEventListener('timeout', function() { done(elm$http$Http$Timeout_); });
+		xhr.addEventListener('load', function() { done(_Http_toResponse(request.expect.b, xhr)); });
+		elm$core$Maybe$isJust(request.tracker) && _Http_track(router, xhr, request.tracker.a);
+
+		try {
+			xhr.open(request.method, request.url, true);
+		} catch (e) {
+			return done(elm$http$Http$BadUrl_(request.url));
+		}
+
+		_Http_configureRequest(xhr, request);
+
+		request.body.a && xhr.setRequestHeader('Content-Type', request.body.a);
+		xhr.send(request.body.b);
+
+		return function() { xhr.c = true; xhr.abort(); };
+	});
+});
+
+
+// CONFIGURE
+
+function _Http_configureRequest(xhr, request)
+{
+	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
+	{
+		xhr.setRequestHeader(headers.a.a, headers.a.b);
+	}
+	xhr.timeout = request.timeout.a || 0;
+	xhr.responseType = request.expect.d;
+	xhr.withCredentials = request.allowCookiesFromOtherDomains;
+}
+
+
+// RESPONSES
+
+function _Http_toResponse(toBody, xhr)
+{
+	return A2(
+		200 <= xhr.status && xhr.status < 300 ? elm$http$Http$GoodStatus_ : elm$http$Http$BadStatus_,
+		_Http_toMetadata(xhr),
+		toBody(xhr.response)
+	);
+}
+
+
+// METADATA
+
+function _Http_toMetadata(xhr)
+{
+	return {
+		url: xhr.responseURL,
+		statusCode: xhr.status,
+		statusText: xhr.statusText,
+		headers: _Http_parseHeaders(xhr.getAllResponseHeaders())
+	};
+}
+
+
+// HEADERS
+
+function _Http_parseHeaders(rawHeaders)
+{
+	if (!rawHeaders)
+	{
+		return elm$core$Dict$empty;
+	}
+
+	var headers = elm$core$Dict$empty;
+	var headerPairs = rawHeaders.split('\r\n');
+	for (var i = headerPairs.length; i--; )
+	{
+		var headerPair = headerPairs[i];
+		var index = headerPair.indexOf(': ');
+		if (index > 0)
+		{
+			var key = headerPair.substring(0, index);
+			var value = headerPair.substring(index + 2);
+
+			headers = A3(elm$core$Dict$update, key, function(oldValue) {
+				return elm$core$Maybe$Just(elm$core$Maybe$isJust(oldValue)
+					? value + ', ' + oldValue.a
+					: value
+				);
+			}, headers);
+		}
+	}
+	return headers;
+}
+
+
+// EXPECT
+
+var _Http_expect = F3(function(type, toBody, toValue)
+{
+	return {
+		$: 0,
+		d: type,
+		b: toBody,
+		a: toValue
+	};
+});
+
+var _Http_mapExpect = F2(function(func, expect)
+{
+	return {
+		$: 0,
+		d: expect.d,
+		b: expect.b,
+		a: function(x) { return func(expect.a(x)); }
+	};
+});
+
+function _Http_toDataView(arrayBuffer)
+{
+	return new DataView(arrayBuffer);
+}
+
+
+// BODY and PARTS
+
+var _Http_emptyBody = { $: 0 };
+var _Http_pair = F2(function(a, b) { return { $: 0, a: a, b: b }; });
+
+function _Http_toFormData(parts)
+{
+	for (var formData = new FormData(); parts.b; parts = parts.b) // WHILE_CONS
+	{
+		var part = parts.a;
+		formData.append(part.a, part.b);
+	}
+	return formData;
+}
+
+var _Http_bytesToBlob = F2(function(mime, bytes)
+{
+	return new Blob([bytes], { type: mime });
+});
+
+
+// PROGRESS
+
+function _Http_track(router, xhr, tracker)
+{
+	// TODO check out lengthComputable on loadstart event
+
+	xhr.upload.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Sending({
+			sent: event.loaded,
+			size: event.total
+		}))));
+	});
+	xhr.addEventListener('progress', function(event) {
+		if (xhr.c) { return; }
+		_Scheduler_rawSpawn(A2(elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, elm$http$Http$Receiving({
+			received: event.loaded,
+			size: event.lengthComputable ? elm$core$Maybe$Just(event.total) : elm$core$Maybe$Nothing
+		}))));
+	});
+}
 
 function _Url_percentEncode(string)
 {
@@ -5229,39 +5238,15 @@ function _Browser_load(url)
 		}
 	}));
 }
-var author$project$Api$Loading = {$: 'Loading'};
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
-	});
-var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var elm$core$Array$foldr = F3(
-	function (func, baseCase, _n0) {
-		var tree = _n0.c;
-		var tail = _n0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			elm$core$Elm$JsArray$foldr,
-			helper,
-			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
+var author$project$Api$Stream$Loading = {$: 'Loading'};
+var elm$core$Array$branchFactor = 32;
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
 	});
 var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$LT = {$: 'LT'};
-var elm$core$List$cons = _List_cons;
-var elm$core$Array$toList = function (array) {
-	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
-};
 var elm$core$Basics$GT = {$: 'GT'};
+var elm$core$Basics$LT = {$: 'LT'};
 var elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -5287,6 +5272,7 @@ var elm$core$Dict$foldr = F3(
 			}
 		}
 	});
+var elm$core$List$cons = _List_cons;
 var elm$core$Dict$toList = function (dict) {
 	return A3(
 		elm$core$Dict$foldr,
@@ -5314,9 +5300,48 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var elm$core$Basics$append = _Utils_append;
-var elm$core$Basics$add = _Basics_add;
-var elm$core$Basics$gt = _Utils_gt;
+var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var elm$core$Array$foldr = F3(
+	function (func, baseCase, _n0) {
+		var tree = _n0.c;
+		var tail = _n0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			elm$core$Elm$JsArray$foldr,
+			helper,
+			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var elm$core$Array$toList = function (array) {
+	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
+};
+var elm$core$Basics$ceiling = _Basics_ceiling;
+var elm$core$Basics$fdiv = _Basics_fdiv;
+var elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var elm$core$Basics$toFloat = _Basics_toFloat;
+var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
+	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
+var elm$core$Elm$JsArray$empty = _JsArray_empty;
+var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
+var elm$core$Array$Leaf = function (a) {
+	return {$: 'Leaf', a: a};
+};
+var elm$core$Array$SubTree = function (a) {
+	return {$: 'SubTree', a: a};
+};
+var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
@@ -5339,139 +5364,6 @@ var elm$core$List$foldl = F3(
 var elm$core$List$reverse = function (list) {
 	return A3(elm$core$List$foldl, elm$core$List$cons, _List_Nil, list);
 };
-var elm$core$List$foldrHelper = F4(
-	function (fn, acc, ctr, ls) {
-		if (!ls.b) {
-			return acc;
-		} else {
-			var a = ls.a;
-			var r1 = ls.b;
-			if (!r1.b) {
-				return A2(fn, a, acc);
-			} else {
-				var b = r1.a;
-				var r2 = r1.b;
-				if (!r2.b) {
-					return A2(
-						fn,
-						a,
-						A2(fn, b, acc));
-				} else {
-					var c = r2.a;
-					var r3 = r2.b;
-					if (!r3.b) {
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(fn, c, acc)));
-					} else {
-						var d = r3.a;
-						var r4 = r3.b;
-						var res = (ctr > 500) ? A3(
-							elm$core$List$foldl,
-							fn,
-							acc,
-							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(
-									fn,
-									c,
-									A2(fn, d, res))));
-					}
-				}
-			}
-		}
-	});
-var elm$core$List$foldr = F3(
-	function (fn, acc, ls) {
-		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
-	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
-var elm$core$Maybe$Just = function (a) {
-	return {$: 'Just', a: a};
-};
-var elm$core$Maybe$Nothing = {$: 'Nothing'};
-var elm$core$String$join = F2(
-	function (sep, chunks) {
-		return A2(
-			_String_join,
-			sep,
-			_List_toArray(chunks));
-	});
-var elm$core$String$concat = function (strings) {
-	return A2(elm$core$String$join, '', strings);
-};
-var author$project$Api$makeUrl = F2(
-	function (path, params) {
-		var base = 'https://api-v3.mbta.com/';
-		var apiKey = '3a6d67c08111426d8617a30340a9fad3';
-		var paramsWithKey = A2(
-			elm$core$List$cons,
-			_Utils_Tuple2('api_key', apiKey),
-			params);
-		return elm$core$String$concat(
-			_List_fromArray(
-				[
-					base,
-					path,
-					'?',
-					A2(
-					elm$core$String$join,
-					'&',
-					A2(
-						elm$core$List$map,
-						function (_n0) {
-							var param = _n0.a;
-							var value = _n0.b;
-							return param + ('=' + value);
-						},
-						paramsWithKey))
-				]));
-	});
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
-	});
-var elm$core$Basics$ceiling = _Basics_ceiling;
-var elm$core$Basics$fdiv = _Basics_fdiv;
-var elm$core$Basics$logBase = F2(
-	function (base, number) {
-		return _Basics_log(number) / _Basics_log(base);
-	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
-var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
-	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
-var elm$core$Elm$JsArray$empty = _JsArray_empty;
-var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
-var elm$core$Array$Leaf = function (a) {
-	return {$: 'Leaf', a: a};
-};
-var elm$core$Array$SubTree = function (a) {
-	return {$: 'SubTree', a: a};
-};
-var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$Array$compressNodes = F2(
 	function (nodes, acc) {
 		compressNodes:
@@ -5494,6 +5386,10 @@ var elm$core$Array$compressNodes = F2(
 			}
 		}
 	});
+var elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
+	});
 var elm$core$Basics$eq = _Utils_equal;
 var elm$core$Tuple$first = function (_n0) {
 	var x = _n0.a;
@@ -5515,11 +5411,13 @@ var elm$core$Array$treeFromBuilder = F2(
 			}
 		}
 	});
+var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$apL = F2(
 	function (f, x) {
 		return f(x);
 	});
 var elm$core$Basics$floor = _Basics_floor;
+var elm$core$Basics$gt = _Utils_gt;
 var elm$core$Basics$max = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) > 0) ? x : y;
@@ -5593,6 +5491,10 @@ var elm$core$Array$initialize = F2(
 			return A5(elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
 		}
 	});
+var elm$core$Maybe$Just = function (a) {
+	return {$: 'Just', a: a};
+};
+var elm$core$Maybe$Nothing = {$: 'Nothing'};
 var elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
 };
@@ -5623,6 +5525,7 @@ var elm$json$Json$Decode$OneOf = function (a) {
 	return {$: 'OneOf', a: a};
 };
 var elm$core$Basics$and = _Basics_and;
+var elm$core$Basics$append = _Utils_append;
 var elm$core$Basics$or = _Basics_or;
 var elm$core$Char$toCode = _Char_toCode;
 var elm$core$Char$isLower = function (_char) {
@@ -5688,6 +5591,13 @@ var elm$core$List$indexedMap = F2(
 	});
 var elm$core$String$all = _String_all;
 var elm$core$String$fromInt = _String_fromNumber;
+var elm$core$String$join = F2(
+	function (sep, chunks) {
+		return A2(
+			_String_join,
+			sep,
+			_List_toArray(chunks));
+	});
 var elm$core$String$uncons = _String_uncons;
 var elm$core$String$split = F2(
 	function (sep, string) {
@@ -5805,8 +5715,107 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 		}
 	});
 var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Api$startStreamPort = _Platform_outgoingPort('startStreamPort', elm$json$Json$Encode$string);
-var author$project$Api$startStream = function (selections) {
+var author$project$Api$Stream$startStreamPort = _Platform_outgoingPort('startStreamPort', elm$json$Json$Encode$string);
+var elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							elm$core$List$foldl,
+							fn,
+							acc,
+							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var elm$core$String$concat = function (strings) {
+	return A2(elm$core$String$join, '', strings);
+};
+var author$project$Api$Url$url = F2(
+	function (path, params) {
+		var base = 'https://api-v3.mbta.com/';
+		var apiKey = '3a6d67c08111426d8617a30340a9fad3';
+		var paramsWithKey = A2(
+			elm$core$List$cons,
+			_Utils_Tuple2('api_key', apiKey),
+			params);
+		return elm$core$String$concat(
+			_List_fromArray(
+				[
+					base,
+					path,
+					'?',
+					A2(
+					elm$core$String$join,
+					'&',
+					A2(
+						elm$core$List$map,
+						function (_n0) {
+							var param = _n0.a;
+							var value = _n0.b;
+							return param + ('=' + value);
+						},
+						paramsWithKey))
+				]));
+	});
+var author$project$Api$Stream$startStream = function (selections) {
 	var stopIds = A2(
 		elm$core$String$join,
 		',',
@@ -5838,7 +5847,7 @@ var author$project$Api$startStream = function (selections) {
 				},
 				selections)));
 	var url = A2(
-		author$project$Api$makeUrl,
+		author$project$Api$Url$url,
 		'predictions',
 		_List_fromArray(
 			[
@@ -5847,106 +5856,129 @@ var author$project$Api$startStream = function (selections) {
 				_Utils_Tuple2('include', 'trip'),
 				_Utils_Tuple2('include', 'stop')
 			]));
-	return author$project$Api$startStreamPort(url);
+	return author$project$Api$Stream$startStreamPort(url);
 };
-var author$project$Api$init = function (selections) {
+var author$project$Api$Stream$init = function (selections) {
 	return _Utils_Tuple2(
-		author$project$Api$Loading,
-		author$project$Api$startStream(selections));
+		author$project$Api$Stream$Loading,
+		author$project$Api$Stream$startStream(selections));
 };
-var author$project$Data$StopId = function (a) {
-	return {$: 'StopId', a: a};
-};
-var elm$core$Basics$identity = function (x) {
-	return x;
-};
-var elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
+var elm$json$Json$Decode$map2 = _Json_map2;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
+var elm$json$Json$Decode$andThen = _Json_andThen;
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var elm$json$Json$Decode$fail = _Json_fail;
+var elm$json$Json$Decode$null = _Json_decodeNull;
+var elm$json$Json$Decode$oneOf = _Json_oneOf;
+var elm$json$Json$Decode$succeed = _Json_succeed;
+var elm$json$Json$Decode$value = _Json_decodeValue;
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
+	function (pathDecoder, valDecoder, fallback) {
+		var nullOr = function (decoder) {
+			return elm$json$Json$Decode$oneOf(
+				_List_fromArray(
+					[
+						decoder,
+						elm$json$Json$Decode$null(fallback)
+					]));
+		};
+		var handleResult = function (input) {
+			var _n0 = A2(elm$json$Json$Decode$decodeValue, pathDecoder, input);
+			if (_n0.$ === 'Ok') {
+				var rawValue = _n0.a;
+				var _n1 = A2(
+					elm$json$Json$Decode$decodeValue,
+					nullOr(valDecoder),
+					rawValue);
+				if (_n1.$ === 'Ok') {
+					var finalResult = _n1.a;
+					return elm$json$Json$Decode$succeed(finalResult);
+				} else {
+					var finalErr = _n1.a;
+					return elm$json$Json$Decode$fail(
+						elm$json$Json$Decode$errorToString(finalErr));
+				}
+			} else {
+				return elm$json$Json$Decode$succeed(fallback);
+			}
+		};
+		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
 	});
 var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
 	});
-var elm$json$Json$Decode$list = _Json_decodeList;
-var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$map2 = _Json_map2;
-var elm$json$Json$Decode$string = _Json_decodeString;
-var pzp1997$assoc_list$AssocList$D = function (a) {
-	return {$: 'D', a: a};
-};
-var pzp1997$assoc_list$AssocList$empty = pzp1997$assoc_list$AssocList$D(_List_Nil);
-var elm$core$Basics$neq = _Utils_notEqual;
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var pzp1997$assoc_list$AssocList$remove = F2(
-	function (targetKey, _n0) {
-		var alist = _n0.a;
-		return pzp1997$assoc_list$AssocList$D(
-			A2(
-				elm$core$List$filter,
-				function (_n1) {
-					var key = _n1.a;
-					return !_Utils_eq(key, targetKey);
-				},
-				alist));
-	});
-var pzp1997$assoc_list$AssocList$insert = F3(
-	function (key, value, dict) {
-		var _n0 = A2(pzp1997$assoc_list$AssocList$remove, key, dict);
-		var alteredAlist = _n0.a;
-		return pzp1997$assoc_list$AssocList$D(
-			A2(
-				elm$core$List$cons,
-				_Utils_Tuple2(key, value),
-				alteredAlist));
-	});
-var author$project$Main$stopNamesDecoder = A2(
-	elm$json$Json$Decode$map,
-	function (namesList) {
-		return A3(
-			elm$core$List$foldl,
-			function (_n0) {
-				var id = _n0.a;
-				var name = _n0.b;
-				return A2(pzp1997$assoc_list$AssocList$insert, id, name);
-			},
-			pzp1997$assoc_list$AssocList$empty,
-			namesList);
-	},
-	A2(
-		elm$json$Json$Decode$at,
-		_List_fromArray(
-			['data']),
-		elm$json$Json$Decode$list(
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt = F4(
+	function (path, valDecoder, fallback, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
 			A3(
-				elm$json$Json$Decode$map2,
-				elm$core$Tuple$pair,
-				A2(
-					elm$json$Json$Decode$at,
-					_List_fromArray(
-						['id']),
-					A2(elm$json$Json$Decode$map, author$project$Data$StopId, elm$json$Json$Decode$string)),
-				A2(
-					elm$json$Json$Decode$at,
-					_List_fromArray(
-						['attributes', 'name']),
-					elm$json$Json$Decode$string)))));
-var author$project$Model$ReceiveStopNames = function (a) {
-	return {$: 'ReceiveStopNames', a: a};
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
+				A2(elm$json$Json$Decode$at, path, elm$json$Json$Decode$value),
+				valDecoder,
+				fallback),
+			decoder);
+	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
+	function (key, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$field, key, valDecoder),
+			decoder);
+	});
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt = F3(
+	function (path, valDecoder, decoder) {
+		return A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			A2(elm$json$Json$Decode$at, path, valDecoder),
+			decoder);
+	});
+var author$project$Api$Types$StopId = function (a) {
+	return {$: 'StopId', a: a};
 };
-var elm$http$Http$Internal$EmptyBody = {$: 'EmptyBody'};
-var elm$http$Http$emptyBody = elm$http$Http$Internal$EmptyBody;
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
+var elm$json$Json$Decode$map = _Json_map1;
+var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$Api$Decoders$stopIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$StopId, elm$json$Json$Decode$string);
+var author$project$Api$Types$Stop = F3(
+	function (id, name, parentStation) {
+		return {id: id, name: name, parentStation: parentStation};
+	});
+var author$project$Api$Decoders$stopDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
+	_List_fromArray(
+		['relationships', 'parent_station', 'data', 'id']),
+	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$stopIdDecoder),
+	elm$core$Maybe$Nothing,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+		_List_fromArray(
+			['attributes', 'name']),
+		elm$json$Json$Decode$string,
+		A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'id',
+			author$project$Api$Decoders$stopIdDecoder,
+			elm$json$Json$Decode$succeed(author$project$Api$Types$Stop))));
+var elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return elm$core$Result$Err(
+				f(e));
+		}
+	});
+var elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
 var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
 var elm$core$Basics$compare = _Utils_compare;
@@ -6469,6 +6501,8 @@ var elm$core$Maybe$isJust = function (maybe) {
 		return false;
 	}
 };
+var elm$core$Platform$sendToApp = _Platform_sendToApp;
+var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
 var elm$core$Result$map = F2(
 	function (func, ra) {
 		if (ra.$ === 'Ok') {
@@ -6480,10 +6514,36 @@ var elm$core$Result$map = F2(
 			return elm$core$Result$Err(e);
 		}
 	});
-var elm$http$Http$BadPayload = F2(
+var elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
-		return {$: 'BadPayload', a: a, b: b};
+		return {$: 'BadStatus_', a: a, b: b};
 	});
+var elm$http$Http$BadUrl_ = function (a) {
+	return {$: 'BadUrl_', a: a};
+};
+var elm$http$Http$GoodStatus_ = F2(
+	function (a, b) {
+		return {$: 'GoodStatus_', a: a, b: b};
+	});
+var elm$http$Http$NetworkError_ = {$: 'NetworkError_'};
+var elm$http$Http$Receiving = function (a) {
+	return {$: 'Receiving', a: a};
+};
+var elm$http$Http$Sending = function (a) {
+	return {$: 'Sending', a: a};
+};
+var elm$http$Http$Timeout_ = {$: 'Timeout_'};
+var elm$http$Http$expectStringResponse = F2(
+	function (toMsg, toResult) {
+		return A3(
+			_Http_expect,
+			'',
+			elm$core$Basics$identity,
+			A2(elm$core$Basics$composeR, toResult, toMsg));
+	});
+var elm$http$Http$BadBody = function (a) {
+	return {$: 'BadBody', a: a};
+};
 var elm$http$Http$BadStatus = function (a) {
 	return {$: 'BadStatus', a: a};
 };
@@ -6492,69 +6552,144 @@ var elm$http$Http$BadUrl = function (a) {
 };
 var elm$http$Http$NetworkError = {$: 'NetworkError'};
 var elm$http$Http$Timeout = {$: 'Timeout'};
-var elm$http$Http$Internal$FormDataBody = function (a) {
-	return {$: 'FormDataBody', a: a};
-};
-var elm$http$Http$Internal$isStringBody = function (body) {
-	if (body.$ === 'StringBody') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var elm$http$Http$expectStringResponse = _Http_expectStringResponse;
-var elm$json$Json$Decode$decodeString = _Json_runOnString;
-var elm$http$Http$expectJson = function (decoder) {
-	return elm$http$Http$expectStringResponse(
-		function (response) {
-			var _n0 = A2(elm$json$Json$Decode$decodeString, decoder, response.body);
-			if (_n0.$ === 'Err') {
-				var decodeError = _n0.a;
+var elm$http$Http$resolve = F2(
+	function (toResult, response) {
+		switch (response.$) {
+			case 'BadUrl_':
+				var url = response.a;
 				return elm$core$Result$Err(
-					elm$json$Json$Decode$errorToString(decodeError));
-			} else {
-				var value = _n0.a;
-				return elm$core$Result$Ok(value);
-			}
-		});
-};
-var elm$http$Http$Internal$Request = function (a) {
+					elm$http$Http$BadUrl(url));
+			case 'Timeout_':
+				return elm$core$Result$Err(elm$http$Http$Timeout);
+			case 'NetworkError_':
+				return elm$core$Result$Err(elm$http$Http$NetworkError);
+			case 'BadStatus_':
+				var metadata = response.a;
+				return elm$core$Result$Err(
+					elm$http$Http$BadStatus(metadata.statusCode));
+			default:
+				var body = response.b;
+				return A2(
+					elm$core$Result$mapError,
+					elm$http$Http$BadBody,
+					toResult(body));
+		}
+	});
+var elm$json$Json$Decode$decodeString = _Json_runOnString;
+var elm$http$Http$expectJson = F2(
+	function (toMsg, decoder) {
+		return A2(
+			elm$http$Http$expectStringResponse,
+			toMsg,
+			elm$http$Http$resolve(
+				function (string) {
+					return A2(
+						elm$core$Result$mapError,
+						elm$json$Json$Decode$errorToString,
+						A2(elm$json$Json$Decode$decodeString, decoder, string));
+				}));
+	});
+var elm$http$Http$emptyBody = _Http_emptyBody;
+var elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
-var elm$http$Http$request = elm$http$Http$Internal$Request;
-var elm$http$Http$get = F2(
-	function (url, decoder) {
-		return elm$http$Http$request(
-			{
-				body: elm$http$Http$emptyBody,
-				expect: elm$http$Http$expectJson(decoder),
-				headers: _List_Nil,
-				method: 'GET',
-				timeout: elm$core$Maybe$Nothing,
-				url: url,
-				withCredentials: false
-			});
-	});
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
-var elm$core$Task$andThen = _Scheduler_andThen;
 var elm$core$Task$succeed = _Scheduler_succeed;
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$Task$map = F2(
-	function (func, taskA) {
+var elm$http$Http$State = F2(
+	function (reqs, subs) {
+		return {reqs: reqs, subs: subs};
+	});
+var elm$http$Http$init = elm$core$Task$succeed(
+	A2(elm$http$Http$State, elm$core$Dict$empty, _List_Nil));
+var elm$core$Task$andThen = _Scheduler_andThen;
+var elm$core$Process$kill = _Scheduler_kill;
+var elm$core$Process$spawn = _Scheduler_spawn;
+var elm$http$Http$updateReqs = F3(
+	function (router, cmds, reqs) {
+		updateReqs:
+		while (true) {
+			if (!cmds.b) {
+				return elm$core$Task$succeed(reqs);
+			} else {
+				var cmd = cmds.a;
+				var otherCmds = cmds.b;
+				if (cmd.$ === 'Cancel') {
+					var tracker = cmd.a;
+					var _n2 = A2(elm$core$Dict$get, tracker, reqs);
+					if (_n2.$ === 'Nothing') {
+						var $temp$router = router,
+							$temp$cmds = otherCmds,
+							$temp$reqs = reqs;
+						router = $temp$router;
+						cmds = $temp$cmds;
+						reqs = $temp$reqs;
+						continue updateReqs;
+					} else {
+						var pid = _n2.a;
+						return A2(
+							elm$core$Task$andThen,
+							function (_n3) {
+								return A3(
+									elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A2(elm$core$Dict$remove, tracker, reqs));
+							},
+							elm$core$Process$kill(pid));
+					}
+				} else {
+					var req = cmd.a;
+					return A2(
+						elm$core$Task$andThen,
+						function (pid) {
+							var _n4 = req.tracker;
+							if (_n4.$ === 'Nothing') {
+								return A3(elm$http$Http$updateReqs, router, otherCmds, reqs);
+							} else {
+								var tracker = _n4.a;
+								return A3(
+									elm$http$Http$updateReqs,
+									router,
+									otherCmds,
+									A3(elm$core$Dict$insert, tracker, pid, reqs));
+							}
+						},
+						elm$core$Process$spawn(
+							A3(
+								_Http_toTask,
+								router,
+								elm$core$Platform$sendToApp(router),
+								req)));
+				}
+			}
+		}
+	});
+var elm$http$Http$onEffects = F4(
+	function (router, cmds, subs, state) {
 		return A2(
 			elm$core$Task$andThen,
-			function (a) {
+			function (reqs) {
 				return elm$core$Task$succeed(
-					func(a));
+					A2(elm$http$Http$State, reqs, subs));
 			},
-			taskA);
+			A3(elm$http$Http$updateReqs, router, cmds, state.reqs));
+	});
+var elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _n0 = f(mx);
+		if (_n0.$ === 'Just') {
+			var x = _n0.a;
+			return A2(elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
 	});
 var elm$core$Task$map2 = F3(
 	function (func, taskA, taskB) {
@@ -6578,107 +6713,130 @@ var elm$core$Task$sequence = function (tasks) {
 		elm$core$Task$succeed(_List_Nil),
 		tasks);
 };
-var elm$core$Platform$sendToApp = _Platform_sendToApp;
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0.a;
-		return _Scheduler_spawn(
+var elm$http$Http$maybeSend = F4(
+	function (router, desiredTracker, progress, _n0) {
+		var actualTracker = _n0.a;
+		var toMsg = _n0.b;
+		return _Utils_eq(desiredTracker, actualTracker) ? elm$core$Maybe$Just(
 			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
+				elm$core$Platform$sendToApp,
+				router,
+				toMsg(progress))) : elm$core$Maybe$Nothing;
 	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
+var elm$http$Http$onSelfMsg = F3(
+	function (router, _n0, state) {
+		var tracker = _n0.a;
+		var progress = _n0.b;
 		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return _Utils_Tuple0;
+			elm$core$Task$andThen,
+			function (_n1) {
+				return elm$core$Task$succeed(state);
 			},
 			elm$core$Task$sequence(
 				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
+					elm$core$List$filterMap,
+					A3(elm$http$Http$maybeSend, router, tracker, progress),
+					state.subs)));
 	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(_Utils_Tuple0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0.a;
-		return elm$core$Task$Perform(
-			A2(elm$core$Task$map, tagger, task));
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$onError = _Scheduler_onError;
-var elm$core$Task$attempt = F2(
-	function (resultToMessage, task) {
-		return elm$core$Task$command(
-			elm$core$Task$Perform(
-				A2(
-					elm$core$Task$onError,
-					A2(
-						elm$core$Basics$composeL,
-						A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
-						elm$core$Result$Err),
-					A2(
-						elm$core$Task$andThen,
-						A2(
-							elm$core$Basics$composeL,
-							A2(elm$core$Basics$composeL, elm$core$Task$succeed, resultToMessage),
-							elm$core$Result$Ok),
-						task))));
-	});
-var elm$http$Http$toTask = function (_n0) {
-	var request_ = _n0.a;
-	return A2(_Http_toTask, request_, elm$core$Maybe$Nothing);
+var elm$http$Http$Cancel = function (a) {
+	return {$: 'Cancel', a: a};
 };
-var elm$http$Http$send = F2(
-	function (resultToMessage, request_) {
-		return A2(
-			elm$core$Task$attempt,
-			resultToMessage,
-			elm$http$Http$toTask(request_));
+var elm$http$Http$cmdMap = F2(
+	function (func, cmd) {
+		if (cmd.$ === 'Cancel') {
+			var tracker = cmd.a;
+			return elm$http$Http$Cancel(tracker);
+		} else {
+			var r = cmd.a;
+			return elm$http$Http$Request(
+				{
+					allowCookiesFromOtherDomains: r.allowCookiesFromOtherDomains,
+					body: r.body,
+					expect: A2(_Http_mapExpect, func, r.expect),
+					headers: r.headers,
+					method: r.method,
+					timeout: r.timeout,
+					tracker: r.tracker,
+					url: r.url
+				});
+		}
 	});
-var author$project$Main$fetchStopNames = function (selections) {
-	var stopIds = A2(
-		elm$core$String$join,
-		',',
-		A2(
-			elm$core$List$map,
-			function (_n0) {
-				var stopId = _n0.a;
-				return stopId;
-			},
+var elm$http$Http$MySub = F2(
+	function (a, b) {
+		return {$: 'MySub', a: a, b: b};
+	});
+var elm$http$Http$subMap = F2(
+	function (func, _n0) {
+		var tracker = _n0.a;
+		var toMsg = _n0.b;
+		return A2(
+			elm$http$Http$MySub,
+			tracker,
+			A2(elm$core$Basics$composeR, toMsg, func));
+	});
+_Platform_effectManagers['Http'] = _Platform_createManager(elm$http$Http$init, elm$http$Http$onEffects, elm$http$Http$onSelfMsg, elm$http$Http$cmdMap, elm$http$Http$subMap);
+var elm$http$Http$command = _Platform_leaf('Http');
+var elm$http$Http$subscription = _Platform_leaf('Http');
+var elm$http$Http$request = function (r) {
+	return elm$http$Http$command(
+		elm$http$Http$Request(
+			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
+};
+var elm$http$Http$get = function (r) {
+	return elm$http$Http$request(
+		{body: elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: elm$core$Maybe$Nothing, tracker: elm$core$Maybe$Nothing, url: r.url});
+};
+var elm$json$Json$Decode$list = _Json_decodeList;
+var author$project$Api$Request$getStops = F2(
+	function (msg, stopIds) {
+		var stopIdsParam = A2(
+			elm$core$String$join,
+			',',
 			A2(
 				elm$core$List$map,
-				function ($) {
-					return $.stopId;
+				function (_n0) {
+					var stopId = _n0.a;
+					return stopId;
 				},
-				selections)));
-	var url = A2(
-		author$project$Api$makeUrl,
-		'stops',
-		_List_fromArray(
-			[
-				_Utils_Tuple2('filter[id]', stopIds)
-			]));
+				stopIds));
+		var url = A2(
+			author$project$Api$Url$url,
+			'stops',
+			_List_fromArray(
+				[
+					_Utils_Tuple2('filter[id]', stopIdsParam)
+				]));
+		return elm$http$Http$get(
+			{
+				expect: A2(
+					elm$http$Http$expectJson,
+					msg,
+					elm$json$Json$Decode$list(author$project$Api$Decoders$stopDecoder)),
+				url: url
+			});
+	});
+var author$project$Model$ReceiveStopNames = function (a) {
+	return {$: 'ReceiveStopNames', a: a};
+};
+var author$project$Main$getStopNames = function (selections) {
 	return A2(
-		elm$http$Http$send,
+		author$project$Api$Request$getStops,
 		author$project$Model$ReceiveStopNames,
-		A2(elm$http$Http$get, url, author$project$Main$stopNamesDecoder));
+		A2(
+			elm$core$List$map,
+			function ($) {
+				return $.stopId;
+			},
+			selections));
 };
 var author$project$Model$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
-var author$project$Data$One = {$: 'One'};
-var author$project$Data$RouteId = function (a) {
+var author$project$Api$Types$D0 = {$: 'D0'};
+var author$project$Api$Types$D1 = {$: 'D1'};
+var author$project$Api$Types$RouteId = function (a) {
 	return {$: 'RouteId', a: a};
 };
-var author$project$Data$Zero = {$: 'Zero'};
 var author$project$UrlParsing$parseSelection = function (queryValue) {
 	var _n0 = A2(elm$core$String$split, ',', queryValue);
 	_n0$3:
@@ -6690,9 +6848,9 @@ var author$project$UrlParsing$parseSelection = function (queryValue) {
 				var stopId = _n1.a;
 				return elm$core$Maybe$Just(
 					{
-						direction: elm$core$Maybe$Nothing,
-						routeId: author$project$Data$RouteId(routeId),
-						stopId: author$project$Data$StopId(stopId)
+						directionId: elm$core$Maybe$Nothing,
+						routeId: author$project$Api$Types$RouteId(routeId),
+						stopId: author$project$Api$Types$StopId(stopId)
 					});
 			} else {
 				if (!_n0.b.b.b.b) {
@@ -6704,9 +6862,9 @@ var author$project$UrlParsing$parseSelection = function (queryValue) {
 							var _n3 = _n2.b;
 							return elm$core$Maybe$Just(
 								{
-									direction: elm$core$Maybe$Just(author$project$Data$Zero),
-									routeId: author$project$Data$RouteId(routeId),
-									stopId: author$project$Data$StopId(stopId)
+									directionId: elm$core$Maybe$Just(author$project$Api$Types$D0),
+									routeId: author$project$Api$Types$RouteId(routeId),
+									stopId: author$project$Api$Types$StopId(stopId)
 								});
 						case '1':
 							var routeId = _n0.a;
@@ -6715,9 +6873,9 @@ var author$project$UrlParsing$parseSelection = function (queryValue) {
 							var _n5 = _n4.b;
 							return elm$core$Maybe$Just(
 								{
-									direction: elm$core$Maybe$Just(author$project$Data$One),
-									routeId: author$project$Data$RouteId(routeId),
-									stopId: author$project$Data$StopId(stopId)
+									directionId: elm$core$Maybe$Just(author$project$Api$Types$D1),
+									routeId: author$project$Api$Types$RouteId(routeId),
+									stopId: author$project$Api$Types$StopId(stopId)
 								});
 						default:
 							break _n0$3;
@@ -6732,24 +6890,6 @@ var author$project$UrlParsing$parseSelection = function (queryValue) {
 	}
 	return elm$core$Maybe$Nothing;
 };
-var elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _n0 = f(mx);
-		if (_n0.$ === 'Just') {
-			var x = _n0.a;
-			return A2(elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
 var elm$core$Maybe$withDefault = F2(
 	function (_default, maybe) {
 		if (maybe.$ === 'Just') {
@@ -6934,6 +7074,54 @@ var author$project$UrlParsing$parseSelectionsFromUrl = function (url) {
 				{path: '/'})));
 };
 var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
+};
+var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
+var elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var elm$core$Task$spawnCmd = F2(
+	function (router, _n0) {
+		var task = _n0.a;
+		return _Scheduler_spawn(
+			A2(
+				elm$core$Task$andThen,
+				elm$core$Platform$sendToApp(router),
+				task));
+	});
+var elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			elm$core$Task$map,
+			function (_n0) {
+				return _Utils_Tuple0;
+			},
+			elm$core$Task$sequence(
+				A2(
+					elm$core$List$map,
+					elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var elm$core$Task$onSelfMsg = F3(
+	function (_n0, _n1, _n2) {
+		return elm$core$Task$succeed(_Utils_Tuple0);
+	});
+var elm$core$Task$cmdMap = F2(
+	function (tagger, _n0) {
+		var task = _n0.a;
+		return elm$core$Task$Perform(
+			A2(elm$core$Task$map, tagger, task));
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
+var elm$core$Task$command = _Platform_leaf('Task');
 var elm$core$Task$perform = F2(
 	function (toMessage, task) {
 		return elm$core$Task$command(
@@ -6956,17 +7144,21 @@ var elm$time$Time$Zone = F2(
 	});
 var elm$time$Time$customZone = elm$time$Time$Zone;
 var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
+var pzp1997$assoc_list$AssocList$D = function (a) {
+	return {$: 'D', a: a};
+};
+var pzp1997$assoc_list$AssocList$empty = pzp1997$assoc_list$AssocList$D(_List_Nil);
 var author$project$Main$init = F3(
 	function (flags, url, key) {
 		var selections = author$project$UrlParsing$parseSelectionsFromUrl(url);
-		var _n0 = author$project$Api$init(selections);
+		var _n0 = author$project$Api$Stream$init(selections);
 		var initApiResult = _n0.a;
 		var initApiCmd = _n0.b;
 		return _Utils_Tuple2(
 			{
 				apiResult: initApiResult,
 				currentTime: elm$time$Time$millisToPosix(0),
-				directionFormValue: elm$core$Maybe$Nothing,
+				directionIdFormValue: elm$core$Maybe$Nothing,
 				navigationKey: key,
 				routeIdFormText: '',
 				selections: selections,
@@ -6979,75 +7171,37 @@ var author$project$Main$init = F3(
 					[
 						A2(elm$core$Task$perform, author$project$Model$Tick, elm$time$Time$now),
 						initApiCmd,
-						author$project$Main$fetchStopNames(selections)
+						author$project$Main$getStopNames(selections)
 					])));
 	});
-var author$project$Api$Insert = function (a) {
-	return {$: 'Insert', a: a};
-};
-var author$project$Api$Remove = function (a) {
-	return {$: 'Remove', a: a};
-};
-var author$project$Api$Reset = function (a) {
-	return {$: 'Reset', a: a};
-};
-var author$project$Api$ResourcePrediction = function (a) {
-	return {$: 'ResourcePrediction', a: a};
-};
-var author$project$Api$ResourceStop = function (a) {
-	return {$: 'ResourceStop', a: a};
-};
-var author$project$Api$ResourceTrip = function (a) {
-	return {$: 'ResourceTrip', a: a};
-};
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
-	function (key, valDecoder, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A2(elm$json$Json$Decode$field, key, valDecoder),
-			decoder);
-	});
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt = F3(
-	function (path, valDecoder, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A2(elm$json$Json$Decode$at, path, valDecoder),
-			decoder);
-	});
-var author$project$Api$Prediction = F6(
-	function (id, time, routeId, stopId, direction, tripId) {
-		return {direction: direction, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId};
-	});
-var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$fail = _Json_fail;
 var elm$json$Json$Decode$int = _Json_decodeInt;
-var elm$json$Json$Decode$succeed = _Json_succeed;
-var author$project$Api$directionDecoder = A2(
+var author$project$Api$Decoders$directionIdDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (x) {
 		switch (x) {
 			case 0:
-				return elm$json$Json$Decode$succeed(author$project$Data$Zero);
+				return elm$json$Json$Decode$succeed(author$project$Api$Types$D0);
 			case 1:
-				return elm$json$Json$Decode$succeed(author$project$Data$One);
+				return elm$json$Json$Decode$succeed(author$project$Api$Types$D1);
 			default:
 				return elm$json$Json$Decode$fail(
 					'unrecognized direction_id ' + elm$core$String$fromInt(x));
 		}
 	},
 	elm$json$Json$Decode$int);
-var author$project$Api$PredictionId = function (a) {
+var author$project$Api$Types$PredictionId = function (a) {
 	return {$: 'PredictionId', a: a};
 };
-var author$project$Api$predictionIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$PredictionId, elm$json$Json$Decode$string);
-var author$project$Api$routeIdDecoder = A2(elm$json$Json$Decode$map, author$project$Data$RouteId, elm$json$Json$Decode$string);
-var author$project$Api$stopIdDecoder = A2(elm$json$Json$Decode$map, author$project$Data$StopId, elm$json$Json$Decode$string);
-var author$project$Api$TripId = function (a) {
+var author$project$Api$Decoders$predictionIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$PredictionId, elm$json$Json$Decode$string);
+var author$project$Api$Decoders$routeIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$RouteId, elm$json$Json$Decode$string);
+var author$project$Api$Types$TripId = function (a) {
 	return {$: 'TripId', a: a};
 };
-var author$project$Api$tripIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$TripId, elm$json$Json$Decode$string);
-var elm$json$Json$Decode$oneOf = _Json_oneOf;
+var author$project$Api$Decoders$tripIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$TripId, elm$json$Json$Decode$string);
+var author$project$Api$Types$Prediction = F6(
+	function (id, time, routeId, stopId, directionId, tripId) {
+		return {directionId: directionId, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId};
+	});
 var elm$parser$Parser$deadEndsToString = function (deadEnds) {
 	return 'TODO deadEndsToString';
 };
@@ -7495,6 +7649,7 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$invalidDay = function (day) {
 		'Invalid day: ' + elm$core$String$fromInt(day));
 };
 var elm$core$Basics$modBy = _Basics_modBy;
+var elm$core$Basics$neq = _Utils_notEqual;
 var rtfeldman$elm_iso8601_date_strings$Iso8601$isLeapYear = function (year) {
 	return (!A2(elm$core$Basics$modBy, 4, year)) && (A2(elm$core$Basics$modBy, 100, year) || (!A2(elm$core$Basics$modBy, 400, year)));
 };
@@ -7680,26 +7835,26 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$decoder = A2(
 		}
 	},
 	elm$json$Json$Decode$string);
-var author$project$Api$predictionDecoder = A3(
+var author$project$Api$Decoders$predictionDecoder = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 	_List_fromArray(
 		['relationships', 'trip', 'data', 'id']),
-	author$project$Api$tripIdDecoder,
+	author$project$Api$Decoders$tripIdDecoder,
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 		_List_fromArray(
 			['attributes', 'direction_id']),
-		author$project$Api$directionDecoder,
+		author$project$Api$Decoders$directionIdDecoder,
 		A3(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 			_List_fromArray(
 				['relationships', 'stop', 'data', 'id']),
-			author$project$Api$stopIdDecoder,
+			author$project$Api$Decoders$stopIdDecoder,
 			A3(
 				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 				_List_fromArray(
 					['relationships', 'route', 'data', 'id']),
-				author$project$Api$routeIdDecoder,
+				author$project$Api$Decoders$routeIdDecoder,
 				A2(
 					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
 					elm$json$Json$Decode$oneOf(
@@ -7719,74 +7874,13 @@ var author$project$Api$predictionDecoder = A3(
 					A3(
 						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 						'id',
-						author$project$Api$predictionIdDecoder,
-						elm$json$Json$Decode$succeed(author$project$Api$Prediction)))))));
-var elm$json$Json$Decode$decodeValue = _Json_run;
-var elm$json$Json$Decode$null = _Json_decodeNull;
-var elm$json$Json$Decode$value = _Json_decodeValue;
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
-	function (pathDecoder, valDecoder, fallback) {
-		var nullOr = function (decoder) {
-			return elm$json$Json$Decode$oneOf(
-				_List_fromArray(
-					[
-						decoder,
-						elm$json$Json$Decode$null(fallback)
-					]));
-		};
-		var handleResult = function (input) {
-			var _n0 = A2(elm$json$Json$Decode$decodeValue, pathDecoder, input);
-			if (_n0.$ === 'Ok') {
-				var rawValue = _n0.a;
-				var _n1 = A2(
-					elm$json$Json$Decode$decodeValue,
-					nullOr(valDecoder),
-					rawValue);
-				if (_n1.$ === 'Ok') {
-					var finalResult = _n1.a;
-					return elm$json$Json$Decode$succeed(finalResult);
-				} else {
-					var finalErr = _n1.a;
-					return elm$json$Json$Decode$fail(
-						elm$json$Json$Decode$errorToString(finalErr));
-				}
-			} else {
-				return elm$json$Json$Decode$succeed(fallback);
-			}
-		};
-		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
-	});
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt = F4(
-	function (path, valDecoder, fallback, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A3(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
-				A2(elm$json$Json$Decode$at, path, elm$json$Json$Decode$value),
-				valDecoder,
-				fallback),
-			decoder);
-	});
-var author$project$Api$Stop = F2(
-	function (id, parentStation) {
-		return {id: id, parentStation: parentStation};
-	});
-var author$project$Api$stopDecoder = A4(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
-	_List_fromArray(
-		['relationships', 'parent_station', 'data', 'id']),
-	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$stopIdDecoder),
-	elm$core$Maybe$Nothing,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'id',
-		author$project$Api$stopIdDecoder,
-		elm$json$Json$Decode$succeed(author$project$Api$Stop)));
-var author$project$Api$Trip = F2(
+						author$project$Api$Decoders$predictionIdDecoder,
+						elm$json$Json$Decode$succeed(author$project$Api$Types$Prediction)))))));
+var author$project$Api$Types$Trip = F2(
 	function (id, headsign) {
 		return {headsign: headsign, id: id};
 	});
-var author$project$Api$tripDecoder = A3(
+var author$project$Api$Decoders$tripDecoder = A3(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 	_List_fromArray(
 		['attributes', 'headsign']),
@@ -7794,18 +7888,27 @@ var author$project$Api$tripDecoder = A3(
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'id',
-		author$project$Api$tripIdDecoder,
-		elm$json$Json$Decode$succeed(author$project$Api$Trip)));
-var author$project$Api$resourceDecoder = A2(
+		author$project$Api$Decoders$tripIdDecoder,
+		elm$json$Json$Decode$succeed(author$project$Api$Types$Trip)));
+var author$project$Api$Types$ResourcePrediction = function (a) {
+	return {$: 'ResourcePrediction', a: a};
+};
+var author$project$Api$Types$ResourceStop = function (a) {
+	return {$: 'ResourceStop', a: a};
+};
+var author$project$Api$Types$ResourceTrip = function (a) {
+	return {$: 'ResourceTrip', a: a};
+};
+var author$project$Api$Decoders$resourceDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (typeString) {
 		switch (typeString) {
 			case 'prediction':
-				return A2(elm$json$Json$Decode$map, author$project$Api$ResourcePrediction, author$project$Api$predictionDecoder);
+				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourcePrediction, author$project$Api$Decoders$predictionDecoder);
 			case 'trip':
-				return A2(elm$json$Json$Decode$map, author$project$Api$ResourceTrip, author$project$Api$tripDecoder);
+				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceTrip, author$project$Api$Decoders$tripDecoder);
 			case 'stop':
-				return A2(elm$json$Json$Decode$map, author$project$Api$ResourceStop, author$project$Api$stopDecoder);
+				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceStop, author$project$Api$Decoders$stopDecoder);
 			default:
 				var otherType = typeString;
 				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
@@ -7816,16 +7919,20 @@ var author$project$Api$resourceDecoder = A2(
 		_List_fromArray(
 			['type']),
 		elm$json$Json$Decode$string));
-var author$project$Api$ResourcePredictionId = function (a) {
+var author$project$Api$Types$ResourcePredictionId = function (a) {
 	return {$: 'ResourcePredictionId', a: a};
 };
-var author$project$Api$ResourceStopId = function (a) {
+var author$project$Api$Types$ResourceStopId = function (a) {
 	return {$: 'ResourceStopId', a: a};
 };
-var author$project$Api$ResourceTripId = function (a) {
+var author$project$Api$Types$ResourceTripId = function (a) {
 	return {$: 'ResourceTripId', a: a};
 };
-var author$project$Api$resourceIdDecoder = A2(
+var elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var author$project$Api$Decoders$resourceIdDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (_n0) {
 		var typeString = _n0.a;
@@ -7833,16 +7940,16 @@ var author$project$Api$resourceIdDecoder = A2(
 		switch (typeString) {
 			case 'prediction':
 				return elm$json$Json$Decode$succeed(
-					author$project$Api$ResourcePredictionId(
-						author$project$Api$PredictionId(id)));
+					author$project$Api$Types$ResourcePredictionId(
+						author$project$Api$Types$PredictionId(id)));
 			case 'trip':
 				return elm$json$Json$Decode$succeed(
-					author$project$Api$ResourceTripId(
-						author$project$Api$TripId(id)));
+					author$project$Api$Types$ResourceTripId(
+						author$project$Api$Types$TripId(id)));
 			case 'stop':
 				return elm$json$Json$Decode$succeed(
-					author$project$Api$ResourceStopId(
-						author$project$Data$StopId(id)));
+					author$project$Api$Types$ResourceStopId(
+						author$project$Api$Types$StopId(id)));
 			default:
 				var otherType = typeString;
 				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
@@ -7861,43 +7968,47 @@ var author$project$Api$resourceIdDecoder = A2(
 			_List_fromArray(
 				['id']),
 			elm$json$Json$Decode$string)));
-var author$project$Api$eventDataDecoder = function (eventName) {
+var author$project$Api$Stream$Insert = function (a) {
+	return {$: 'Insert', a: a};
+};
+var author$project$Api$Stream$Remove = function (a) {
+	return {$: 'Remove', a: a};
+};
+var author$project$Api$Stream$Reset = function (a) {
+	return {$: 'Reset', a: a};
+};
+var author$project$Api$Stream$eventDataDecoder = function (eventName) {
 	switch (eventName) {
 		case 'reset':
 			return A2(
 				elm$json$Json$Decode$map,
-				author$project$Api$Reset,
-				elm$json$Json$Decode$list(author$project$Api$resourceDecoder));
+				author$project$Api$Stream$Reset,
+				elm$json$Json$Decode$list(author$project$Api$Decoders$resourceDecoder));
 		case 'add':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Insert, author$project$Api$resourceDecoder);
+			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Insert, author$project$Api$Decoders$resourceDecoder);
 		case 'update':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Insert, author$project$Api$resourceDecoder);
+			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Insert, author$project$Api$Decoders$resourceDecoder);
 		case 'remove':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Remove, author$project$Api$resourceIdDecoder);
+			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Remove, author$project$Api$Decoders$resourceIdDecoder);
 		default:
 			return elm$json$Json$Decode$fail('unrecognized event name ' + eventName);
 	}
 };
-var author$project$Api$streamEventDecoder = A2(
+var author$project$Api$Stream$streamEventDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (eventName) {
 		return A2(
 			elm$json$Json$Decode$field,
 			'data',
-			author$project$Api$eventDataDecoder(eventName));
+			author$project$Api$Stream$eventDataDecoder(eventName));
 	},
 	A2(elm$json$Json$Decode$field, 'event', elm$json$Json$Decode$string));
-var author$project$Api$streamEventPort = _Platform_incomingPort('streamEventPort', elm$json$Json$Decode$value);
-var elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
-var author$project$Api$subscriptions = function (msg) {
-	return author$project$Api$streamEventPort(
+var author$project$Api$Stream$streamEventPort = _Platform_incomingPort('streamEventPort', elm$json$Json$Decode$value);
+var author$project$Api$Stream$subscriptions = function (msg) {
+	return author$project$Api$Stream$streamEventPort(
 		A2(
 			elm$core$Basics$composeR,
-			elm$json$Json$Decode$decodeValue(author$project$Api$streamEventDecoder),
+			elm$json$Json$Decode$decodeValue(author$project$Api$Stream$streamEventDecoder),
 			msg));
 };
 var author$project$Model$ApiMsg = function (a) {
@@ -8000,7 +8111,6 @@ var elm$core$Dict$merge = F6(
 			intermediateResult,
 			leftovers);
 	});
-var elm$core$Process$kill = _Scheduler_kill;
 var elm$time$Time$addMySub = F2(
 	function (_n0, state) {
 		var interval = _n0.a;
@@ -8022,8 +8132,6 @@ var elm$time$Time$addMySub = F2(
 				state);
 		}
 	});
-var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$core$Process$spawn = _Scheduler_spawn;
 var elm$time$Time$setInterval = _Time_setInterval;
 var elm$time$Time$spawnHelp = F3(
 	function (router, intervals, processes) {
@@ -8140,6 +8248,11 @@ var elm$time$Time$onSelfMsg = F3(
 				A2(elm$core$Task$andThen, tellTaggers, elm$time$Time$now));
 		}
 	});
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
 var elm$time$Time$subMap = F2(
 	function (f, _n0) {
 		var interval = _n0.a;
@@ -8161,23 +8274,56 @@ var author$project$Main$subscriptions = function (_n0) {
 		_List_fromArray(
 			[
 				A2(elm$time$Time$every, 1000, author$project$Model$Tick),
-				author$project$Api$subscriptions(author$project$Model$ApiMsg)
+				author$project$Api$Stream$subscriptions(author$project$Model$ApiMsg)
 			]));
 };
-var author$project$Api$BadOrder = function (a) {
+var author$project$Api$Stream$BadOrder = function (a) {
 	return {$: 'BadOrder', a: a};
 };
-var author$project$Api$DecodeError = function (a) {
+var author$project$Api$Stream$DecodeError = function (a) {
 	return {$: 'DecodeError', a: a};
 };
-var author$project$Api$Failure = function (a) {
+var author$project$Api$Stream$Failure = function (a) {
 	return {$: 'Failure', a: a};
 };
-var author$project$Api$Success = function (a) {
+var author$project$Api$Stream$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var author$project$Api$emptyData = {predictions: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty};
-var author$project$Api$insertResource = F2(
+var author$project$Api$Stream$emptyData = {predictions: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty};
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var pzp1997$assoc_list$AssocList$remove = F2(
+	function (targetKey, _n0) {
+		var alist = _n0.a;
+		return pzp1997$assoc_list$AssocList$D(
+			A2(
+				elm$core$List$filter,
+				function (_n1) {
+					var key = _n1.a;
+					return !_Utils_eq(key, targetKey);
+				},
+				alist));
+	});
+var pzp1997$assoc_list$AssocList$insert = F3(
+	function (key, value, dict) {
+		var _n0 = A2(pzp1997$assoc_list$AssocList$remove, key, dict);
+		var alteredAlist = _n0.a;
+		return pzp1997$assoc_list$AssocList$D(
+			A2(
+				elm$core$List$cons,
+				_Utils_Tuple2(key, value),
+				alteredAlist));
+	});
+var author$project$Api$Stream$insertResource = F2(
 	function (resource, apiData) {
 		switch (resource.$) {
 			case 'ResourcePrediction':
@@ -8236,7 +8382,7 @@ var pzp1997$assoc_list$AssocList$member = F2(
 			return false;
 		}
 	});
-var author$project$Api$update = F2(
+var author$project$Api$Stream$update = F2(
 	function (eventDecodeResult, apiResult) {
 		var _n0 = _Utils_Tuple2(eventDecodeResult, apiResult);
 		_n0$0:
@@ -8248,8 +8394,8 @@ var author$project$Api$update = F2(
 						break _n0$0;
 					} else {
 						var decodeError = _n0.a.a;
-						return author$project$Api$Failure(
-							author$project$Api$DecodeError(decodeError));
+						return author$project$Api$Stream$Failure(
+							author$project$Api$Stream$DecodeError(decodeError));
 					}
 				} else {
 					switch (_n0.b.$) {
@@ -8261,12 +8407,12 @@ var author$project$Api$update = F2(
 									break _n0$2;
 								case 'Insert':
 									var _n1 = _n0.b;
-									return author$project$Api$Failure(
-										author$project$Api$BadOrder('Insert while Loading'));
+									return author$project$Api$Stream$Failure(
+										author$project$Api$Stream$BadOrder('Insert while Loading'));
 								default:
 									var _n2 = _n0.b;
-									return author$project$Api$Failure(
-										author$project$Api$BadOrder('Remove while Loading'));
+									return author$project$Api$Stream$Failure(
+										author$project$Api$Stream$BadOrder('Remove while Loading'));
 							}
 						default:
 							switch (_n0.a.a.$) {
@@ -8275,58 +8421,58 @@ var author$project$Api$update = F2(
 								case 'Insert':
 									var newResource = _n0.a.a.a;
 									var apiData = _n0.b.a;
-									return author$project$Api$Success(
-										A2(author$project$Api$insertResource, newResource, apiData));
+									return author$project$Api$Stream$Success(
+										A2(author$project$Api$Stream$insertResource, newResource, apiData));
 								default:
 									var resourceId = _n0.a.a.a;
 									var apiData = _n0.b.a;
 									switch (resourceId.$) {
 										case 'ResourcePredictionId':
 											var predictionId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? author$project$Api$Success(
+											return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? author$project$Api$Stream$Success(
 												_Utils_update(
 													apiData,
 													{
 														predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
-													})) : author$project$Api$Failure(
-												author$project$Api$BadOrder('Remove unknown prediction id'));
+													})) : author$project$Api$Stream$Failure(
+												author$project$Api$Stream$BadOrder('Remove unknown prediction id'));
 										case 'ResourceTripId':
 											var tripId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? author$project$Api$Success(
+											return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? author$project$Api$Stream$Success(
 												_Utils_update(
 													apiData,
 													{
 														trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
-													})) : author$project$Api$Failure(
-												author$project$Api$BadOrder('Remove unknown trip id'));
+													})) : author$project$Api$Stream$Failure(
+												author$project$Api$Stream$BadOrder('Remove unknown trip id'));
 										default:
 											var stopId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? author$project$Api$Success(
+											return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? author$project$Api$Stream$Success(
 												_Utils_update(
 													apiData,
 													{
 														stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
-													})) : author$project$Api$Failure(
-												author$project$Api$BadOrder('Remove unknown stop id'));
+													})) : author$project$Api$Stream$Failure(
+												author$project$Api$Stream$BadOrder('Remove unknown stop id'));
 									}
 							}
 					}
 				}
 			}
 			var newResources = _n0.a.a.a;
-			return author$project$Api$Success(
-				A3(elm$core$List$foldl, author$project$Api$insertResource, author$project$Api$emptyData, newResources));
+			return author$project$Api$Stream$Success(
+				A3(elm$core$List$foldl, author$project$Api$Stream$insertResource, author$project$Api$Stream$emptyData, newResources));
 		}
 		var error = _n0.b.a;
-		return author$project$Api$Failure(error);
+		return author$project$Api$Stream$Failure(error);
 	});
 var author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
-	var direction = function () {
-		var _n2 = selection.direction;
+	var directionId = function () {
+		var _n2 = selection.directionId;
 		if (_n2.$ === 'Nothing') {
 			return '';
 		} else {
-			if (_n2.a.$ === 'Zero') {
+			if (_n2.a.$ === 'D0') {
 				var _n3 = _n2.a;
 				return ',0';
 			} else {
@@ -8341,7 +8487,7 @@ var author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection)
 	var routeId = _n1.a;
 	return elm$core$String$concat(
 		_List_fromArray(
-			['stop=', routeId, ',', stopId, direction]));
+			['stop=', routeId, ',', stopId, directionId]));
 };
 var author$project$UrlParsing$setSelectionsInUrl = F2(
 	function (selections, url) {
@@ -11880,6 +12026,18 @@ var elm$url$Url$toString = function (url) {
 					_Utils_ap(http, url.host)),
 				url.path)));
 };
+var pzp1997$assoc_list$AssocList$fromList = function (alist) {
+	return A3(
+		elm$core$List$foldl,
+		F2(
+			function (_n0, result) {
+				var key = _n0.a;
+				var value = _n0.b;
+				return A3(pzp1997$assoc_list$AssocList$insert, key, value, result);
+			}),
+		pzp1997$assoc_list$AssocList$D(_List_Nil),
+		alist);
+};
 var author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -11896,7 +12054,7 @@ var author$project$Main$update = F2(
 			case 'OnUrlChange':
 				var url = msg.a;
 				var newSelections = author$project$UrlParsing$parseSelectionsFromUrl(url);
-				var _n1 = author$project$Api$init(newSelections);
+				var _n1 = author$project$Api$Stream$init(newSelections);
 				var initApiResult = _n1.a;
 				var initApiCmd = _n1.b;
 				return _Utils_Tuple2(
@@ -11907,7 +12065,7 @@ var author$project$Main$update = F2(
 						_List_fromArray(
 							[
 								initApiCmd,
-								author$project$Main$fetchStopNames(newSelections)
+								author$project$Main$getStopNames(newSelections)
 							])));
 			case 'AddSelection':
 				var newSelection = msg.a;
@@ -11937,11 +12095,11 @@ var author$project$Main$update = F2(
 						{stopIdFormText: text}),
 					elm$core$Platform$Cmd$none);
 			case 'TypeDirection':
-				var direction = msg.a;
+				var directionId = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{directionFormValue: direction}),
+						{directionIdFormValue: directionId}),
 					elm$core$Platform$Cmd$none);
 			case 'ReceiveStopNames':
 				var result = msg.a;
@@ -11949,7 +12107,13 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							stopNames: A2(elm$core$Result$withDefault, pzp1997$assoc_list$AssocList$empty, result)
+							stopNames: pzp1997$assoc_list$AssocList$fromList(
+								A2(
+									elm$core$List$map,
+									function (stop) {
+										return _Utils_Tuple2(stop.id, stop.name);
+									},
+									A2(elm$core$Result$withDefault, _List_Nil, result)))
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
@@ -11958,7 +12122,7 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							apiResult: A2(author$project$Api$update, apiMsg, model.apiResult)
+							apiResult: A2(author$project$Api$Stream$update, apiMsg, model.apiResult)
 						}),
 					elm$core$Platform$Cmd$none);
 		}
@@ -18505,14 +18669,14 @@ var author$project$View$addSelectionForm = function (model) {
 							mdgriffith$elm_ui$Element$text('None')),
 							A2(
 							mdgriffith$elm_ui$Element$Input$option,
-							elm$core$Maybe$Just(author$project$Data$Zero),
+							elm$core$Maybe$Just(author$project$Api$Types$D0),
 							mdgriffith$elm_ui$Element$text('0')),
 							A2(
 							mdgriffith$elm_ui$Element$Input$option,
-							elm$core$Maybe$Just(author$project$Data$One),
+							elm$core$Maybe$Just(author$project$Api$Types$D1),
 							mdgriffith$elm_ui$Element$text('1'))
 						]),
-					selected: elm$core$Maybe$Just(model.directionFormValue)
+					selected: elm$core$Maybe$Just(model.directionIdFormValue)
 				}),
 				A2(
 				mdgriffith$elm_ui$Element$Input$button,
@@ -18522,9 +18686,9 @@ var author$project$View$addSelectionForm = function (model) {
 					onPress: elm$core$Maybe$Just(
 						author$project$Model$AddSelection(
 							{
-								direction: model.directionFormValue,
-								routeId: author$project$Data$RouteId(model.routeIdFormText),
-								stopId: author$project$Data$StopId(model.stopIdFormText)
+								directionId: model.directionIdFormValue,
+								routeId: author$project$Api$Types$RouteId(model.routeIdFormText),
+								stopId: author$project$Api$Types$StopId(model.stopIdFormText)
 							}))
 				})
 			]));
@@ -18584,11 +18748,11 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 var author$project$View$selectionHeading = F2(
 	function (stopNames, selection) {
 		var directionText = function () {
-			var _n2 = selection.direction;
+			var _n2 = selection.directionId;
 			if (_n2.$ === 'Nothing') {
 				return '';
 			} else {
-				if (_n2.a.$ === 'Zero') {
+				if (_n2.a.$ === 'D0') {
 					var _n3 = _n2.a;
 					return ' - 0';
 				} else {
@@ -18639,13 +18803,13 @@ var author$project$View$selectionHeading = F2(
 					mdgriffith$elm_ui$Element$text(stopName))
 				]));
 	});
-var author$project$Api$predictionMatchesDirection = F2(
+var author$project$Api$Stream$predictionMatchesDirection = F2(
 	function (selectionDirection, prediction) {
 		if (selectionDirection.$ === 'Nothing') {
 			return true;
 		} else {
-			var direction = selectionDirection.a;
-			return _Utils_eq(prediction.direction, direction);
+			var directionId = selectionDirection.a;
+			return _Utils_eq(prediction.directionId, directionId);
 		}
 	});
 var elm$core$Maybe$andThen = F2(
@@ -18657,7 +18821,7 @@ var elm$core$Maybe$andThen = F2(
 			return elm$core$Maybe$Nothing;
 		}
 	});
-var author$project$Api$predictionMatchesStop = F3(
+var author$project$Api$Stream$predictionMatchesStop = F3(
 	function (apiData, queriedStop, prediction) {
 		return _Utils_eq(prediction.stopId, queriedStop) || function () {
 			var predictionParentStation = A2(
@@ -18675,7 +18839,7 @@ var pzp1997$assoc_list$AssocList$values = function (_n0) {
 	var alist = _n0.a;
 	return A2(elm$core$List$map, elm$core$Tuple$second, alist);
 };
-var author$project$Api$predictionsForSelection = F2(
+var author$project$Api$Stream$predictionsForSelection = F2(
 	function (apiData, selection) {
 		return A2(
 			elm$core$List$map,
@@ -18692,10 +18856,10 @@ var author$project$Api$predictionsForSelection = F2(
 			},
 			A2(
 				elm$core$List$filter,
-				author$project$Api$predictionMatchesDirection(selection.direction),
+				author$project$Api$Stream$predictionMatchesDirection(selection.directionId),
 				A2(
 					elm$core$List$filter,
-					A2(author$project$Api$predictionMatchesStop, apiData, selection.stopId),
+					A2(author$project$Api$Stream$predictionMatchesStop, apiData, selection.stopId),
 					A2(
 						elm$core$List$filter,
 						function (prediction) {
@@ -18890,7 +19054,7 @@ var author$project$View$viewPredictions = F3(
 						return $.time;
 					},
 					elm$time$Time$posixToMillis),
-				A2(author$project$Api$predictionsForSelection, apiData, selection)));
+				A2(author$project$Api$Stream$predictionsForSelection, apiData, selection)));
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -19242,4 +19406,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.StreamEvent"},"Data.Selection":{"args":[],"type":"{ routeId : Data.RouteId, stopId : Data.StopId, direction : Maybe.Maybe Data.Direction }"},"Model.StopNames":{"args":[],"type":"AssocList.Dict Data.StopId String.String"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Http.Response":{"args":["body"],"type":"{ url : String.String, status : { code : Basics.Int, message : String.String }, headers : Dict.Dict String.String String.String, body : body }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Prediction":{"args":[],"type":"{ id : Api.PredictionId, time : Time.Posix, routeId : Data.RouteId, stopId : Data.StopId, direction : Data.Direction, tripId : Api.TripId }"},"Api.Stop":{"args":[],"type":"{ id : Data.StopId, parentStation : Maybe.Maybe Data.StopId }"},"Api.Trip":{"args":[],"type":"{ id : Api.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Data.Direction"],"ReceiveStopNames":["Result.Result Http.Error Model.StopNames"],"ApiMsg":["Api.Msg"]}},"Api.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Resource"],"Insert":["Api.Resource"],"Remove":["Api.ResourceId"]}},"Data.Direction":{"args":[],"tags":{"Zero":[],"One":[]}},"Data.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Data.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Http.Response String.String"],"BadPayload":["String.String","Http.Response String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Api.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Prediction"],"ResourceTrip":["Api.Trip"],"ResourceStop":["Api.Stop"]}},"Api.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.PredictionId"],"ResourceTripId":["Api.TripId"],"ResourceStopId":["Data.StopId"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"List.List":{"args":["a"],"tags":{}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
