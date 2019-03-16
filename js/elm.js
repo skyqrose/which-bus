@@ -5934,6 +5934,20 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt = F3(
 			A2(elm$json$Json$Decode$at, path, valDecoder),
 			decoder);
 	});
+var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$Api$Decoders$checkType = F2(
+	function (expectedTypeString, resourceConstructor) {
+		return A2(
+			elm$json$Json$Decode$andThen,
+			function (actualTypeString) {
+				return _Utils_eq(expectedTypeString, actualTypeString) ? elm$json$Json$Decode$succeed(resourceConstructor) : elm$json$Json$Decode$fail('expected type ' + (expectedTypeString + (' but got ' + actualTypeString)));
+			},
+			A2(
+				elm$json$Json$Decode$at,
+				_List_fromArray(
+					['type']),
+				elm$json$Json$Decode$string));
+	});
 var author$project$Api$Types$StopId = function (a) {
 	return {$: 'StopId', a: a};
 };
@@ -5941,7 +5955,6 @@ var elm$core$Basics$identity = function (x) {
 	return x;
 };
 var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$string = _Json_decodeString;
 var author$project$Api$Decoders$stopIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$StopId, elm$json$Json$Decode$string);
 var author$project$Api$Types$Stop = F3(
 	function (id, name, parentStation) {
@@ -5962,7 +5975,7 @@ var author$project$Api$Decoders$stopDecoder = A4(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 			'id',
 			author$project$Api$Decoders$stopIdDecoder,
-			elm$json$Json$Decode$succeed(author$project$Api$Types$Stop))));
+			A2(author$project$Api$Decoders$checkType, 'stop', author$project$Api$Types$Stop))));
 var elm$core$Result$mapError = F2(
 	function (f, result) {
 		if (result.$ === 'Ok') {
@@ -7875,7 +7888,7 @@ var author$project$Api$Decoders$predictionDecoder = A3(
 						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 						'id',
 						author$project$Api$Decoders$predictionIdDecoder,
-						elm$json$Json$Decode$succeed(author$project$Api$Types$Prediction)))))));
+						A2(author$project$Api$Decoders$checkType, 'prediction', author$project$Api$Types$Prediction)))))));
 var author$project$Api$Types$Trip = F2(
 	function (id, headsign) {
 		return {headsign: headsign, id: id};
@@ -7889,7 +7902,7 @@ var author$project$Api$Decoders$tripDecoder = A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
 		'id',
 		author$project$Api$Decoders$tripIdDecoder,
-		elm$json$Json$Decode$succeed(author$project$Api$Types$Trip)));
+		A2(author$project$Api$Decoders$checkType, 'trip', author$project$Api$Types$Trip)));
 var author$project$Api$Types$ResourcePrediction = function (a) {
 	return {$: 'ResourcePrediction', a: a};
 };
