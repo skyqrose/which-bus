@@ -124,4 +124,5 @@ stopDecoder : Decode.Decoder Stop
 stopDecoder =
     Decode.succeed Stop
         |> Pipeline.required "id" stopIdDecoder
+        |> Pipeline.requiredAt [ "attributes", "name" ] Decode.string
         |> Pipeline.optionalAt [ "relationships", "parent_station", "data", "id" ] (Decode.map Just stopIdDecoder) Nothing

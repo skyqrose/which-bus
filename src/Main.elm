@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Api.Request
 import Api.Stream
 import Api.Types as Api
 import Api.Url
@@ -8,7 +9,6 @@ import Browser
 import Browser.Navigation as Navigation
 import Data exposing (..)
 import Html
-import Http
 import Json.Decode as Decode exposing (Decoder)
 import Model exposing (..)
 import Task
@@ -52,7 +52,7 @@ init flags url key =
     , Cmd.batch
         [ Task.perform Tick Time.now
         , initApiCmd
-        , fetchStopNames selections
+        , getStopNames selections
         ]
     )
 
@@ -87,7 +87,7 @@ update msg model =
               }
             , Cmd.batch
                 [ initApiCmd
-                , fetchStopNames newSelections
+                , getStopNames newSelections
                 ]
             )
 
@@ -126,7 +126,11 @@ update msg model =
 
         ReceiveStopNames result ->
             ( { model
-                | stopNames = Result.withDefault Dict.empty result
+                | stopNames =
+                    result
+                        |> Result.withDefault []
+                        |> List.map (\stop -> ( stop.id, stop.name ))
+                        |> Dict.fromList
               }
             , Cmd.none
             )
@@ -147,34 +151,6 @@ subscriptions _ =
         ]
 
 
-fetchStopNames : List Selection -> Cmd Msg
-fetchStopNames selections =
-    let
-        stopIds =
-            selections
-                |> List.map .stopId
-                |> List.map (\(Api.StopId stopId) -> stopId)
-                |> String.join ","
-
-        url =
-            Api.Url.url "stops" [ ( "filter[id]", stopIds ) ]
-    in
-    Http.get url stopNamesDecoder
-        |> Http.send ReceiveStopNames
-
-
-stopNamesDecoder : Decoder StopNames
-stopNamesDecoder =
-    Decode.map2
-        Tuple.pair
-        (Decode.at [ "id" ] (Decode.map Api.StopId Decode.string))
-        (Decode.at [ "attributes", "name" ] Decode.string)
-        |> Decode.list
-        |> Decode.at [ "data" ]
-        |> Decode.map
-            (\namesList ->
-                List.foldl
-                    (\( id, name ) -> Dict.insert id name)
-                    Dict.empty
-                    namesList
-            )
+getStopNames : List Selection -> Cmd Msg
+getStopNames selections =
+    Api.Request.getStops ReceiveStopNames (List.map .stopId selections)

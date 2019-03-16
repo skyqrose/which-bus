@@ -37,7 +37,7 @@ type Msg
     | TypeRouteId String
     | TypeStopId String
     | TypeDirection (Maybe Api.DirectionId)
-    | ReceiveStopNames (Result Http.Error StopNames)
+    | ReceiveStopNames (Result Http.Error (List Api.Stop))
     | ApiMsg Api.Stream.Msg
 
 
