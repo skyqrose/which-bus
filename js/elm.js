@@ -6824,7 +6824,11 @@ var author$project$Api$Request$getStops = F2(
 				expect: A2(
 					elm$http$Http$expectJson,
 					msg,
-					elm$json$Json$Decode$list(author$project$Api$Decoders$stopDecoder)),
+					A2(
+						elm$json$Json$Decode$at,
+						_List_fromArray(
+							['data']),
+						elm$json$Json$Decode$list(author$project$Api$Decoders$stopDecoder))),
 				url: url
 			});
 	});
