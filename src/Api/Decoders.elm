@@ -99,7 +99,7 @@ directionIdDecoder =
 
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
-    Decode.succeed Prediction
+    checkType "prediction" Prediction
         |> Pipeline.required "id" predictionIdDecoder
         |> Pipeline.custom
             (Decode.oneOf
@@ -115,14 +115,30 @@ predictionDecoder =
 
 tripDecoder : Decode.Decoder Trip
 tripDecoder =
-    Decode.succeed Trip
+    checkType "trip" Trip
         |> Pipeline.required "id" tripIdDecoder
         |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
 
 
 stopDecoder : Decode.Decoder Stop
 stopDecoder =
-    Decode.succeed Stop
+    checkType "stop" Stop
         |> Pipeline.required "id" stopIdDecoder
         |> Pipeline.requiredAt [ "attributes", "name" ] Decode.string
         |> Pipeline.optionalAt [ "relationships", "parent_station", "data", "id" ] (Decode.map Just stopIdDecoder) Nothing
+
+
+{-| Fails decoding if the json api type is not as expected.
+Replaces `Decode.succeed` in a pipeline
+-}
+checkType : String -> a -> Decode.Decoder a
+checkType expectedTypeString resourceConstructor =
+    Decode.at [ "type" ] Decode.string
+        |> Decode.andThen
+            (\actualTypeString ->
+                if expectedTypeString == actualTypeString then
+                    Decode.succeed resourceConstructor
+
+                else
+                    Decode.fail ("expected type " ++ expectedTypeString ++ " but got " ++ actualTypeString)
+            )
