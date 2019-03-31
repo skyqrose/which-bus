@@ -140,10 +140,23 @@ viewPredictions currentTime apiData selection =
             [ El.text "---" ]
 
          else
-            predictions
-                |> List.map (predictionTimeString currentTime)
-                |> List.map El.text
+            List.map (viewPrediction currentTime) predictions
         )
+
+
+viewPrediction : Time.Posix -> ShownPrediction -> Element msg
+viewPrediction currentTime prediction =
+    case prediction.tripHeadsign of
+        Nothing ->
+            El.text (predictionTimeString currentTime prediction)
+
+        Just tripHeadsign ->
+            El.row
+                [ El.spacing unit
+                ]
+                [ El.text (predictionTimeString currentTime prediction)
+                , El.text tripHeadsign
+                ]
 
 
 predictionTimeString : Time.Posix -> ShownPrediction -> String
