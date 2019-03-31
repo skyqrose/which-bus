@@ -18930,6 +18930,28 @@ var author$project$View$predictionTimeString = F2(
 			elm$core$String$fromInt(absSecs % 60));
 		return sign + (displayMins + (':' + displaySecs));
 	});
+var author$project$View$viewPrediction = F2(
+	function (currentTime, prediction) {
+		var _n0 = prediction.tripHeadsign;
+		if (_n0.$ === 'Nothing') {
+			return mdgriffith$elm_ui$Element$text(
+				A2(author$project$View$predictionTimeString, currentTime, prediction));
+		} else {
+			var tripHeadsign = _n0.a;
+			return A2(
+				mdgriffith$elm_ui$Element$row,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(author$project$View$unit)
+					]),
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$text(
+						A2(author$project$View$predictionTimeString, currentTime, prediction)),
+						mdgriffith$elm_ui$Element$text(tripHeadsign)
+					]));
+		}
+	});
 var elm$core$List$sortBy = _List_sortBy;
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
@@ -19082,11 +19104,8 @@ var author$project$View$viewPredictions = F3(
 					mdgriffith$elm_ui$Element$text('---')
 				]) : A2(
 				elm$core$List$map,
-				mdgriffith$elm_ui$Element$text,
-				A2(
-					elm$core$List$map,
-					author$project$View$predictionTimeString(currentTime),
-					predictions)));
+				author$project$View$viewPrediction(currentTime),
+				predictions));
 	});
 var author$project$View$viewSelection = F4(
 	function (currentTime, stopNames, apiData, selection) {
