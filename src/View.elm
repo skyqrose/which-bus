@@ -133,30 +133,45 @@ viewPredictions currentTime apiData selection =
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 3
     in
-    El.column
-        [ El.padding unit
-        ]
-        (if List.isEmpty predictions then
-            [ El.text "---" ]
+    if List.isEmpty predictions then
+        El.el
+            [ El.padding unit
+            ]
+            (El.text "---")
 
-         else
-            List.map (viewPrediction currentTime) predictions
-        )
+    else
+        El.table
+            [ El.padding unit
+            , El.spacingXY unit 0
+            ]
+            { data = predictions
+            , columns =
+                [ { header = El.none
+                  , width = El.shrink
+                  , view =
+                        \prediction ->
+                            -- Needs two layers of els in order to align right
+                            -- el won't align right directly inside a table cell
+                            El.el [] <|
+                                El.el
+                                    [ Font.variant Font.tabularNumbers
+                                    , El.alignRight
+                                    ]
+                                    (El.text (predictionTimeString currentTime prediction))
+                  }
+                , { header = El.none
+                  , width = El.fill
+                  , view =
+                        \prediction ->
+                            case prediction.tripHeadsign of
+                                Nothing ->
+                                    El.none
 
-
-viewPrediction : Time.Posix -> ShownPrediction -> Element msg
-viewPrediction currentTime prediction =
-    case prediction.tripHeadsign of
-        Nothing ->
-            El.text (predictionTimeString currentTime prediction)
-
-        Just tripHeadsign ->
-            El.row
-                [ El.spacing unit
+                                Just headsign ->
+                                    El.text headsign
+                  }
                 ]
-                [ El.text (predictionTimeString currentTime prediction)
-                , El.text tripHeadsign
-                ]
+            }
 
 
 predictionTimeString : Time.Posix -> ShownPrediction -> String
