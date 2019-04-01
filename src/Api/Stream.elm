@@ -16,6 +16,7 @@ import AssocList as Dict
 import Data exposing (..)
 import Json.Decode as Decode
 import Json.Encode
+import Time
 
 
 port startStreamPort : String -> Cmd msg
@@ -27,7 +28,10 @@ port streamEventPort : (Decode.Value -> msg) -> Sub msg
 type ApiResult
     = Loading
     | Failure Error
-    | Success ApiData
+    | Success
+        { lastUpdated : Time.Posix
+        , apiData : ApiData
+        }
 
 
 type Error
@@ -98,8 +102,8 @@ subscriptions msg =
     streamEventPort (Decode.decodeValue streamEventDecoder >> msg)
 
 
-update : Msg -> ApiResult -> ApiResult
-update eventDecodeResult apiResult =
+update : Time.Posix -> Msg -> ApiResult -> ApiResult
+update currentTime eventDecodeResult apiResult =
     case ( eventDecodeResult, apiResult ) of
         ( _, Failure error ) ->
             Failure error
@@ -108,8 +112,10 @@ update eventDecodeResult apiResult =
             Failure (DecodeError decodeError)
 
         ( Ok (Reset newResources), _ ) ->
-            Success <|
-                List.foldl insertResource emptyData newResources
+            Success
+                { lastUpdated = currentTime
+                , apiData = List.foldl insertResource emptyData newResources
+                }
 
         ( Ok (Insert _), Loading ) ->
             Failure (BadOrder "Insert while Loading")
@@ -117,18 +123,23 @@ update eventDecodeResult apiResult =
         ( Ok (Remove _), Loading ) ->
             Failure (BadOrder "Remove while Loading")
 
-        ( Ok (Insert newResource), Success apiData ) ->
-            Success <|
-                insertResource newResource apiData
+        ( Ok (Insert newResource), Success { apiData } ) ->
+            Success
+                { lastUpdated = currentTime
+                , apiData = insertResource newResource apiData
+                }
 
-        ( Ok (Remove resourceId), Success apiData ) ->
+        ( Ok (Remove resourceId), Success { apiData } ) ->
             case resourceId of
                 ResourcePredictionId predictionId ->
                     if Dict.member predictionId apiData.predictions then
-                        Success <|
-                            { apiData
-                                | predictions =
-                                    Dict.remove predictionId apiData.predictions
+                        Success
+                            { lastUpdated = currentTime
+                            , apiData =
+                                { apiData
+                                    | predictions =
+                                        Dict.remove predictionId apiData.predictions
+                                }
                             }
 
                     else
@@ -136,10 +147,13 @@ update eventDecodeResult apiResult =
 
                 ResourceTripId tripId ->
                     if Dict.member tripId apiData.trips then
-                        Success <|
-                            { apiData
-                                | trips =
-                                    Dict.remove tripId apiData.trips
+                        Success
+                            { lastUpdated = currentTime
+                            , apiData =
+                                { apiData
+                                    | trips =
+                                        Dict.remove tripId apiData.trips
+                                }
                             }
 
                     else
@@ -147,10 +161,13 @@ update eventDecodeResult apiResult =
 
                 ResourceStopId stopId ->
                     if Dict.member stopId apiData.stops then
-                        Success <|
-                            { apiData
-                                | stops =
-                                    Dict.remove stopId apiData.stops
+                        Success
+                            { lastUpdated = currentTime
+                            , apiData =
+                                { apiData
+                                    | stops =
+                                        Dict.remove stopId apiData.stops
+                                }
                             }
 
                     else

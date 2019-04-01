@@ -137,7 +137,7 @@ update msg model =
 
         ApiMsg apiMsg ->
             ( { model
-                | apiResult = Api.Stream.update apiMsg model.apiResult
+                | apiResult = Api.Stream.update model.currentTime apiMsg model.apiResult
               }
             , Cmd.none
             )

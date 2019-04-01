@@ -46,7 +46,7 @@ ui model =
                 , El.text (Debug.toString error)
                 ]
 
-            Api.Stream.Success apiData ->
+            Api.Stream.Success { apiData } ->
                 [ El.text "Stops"
                 , viewSelections
                     model.currentTime
