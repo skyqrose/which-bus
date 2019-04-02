@@ -233,7 +233,8 @@ addSelectionForm model =
             , selected = Just model.directionIdFormValue
             , label = label "Direction Id"
             }
-        , Input.button []
+        , Input.button
+            buttonStyles
             { onPress =
                 Just
                     (AddSelection
@@ -263,7 +264,8 @@ refreshButton currentTime lastUpdated =
     El.row
         [ El.spacing unit
         ]
-        [ Input.button []
+        [ Input.button
+            buttonStyles
             { onPress = Just RefreshStream
             , label = El.text "Refresh"
             }
@@ -287,3 +289,17 @@ unit =
 fontSmall : Int
 fontSmall =
     14
+
+
+buttonStyles : List (El.Attribute msg)
+buttonStyles =
+    [ El.padding (unit // 2)
+    , Border.width 1
+    , Border.rounded 4
+    , Border.shadow
+        { offset = ( 1, 1 )
+        , size = 0.0
+        , blur = 1.0
+        , color = El.rgb 0.5 0.5 0.5
+        }
+    ]
