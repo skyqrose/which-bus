@@ -39,6 +39,7 @@ type Msg
     | TypeDirection (Maybe Api.DirectionId)
     | ReceiveStopNames (Result Http.Error (List Api.Stop))
     | ApiMsg Api.Stream.Msg
+    | RefreshStream
 
 
 type alias StopNames =

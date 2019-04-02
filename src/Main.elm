@@ -142,6 +142,17 @@ update msg model =
             , Cmd.none
             )
 
+        RefreshStream ->
+            let
+                ( initApiResult, initApiCmd ) =
+                    Api.Stream.init model.selections
+            in
+            ( { model
+                | apiResult = initApiResult
+              }
+            , initApiCmd
+            )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =

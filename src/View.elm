@@ -46,7 +46,7 @@ ui model =
                 , El.text (Debug.toString error)
                 ]
 
-            Api.Stream.Success { apiData } ->
+            Api.Stream.Success { lastUpdated, apiData } ->
                 [ El.text "Stops"
                 , viewSelections
                     model.currentTime
@@ -54,6 +54,7 @@ ui model =
                     model.stopNames
                     apiData
                 , addSelectionForm model
+                , refreshButton model.currentTime lastUpdated
                 ]
         )
 
@@ -249,6 +250,31 @@ addSelectionForm model =
 label : String -> Input.Label msg
 label text =
     Input.labelAbove [] (El.text text)
+
+
+refreshButton : Time.Posix -> Time.Posix -> Element Msg
+refreshButton currentTime lastUpdated =
+    let
+        timeDifferenceMinutes =
+            (Time.posixToMillis currentTime - Time.posixToMillis lastUpdated)
+                // 1000
+                // 60
+    in
+    El.row
+        [ El.spacing unit
+        ]
+        [ Input.button []
+            { onPress = Just RefreshStream
+            , label = El.text "Refresh"
+            }
+        , El.text
+            (String.concat
+                [ "Last updated "
+                , String.fromInt timeDifferenceMinutes
+                , " minutes ago"
+                ]
+            )
+        ]
 
 
 {-| Pixels
