@@ -5955,26 +5955,32 @@ var elm$core$Basics$identity = function (x) {
 };
 var elm$json$Json$Decode$map = _Json_map1;
 var author$project$Api$Decoders$stopIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$StopId, elm$json$Json$Decode$string);
-var author$project$Api$Types$Stop = F3(
-	function (id, name, parentStation) {
-		return {id: id, name: name, parentStation: parentStation};
+var author$project$Api$Types$Stop = F4(
+	function (id, name, parentStation, platformCode) {
+		return {id: id, name: name, parentStation: parentStation, platformCode: platformCode};
 	});
 var author$project$Api$Decoders$stopDecoder = A4(
 	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
 	_List_fromArray(
-		['relationships', 'parent_station', 'data', 'id']),
-	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$stopIdDecoder),
+		['attributes', 'platform_code']),
+	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, elm$json$Json$Decode$string),
 	elm$core$Maybe$Nothing,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+	A4(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
 		_List_fromArray(
-			['attributes', 'name']),
-		elm$json$Json$Decode$string,
+			['relationships', 'parent_station', 'data', 'id']),
+		A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$stopIdDecoder),
+		elm$core$Maybe$Nothing,
 		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'id',
-			author$project$Api$Decoders$stopIdDecoder,
-			A2(author$project$Api$Decoders$checkType, 'stop', author$project$Api$Types$Stop))));
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+			_List_fromArray(
+				['attributes', 'name']),
+			elm$json$Json$Decode$string,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'id',
+				author$project$Api$Decoders$stopIdDecoder,
+				A2(author$project$Api$Decoders$checkType, 'stop', author$project$Api$Types$Stop)))));
 var elm$core$Result$mapError = F2(
 	function (f, result) {
 		if (result.$ === 'Ok') {
@@ -18794,7 +18800,8 @@ var author$project$View$refreshButton = F2(
 			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$spacing(author$project$View$unit)
+					mdgriffith$elm_ui$Element$spacing(author$project$View$unit),
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 				]),
 			_List_fromArray(
 				[
@@ -18809,7 +18816,7 @@ var author$project$View$refreshButton = F2(
 					elm$core$String$concat(
 						_List_fromArray(
 							[
-								'Last updated ',
+								'Last updated\n',
 								elm$core$String$fromInt(timeDifferenceMinutes),
 								' minutes ago'
 							])))
@@ -18955,6 +18962,12 @@ var author$project$Api$Stream$predictionsForSelection = F2(
 			elm$core$List$map,
 			function (prediction) {
 				return {
+					platformCode: A2(
+						elm$core$Maybe$andThen,
+						function ($) {
+							return $.platformCode;
+						},
+						A2(pzp1997$assoc_list$AssocList$get, prediction.stopId, apiData.stops)),
 					time: prediction.time,
 					tripHeadsign: A2(
 						elm$core$Maybe$map,
@@ -19461,11 +19474,24 @@ var author$project$View$viewPredictions = F3(
 						{
 						header: mdgriffith$elm_ui$Element$none,
 						view: function (prediction) {
-							var _n0 = prediction.tripHeadsign;
+							var _n0 = prediction.platformCode;
 							if (_n0.$ === 'Nothing') {
 								return mdgriffith$elm_ui$Element$none;
 							} else {
-								var headsign = _n0.a;
+								var platformCode = _n0.a;
+								return mdgriffith$elm_ui$Element$text(platformCode);
+							}
+						},
+						width: mdgriffith$elm_ui$Element$shrink
+					},
+						{
+						header: mdgriffith$elm_ui$Element$none,
+						view: function (prediction) {
+							var _n1 = prediction.tripHeadsign;
+							if (_n1.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var headsign = _n1.a;
 								return mdgriffith$elm_ui$Element$text(headsign);
 							}
 						},
@@ -19506,13 +19532,26 @@ var author$project$View$viewSelections = F4(
 				selections));
 	});
 var elm$core$Debug$toString = _Debug_toString;
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
+var mdgriffith$elm_ui$Internal$Model$Max = F2(
+	function (a, b) {
+		return {$: 'Max', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$maximum = F2(
+	function (i, l) {
+		return A2(mdgriffith$elm_ui$Internal$Model$Max, i, l);
+	});
 var author$project$View$ui = function (model) {
 	return A2(
 		mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
 				mdgriffith$elm_ui$Element$padding(author$project$View$unit),
-				mdgriffith$elm_ui$Element$spacing(author$project$View$unit)
+				mdgriffith$elm_ui$Element$spacing(author$project$View$unit),
+				mdgriffith$elm_ui$Element$centerX,
+				mdgriffith$elm_ui$Element$width(
+				A2(mdgriffith$elm_ui$Element$maximum, 320, mdgriffith$elm_ui$Element$fill))
 			]),
 		function () {
 			var _n0 = model.apiResult;
@@ -19536,7 +19575,6 @@ var author$project$View$ui = function (model) {
 					var apiData = _n0.a.apiData;
 					return _List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$text('Stops'),
 							A4(author$project$View$viewSelections, model.currentTime, model.selections, model.stopNames, apiData),
 							author$project$View$addSelectionForm(model),
 							A2(author$project$View$refreshButton, model.currentTime, lastUpdated)
@@ -19830,4 +19868,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId, platformCode : Maybe.Maybe String.String }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
