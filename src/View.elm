@@ -236,13 +236,17 @@ addSelectionForm model =
         , Input.button
             buttonStyles
             { onPress =
-                Just
-                    (AddSelection
-                        { routeId = Api.RouteId model.routeIdFormText
-                        , stopId = Api.StopId model.stopIdFormText
-                        , directionId = model.directionIdFormValue
-                        }
-                    )
+                if model.routeIdFormText /= "" && model.stopIdFormText /= "" then
+                    Just
+                        (AddSelection
+                            { routeId = Api.RouteId model.routeIdFormText
+                            , stopId = Api.StopId model.stopIdFormText
+                            , directionId = model.directionIdFormValue
+                            }
+                        )
+
+                else
+                    Nothing
             , label = El.text "Add Stop"
             }
         ]
