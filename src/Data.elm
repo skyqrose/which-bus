@@ -17,4 +17,5 @@ type alias Selection =
 type alias ShownPrediction =
     { time : Time.Posix
     , tripHeadsign : Maybe String
+    , platformCode : Maybe String
     }

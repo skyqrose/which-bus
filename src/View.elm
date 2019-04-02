@@ -162,6 +162,17 @@ viewPredictions currentTime apiData selection =
                                     (El.text (predictionTimeString currentTime prediction))
                   }
                 , { header = El.none
+                  , width = El.shrink
+                  , view =
+                        \prediction ->
+                            case prediction.platformCode of
+                                Nothing ->
+                                    El.none
+
+                                Just platformCode ->
+                                    El.text platformCode
+                  }
+                , { header = El.none
                   , width = El.fill
                   , view =
                         \prediction ->

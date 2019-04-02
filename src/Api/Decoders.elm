@@ -126,6 +126,7 @@ stopDecoder =
         |> Pipeline.required "id" stopIdDecoder
         |> Pipeline.requiredAt [ "attributes", "name" ] Decode.string
         |> Pipeline.optionalAt [ "relationships", "parent_station", "data", "id" ] (Decode.map Just stopIdDecoder) Nothing
+        |> Pipeline.optionalAt [ "attributes", "platform_code" ] (Decode.map Just Decode.string) Nothing
 
 
 {-| Fails decoding if the json api type is not as expected.

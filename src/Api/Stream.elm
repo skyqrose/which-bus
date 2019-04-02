@@ -210,6 +210,10 @@ predictionsForSelection apiData selection =
                     apiData.trips
                         |> Dict.get prediction.tripId
                         |> Maybe.map .headsign
+                , platformCode =
+                    apiData.stops
+                        |> Dict.get prediction.stopId
+                        |> Maybe.andThen .platformCode
                 }
             )
 

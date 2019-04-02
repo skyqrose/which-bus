@@ -67,4 +67,5 @@ type alias Stop =
     { id : StopId
     , name : String
     , parentStation : Maybe StopId
+    , platformCode : Maybe String
     }
