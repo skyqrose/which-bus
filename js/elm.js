@@ -8398,8 +8398,8 @@ var pzp1997$assoc_list$AssocList$member = F2(
 			return false;
 		}
 	});
-var author$project$Api$Stream$update = F2(
-	function (eventDecodeResult, apiResult) {
+var author$project$Api$Stream$update = F3(
+	function (currentTime, eventDecodeResult, apiResult) {
 		var _n0 = _Utils_Tuple2(eventDecodeResult, apiResult);
 		_n0$0:
 		while (true) {
@@ -8436,39 +8436,51 @@ var author$project$Api$Stream$update = F2(
 									break _n0$2;
 								case 'Insert':
 									var newResource = _n0.a.a.a;
-									var apiData = _n0.b.a;
+									var apiData = _n0.b.a.apiData;
 									return author$project$Api$Stream$Success(
-										A2(author$project$Api$Stream$insertResource, newResource, apiData));
+										{
+											apiData: A2(author$project$Api$Stream$insertResource, newResource, apiData),
+											lastUpdated: currentTime
+										});
 								default:
 									var resourceId = _n0.a.a.a;
-									var apiData = _n0.b.a;
+									var apiData = _n0.b.a.apiData;
 									switch (resourceId.$) {
 										case 'ResourcePredictionId':
 											var predictionId = resourceId.a;
 											return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? author$project$Api$Stream$Success(
-												_Utils_update(
-													apiData,
-													{
-														predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
-													})) : author$project$Api$Stream$Failure(
+												{
+													apiData: _Utils_update(
+														apiData,
+														{
+															predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
+														}),
+													lastUpdated: currentTime
+												}) : author$project$Api$Stream$Failure(
 												author$project$Api$Stream$BadOrder('Remove unknown prediction id'));
 										case 'ResourceTripId':
 											var tripId = resourceId.a;
 											return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? author$project$Api$Stream$Success(
-												_Utils_update(
-													apiData,
-													{
-														trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
-													})) : author$project$Api$Stream$Failure(
+												{
+													apiData: _Utils_update(
+														apiData,
+														{
+															trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
+														}),
+													lastUpdated: currentTime
+												}) : author$project$Api$Stream$Failure(
 												author$project$Api$Stream$BadOrder('Remove unknown trip id'));
 										default:
 											var stopId = resourceId.a;
 											return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? author$project$Api$Stream$Success(
-												_Utils_update(
-													apiData,
-													{
-														stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
-													})) : author$project$Api$Stream$Failure(
+												{
+													apiData: _Utils_update(
+														apiData,
+														{
+															stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
+														}),
+													lastUpdated: currentTime
+												}) : author$project$Api$Stream$Failure(
 												author$project$Api$Stream$BadOrder('Remove unknown stop id'));
 									}
 							}
@@ -8477,7 +8489,10 @@ var author$project$Api$Stream$update = F2(
 			}
 			var newResources = _n0.a.a.a;
 			return author$project$Api$Stream$Success(
-				A3(elm$core$List$foldl, author$project$Api$Stream$insertResource, author$project$Api$Stream$emptyData, newResources));
+				{
+					apiData: A3(elm$core$List$foldl, author$project$Api$Stream$insertResource, author$project$Api$Stream$emptyData, newResources),
+					lastUpdated: currentTime
+				});
 		}
 		var error = _n0.b.a;
 		return author$project$Api$Stream$Failure(error);
@@ -12132,15 +12147,24 @@ var author$project$Main$update = F2(
 									A2(elm$core$Result$withDefault, _List_Nil, result)))
 						}),
 					elm$core$Platform$Cmd$none);
-			default:
+			case 'ApiMsg':
 				var apiMsg = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							apiResult: A2(author$project$Api$Stream$update, apiMsg, model.apiResult)
+							apiResult: A3(author$project$Api$Stream$update, model.currentTime, apiMsg, model.apiResult)
 						}),
 					elm$core$Platform$Cmd$none);
+			default:
+				var _n2 = author$project$Api$Stream$init(model.selections);
+				var initApiResult = _n2.a;
+				var initApiCmd = _n2.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{apiResult: initApiResult}),
+					initApiCmd);
 		}
 	});
 var author$project$Model$OnUrlChange = function (a) {
@@ -12161,6 +12185,158 @@ var author$project$Model$TypeRouteId = function (a) {
 var author$project$Model$TypeStopId = function (a) {
 	return {$: 'TypeStopId', a: a};
 };
+var author$project$View$unit = 16;
+var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
+	return {$: 'Flag', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
+	return {$: 'Second', a: a};
+};
+var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
+	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
+};
+var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
+var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
+	function (a, b) {
+		return {$: 'StyleClass', a: a, b: b};
+	});
+var mdgriffith$elm_ui$Element$padding = function (x) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + elm$core$String$fromInt(x),
+			x,
+			x,
+			x,
+			x));
+};
+var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
+	function (a, b, c, d) {
+		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+	});
+var mdgriffith$elm_ui$Element$rgb = F3(
+	function (r, g, b) {
+		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+	});
+var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
+var mdgriffith$elm_ui$Internal$Model$Single = F3(
+	function (a, b, c) {
+		return {$: 'Single', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + elm$core$String$fromInt(radius),
+			'border-radius',
+			elm$core$String$fromInt(radius) + 'px'));
+};
+var mdgriffith$elm_ui$Internal$Flag$shadows = mdgriffith$elm_ui$Internal$Flag$flag(19);
+var elm$core$String$fromFloat = _String_fromNumber;
+var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
+	return elm$core$String$fromInt(
+		elm$core$Basics$round(x * 255));
+};
+var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var mdgriffith$elm_ui$Internal$Model$boxShadowName = function (shadow) {
+	return elm$core$String$concat(
+		_List_fromArray(
+			[
+				shadow.inset ? 'box-inset' : 'box-',
+				elm$core$String$fromFloat(shadow.offset.a) + 'px',
+				elm$core$String$fromFloat(shadow.offset.b) + 'px',
+				elm$core$String$fromFloat(shadow.blur) + 'px',
+				elm$core$String$fromFloat(shadow.size) + 'px',
+				mdgriffith$elm_ui$Internal$Model$formatColorClass(shadow.color)
+			]));
+};
+var mdgriffith$elm_ui$Internal$Model$formatColor = function (_n0) {
+	var red = _n0.a;
+	var green = _n0.b;
+	var blue = _n0.c;
+	var alpha = _n0.d;
+	return 'rgba(' + (elm$core$String$fromInt(
+		elm$core$Basics$round(red * 255)) + ((',' + elm$core$String$fromInt(
+		elm$core$Basics$round(green * 255))) + ((',' + elm$core$String$fromInt(
+		elm$core$Basics$round(blue * 255))) + (',' + (elm$core$String$fromFloat(alpha) + ')')))));
+};
+var mdgriffith$elm_ui$Internal$Model$formatBoxShadow = function (shadow) {
+	return A2(
+		elm$core$String$join,
+		' ',
+		A2(
+			elm$core$List$filterMap,
+			elm$core$Basics$identity,
+			_List_fromArray(
+				[
+					shadow.inset ? elm$core$Maybe$Just('inset') : elm$core$Maybe$Nothing,
+					elm$core$Maybe$Just(
+					elm$core$String$fromFloat(shadow.offset.a) + 'px'),
+					elm$core$Maybe$Just(
+					elm$core$String$fromFloat(shadow.offset.b) + 'px'),
+					elm$core$Maybe$Just(
+					elm$core$String$fromFloat(shadow.blur) + 'px'),
+					elm$core$Maybe$Just(
+					elm$core$String$fromFloat(shadow.size) + 'px'),
+					elm$core$Maybe$Just(
+					mdgriffith$elm_ui$Internal$Model$formatColor(shadow.color))
+				])));
+};
+var mdgriffith$elm_ui$Element$Border$shadow = function (almostShade) {
+	var shade = {blur: almostShade.blur, color: almostShade.color, inset: false, offset: almostShade.offset, size: almostShade.size};
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$shadows,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Single,
+			mdgriffith$elm_ui$Internal$Model$boxShadowName(shade),
+			'box-shadow',
+			mdgriffith$elm_ui$Internal$Model$formatBoxShadow(shade)));
+};
+var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
+var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
+var author$project$View$buttonStyles = _List_fromArray(
+	[
+		mdgriffith$elm_ui$Element$padding((author$project$View$unit / 2) | 0),
+		mdgriffith$elm_ui$Element$Border$width(1),
+		mdgriffith$elm_ui$Element$Border$rounded(4),
+		mdgriffith$elm_ui$Element$Border$shadow(
+		{
+			blur: 1.0,
+			color: A3(mdgriffith$elm_ui$Element$rgb, 0.5, 0.5, 0.5),
+			offset: _Utils_Tuple2(1, 1),
+			size: 0.0
+		})
+	]);
 var mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 	return {$: 'Text', a: a};
 };
@@ -12179,7 +12355,6 @@ var author$project$View$label = function (text) {
 		_List_Nil,
 		mdgriffith$elm_ui$Element$text(text));
 };
-var author$project$View$unit = 16;
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
 };
@@ -12310,15 +12485,6 @@ var elm$virtual_dom$VirtualDom$keyedNode = function (tag) {
 	return _VirtualDom_keyedNode(
 		_VirtualDom_noScript(tag));
 };
-var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
-	return {$: 'Flag', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
-	return {$: 'Second', a: a};
-};
-var mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
-	return (i > 31) ? mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
-};
 var mdgriffith$elm_ui$Internal$Flag$alignBottom = mdgriffith$elm_ui$Internal$Flag$flag(41);
 var mdgriffith$elm_ui$Internal$Flag$alignRight = mdgriffith$elm_ui$Internal$Flag$flag(40);
 var mdgriffith$elm_ui$Internal$Flag$centerX = mdgriffith$elm_ui$Internal$Flag$flag(42);
@@ -12382,10 +12548,6 @@ var mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + (elm$core$String$fromInt(max) + mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
-};
-var mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
-	return elm$core$String$fromInt(
-		elm$core$Basics$round(x * 255));
 };
 var mdgriffith$elm_ui$Internal$Model$transformClass = function (transform) {
 	switch (transform.$) {
@@ -12550,39 +12712,6 @@ var mdgriffith$elm_ui$Internal$Model$Style = F2(
 	function (a, b) {
 		return {$: 'Style', a: a, b: b};
 	});
-var elm$core$String$fromFloat = _String_fromNumber;
-var mdgriffith$elm_ui$Internal$Model$formatColor = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return 'rgba(' + (elm$core$String$fromInt(
-		elm$core$Basics$round(red * 255)) + ((',' + elm$core$String$fromInt(
-		elm$core$Basics$round(green * 255))) + ((',' + elm$core$String$fromInt(
-		elm$core$Basics$round(blue * 255))) + (',' + (elm$core$String$fromFloat(alpha) + ')')))));
-};
-var mdgriffith$elm_ui$Internal$Model$formatBoxShadow = function (shadow) {
-	return A2(
-		elm$core$String$join,
-		' ',
-		A2(
-			elm$core$List$filterMap,
-			elm$core$Basics$identity,
-			_List_fromArray(
-				[
-					shadow.inset ? elm$core$Maybe$Just('inset') : elm$core$Maybe$Nothing,
-					elm$core$Maybe$Just(
-					elm$core$String$fromFloat(shadow.offset.a) + 'px'),
-					elm$core$Maybe$Just(
-					elm$core$String$fromFloat(shadow.offset.b) + 'px'),
-					elm$core$Maybe$Just(
-					elm$core$String$fromFloat(shadow.blur) + 'px'),
-					elm$core$Maybe$Just(
-					elm$core$String$fromFloat(shadow.size) + 'px'),
-					elm$core$Maybe$Just(
-					mdgriffith$elm_ui$Internal$Model$formatColor(shadow.color))
-				])));
-};
 var mdgriffith$elm_ui$Internal$Style$dot = function (c) {
 	return '.' + c;
 };
@@ -15893,10 +16022,6 @@ var mdgriffith$elm_ui$Internal$Model$Embedded = F2(
 var mdgriffith$elm_ui$Internal$Model$NodeName = function (a) {
 	return {$: 'NodeName', a: a};
 };
-var mdgriffith$elm_ui$Internal$Model$Single = F3(
-	function (a, b, c) {
-		return {$: 'Single', a: a, b: b, c: c};
-	});
 var mdgriffith$elm_ui$Internal$Model$Transform = function (a) {
 	return {$: 'Transform', a: a};
 };
@@ -16339,7 +16464,6 @@ var mdgriffith$elm_ui$Internal$Model$renderWidth = function (w) {
 				A2(elm$core$List$cons, style, newStyle));
 	}
 };
-var mdgriffith$elm_ui$Internal$Flag$borderWidth = mdgriffith$elm_ui$Internal$Flag$flag(27);
 var mdgriffith$elm_ui$Internal$Model$skippable = F2(
 	function (flag, style) {
 		if (_Utils_eq(flag, mdgriffith$elm_ui$Internal$Flag$borderWidth)) {
@@ -17307,10 +17431,6 @@ var mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
 	function (a, b, c) {
 		return {$: 'SpacingStyle', a: a, b: b, c: c};
 	});
-var mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
-	function (a, b) {
-		return {$: 'StyleClass', a: a, b: b};
-	});
 var mdgriffith$elm_ui$Internal$Model$spacingName = F2(
 	function (x, y) {
 		return 'spacing-' + (elm$core$String$fromInt(x) + ('-' + elm$core$String$fromInt(y)));
@@ -17486,14 +17606,6 @@ var mdgriffith$elm_ui$Internal$Model$Px = function (a) {
 	return {$: 'Px', a: a};
 };
 var mdgriffith$elm_ui$Element$px = mdgriffith$elm_ui$Internal$Model$Px;
-var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
-	function (a, b, c, d) {
-		return {$: 'Rgba', a: a, b: b, c: c, d: d};
-	});
-var mdgriffith$elm_ui$Element$rgb = F3(
-	function (r, g, b) {
-		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
-	});
 var mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var mdgriffith$elm_ui$Internal$Model$asRow = mdgriffith$elm_ui$Internal$Model$AsRow;
 var mdgriffith$elm_ui$Element$row = F2(
@@ -17519,13 +17631,6 @@ var mdgriffith$elm_ui$Internal$Model$Colored = F3(
 	function (a, b, c) {
 		return {$: 'Colored', a: a, b: b, c: c};
 	});
-var mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_n0) {
-	var red = _n0.a;
-	var green = _n0.b;
-	var blue = _n0.c;
-	var alpha = _n0.d;
-	return mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + (mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
 var mdgriffith$elm_ui$Element$Background$color = function (clr) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -17546,33 +17651,6 @@ var mdgriffith$elm_ui$Element$Border$color = function (clr) {
 			'bc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
 			'border-color',
 			clr));
-};
-var mdgriffith$elm_ui$Internal$Flag$borderRound = mdgriffith$elm_ui$Internal$Flag$flag(17);
-var mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + elm$core$String$fromInt(radius),
-			'border-radius',
-			elm$core$String$fromInt(radius) + 'px'));
-};
-var mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
 };
 var mdgriffith$elm_ui$Element$Input$white = A3(mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
 var mdgriffith$elm_ui$Element$Input$defaultRadioOption = F2(
@@ -18110,11 +18188,6 @@ var mdgriffith$elm_ui$Internal$Model$Nearby = F2(
 var mdgriffith$elm_ui$Element$inFront = function (element) {
 	return A2(mdgriffith$elm_ui$Internal$Model$Nearby, mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
-var mdgriffith$elm_ui$Internal$Flag$padding = mdgriffith$elm_ui$Internal$Flag$flag(2);
-var mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
 var mdgriffith$elm_ui$Internal$Model$paddingName = F4(
 	function (top, right, bottom, left) {
 		return 'pad-' + (elm$core$String$fromInt(top) + ('-' + (elm$core$String$fromInt(right) + ('-' + (elm$core$String$fromInt(bottom) + ('-' + elm$core$String$fromInt(left)))))));
@@ -18696,7 +18769,7 @@ var author$project$View$addSelectionForm = function (model) {
 				}),
 				A2(
 				mdgriffith$elm_ui$Element$Input$button,
-				_List_Nil,
+				author$project$View$buttonStyles,
 				{
 					label: mdgriffith$elm_ui$Element$text('Add Stop'),
 					onPress: elm$core$Maybe$Just(
@@ -18709,19 +18782,40 @@ var author$project$View$addSelectionForm = function (model) {
 				})
 			]));
 };
-var author$project$View$fontSmall = 14;
-var mdgriffith$elm_ui$Element$padding = function (x) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + elm$core$String$fromInt(x),
-			x,
-			x,
-			x,
-			x));
+var author$project$Model$RefreshStream = {$: 'RefreshStream'};
+var elm$time$Time$posixToMillis = function (_n0) {
+	var millis = _n0.a;
+	return millis;
 };
+var author$project$View$refreshButton = F2(
+	function (currentTime, lastUpdated) {
+		var timeDifferenceMinutes = ((((elm$time$Time$posixToMillis(currentTime) - elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) / 60) | 0;
+		return A2(
+			mdgriffith$elm_ui$Element$row,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$spacing(author$project$View$unit)
+				]),
+			_List_fromArray(
+				[
+					A2(
+					mdgriffith$elm_ui$Element$Input$button,
+					author$project$View$buttonStyles,
+					{
+						label: mdgriffith$elm_ui$Element$text('Refresh'),
+						onPress: elm$core$Maybe$Just(author$project$Model$RefreshStream)
+					}),
+					mdgriffith$elm_ui$Element$text(
+					elm$core$String$concat(
+						_List_fromArray(
+							[
+								'Last updated ',
+								elm$core$String$fromInt(timeDifferenceMinutes),
+								' minutes ago'
+							])))
+				]));
+	});
+var author$project$View$fontSmall = 14;
 var mdgriffith$elm_ui$Element$Border$widthXY = F2(
 	function (x, y) {
 		return A2(
@@ -18912,10 +19006,6 @@ var elm$core$String$padLeft = F3(
 				elm$core$String$fromChar(_char)),
 			string);
 	});
-var elm$time$Time$posixToMillis = function (_n0) {
-	var millis = _n0.a;
-	return millis;
-};
 var author$project$View$predictionTimeString = F2(
 	function (currentTime, prediction) {
 		var differenceMillis = elm$time$Time$posixToMillis(prediction.time) - elm$time$Time$posixToMillis(currentTime);
@@ -19442,12 +19532,14 @@ var author$project$View$ui = function (model) {
 							elm$core$Debug$toString(error))
 						]);
 				default:
-					var apiData = _n0.a;
+					var lastUpdated = _n0.a.lastUpdated;
+					var apiData = _n0.a.apiData;
 					return _List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$text('Stops'),
 							A4(author$project$View$viewSelections, model.currentTime, model.selections, model.stopNames, apiData),
-							author$project$View$addSelectionForm(model)
+							author$project$View$addSelectionForm(model),
+							A2(author$project$View$refreshButton, model.currentTime, lastUpdated)
 						]);
 			}
 		}());
@@ -19738,4 +19830,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
