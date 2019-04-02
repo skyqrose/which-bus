@@ -18772,13 +18772,13 @@ var author$project$View$addSelectionForm = function (model) {
 				author$project$View$buttonStyles,
 				{
 					label: mdgriffith$elm_ui$Element$text('Add Stop'),
-					onPress: elm$core$Maybe$Just(
+					onPress: ((model.routeIdFormText !== '') && (model.stopIdFormText !== '')) ? elm$core$Maybe$Just(
 						author$project$Model$AddSelection(
 							{
 								directionId: model.directionIdFormValue,
 								routeId: author$project$Api$Types$RouteId(model.routeIdFormText),
 								stopId: author$project$Api$Types$StopId(model.stopIdFormText)
-							}))
+							})) : elm$core$Maybe$Nothing
 				})
 			]));
 };
