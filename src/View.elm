@@ -34,6 +34,8 @@ ui model =
     El.column
         [ El.padding unit
         , El.spacing unit
+        , El.centerX
+        , El.width (El.maximum 320 El.fill)
         ]
         (case model.apiResult of
             Api.Stream.Loading ->
@@ -47,8 +49,7 @@ ui model =
                 ]
 
             Api.Stream.Success { lastUpdated, apiData } ->
-                [ El.text "Stops"
-                , viewSelections
+                [ viewSelections
                     model.currentTime
                     model.selections
                     model.stopNames
@@ -267,6 +268,7 @@ refreshButton currentTime lastUpdated =
     in
     El.row
         [ El.spacing unit
+        , El.width El.fill
         ]
         [ Input.button
             buttonStyles
@@ -275,7 +277,7 @@ refreshButton currentTime lastUpdated =
             }
         , El.text
             (String.concat
-                [ "Last updated "
+                [ "Last updated\n"
                 , String.fromInt timeDifferenceMinutes
                 , " minutes ago"
                 ]
