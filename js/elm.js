@@ -5853,7 +5853,7 @@ var author$project$Api$Stream$startStream = function (selections) {
 			[
 				_Utils_Tuple2('filter[route]', routeIds),
 				_Utils_Tuple2('filter[stop]', stopIds),
-				_Utils_Tuple2('include', 'stop,trip')
+				_Utils_Tuple2('include', 'stop,trip,vehicle')
 			]));
 	return author$project$Api$Stream$startStreamPort(url);
 };
@@ -7220,9 +7220,13 @@ var author$project$Api$Types$TripId = function (a) {
 	return {$: 'TripId', a: a};
 };
 var author$project$Api$Decoders$tripIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$TripId, elm$json$Json$Decode$string);
-var author$project$Api$Types$Prediction = F6(
-	function (id, time, routeId, stopId, directionId, tripId) {
-		return {directionId: directionId, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId};
+var author$project$Api$Types$VehicleId = function (a) {
+	return {$: 'VehicleId', a: a};
+};
+var author$project$Api$Decoders$vehicleIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$VehicleId, elm$json$Json$Decode$string);
+var author$project$Api$Types$Prediction = F7(
+	function (id, time, routeId, stopId, directionId, tripId, vehicleId) {
+		return {directionId: directionId, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId, vehicleId: vehicleId};
 	});
 var elm$parser$Parser$deadEndsToString = function (deadEnds) {
 	return 'TODO deadEndsToString';
@@ -7857,47 +7861,53 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$decoder = A2(
 		}
 	},
 	elm$json$Json$Decode$string);
-var author$project$Api$Decoders$predictionDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+var author$project$Api$Decoders$predictionDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
 	_List_fromArray(
-		['relationships', 'trip', 'data', 'id']),
-	author$project$Api$Decoders$tripIdDecoder,
+		['relationships', 'vehicle', 'data', 'id']),
+	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$vehicleIdDecoder),
+	elm$core$Maybe$Nothing,
 	A3(
 		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 		_List_fromArray(
-			['attributes', 'direction_id']),
-		author$project$Api$Decoders$directionIdDecoder,
+			['relationships', 'trip', 'data', 'id']),
+		author$project$Api$Decoders$tripIdDecoder,
 		A3(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 			_List_fromArray(
-				['relationships', 'stop', 'data', 'id']),
-			author$project$Api$Decoders$stopIdDecoder,
+				['attributes', 'direction_id']),
+			author$project$Api$Decoders$directionIdDecoder,
 			A3(
 				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
 				_List_fromArray(
-					['relationships', 'route', 'data', 'id']),
-				author$project$Api$Decoders$routeIdDecoder,
-				A2(
-					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-					elm$json$Json$Decode$oneOf(
-						_List_fromArray(
-							[
-								A2(
-								elm$json$Json$Decode$at,
-								_List_fromArray(
-									['attributes', 'arrival_time']),
-								rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
-								A2(
-								elm$json$Json$Decode$at,
-								_List_fromArray(
-									['attributes', 'departure_time']),
-								rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)
-							])),
-					A3(
-						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-						'id',
-						author$project$Api$Decoders$predictionIdDecoder,
-						A2(author$project$Api$Decoders$checkType, 'prediction', author$project$Api$Types$Prediction)))))));
+					['relationships', 'stop', 'data', 'id']),
+				author$project$Api$Decoders$stopIdDecoder,
+				A3(
+					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+					_List_fromArray(
+						['relationships', 'route', 'data', 'id']),
+					author$project$Api$Decoders$routeIdDecoder,
+					A2(
+						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+						elm$json$Json$Decode$oneOf(
+							_List_fromArray(
+								[
+									A2(
+									elm$json$Json$Decode$at,
+									_List_fromArray(
+										['attributes', 'arrival_time']),
+									rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
+									A2(
+									elm$json$Json$Decode$at,
+									_List_fromArray(
+										['attributes', 'departure_time']),
+									rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)
+								])),
+						A3(
+							NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+							'id',
+							author$project$Api$Decoders$predictionIdDecoder,
+							A2(author$project$Api$Decoders$checkType, 'prediction', author$project$Api$Types$Prediction))))))));
 var author$project$Api$Types$Trip = F2(
 	function (id, headsign) {
 		return {headsign: headsign, id: id};
@@ -7912,6 +7922,20 @@ var author$project$Api$Decoders$tripDecoder = A3(
 		'id',
 		author$project$Api$Decoders$tripIdDecoder,
 		A2(author$project$Api$Decoders$checkType, 'trip', author$project$Api$Types$Trip)));
+var author$project$Api$Types$Vehicle = F2(
+	function (id, label) {
+		return {id: id, label: label};
+	});
+var author$project$Api$Decoders$vehicleDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+	_List_fromArray(
+		['attributes', 'label']),
+	elm$json$Json$Decode$string,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'id',
+		author$project$Api$Decoders$vehicleIdDecoder,
+		A2(author$project$Api$Decoders$checkType, 'vehicle', author$project$Api$Types$Vehicle)));
 var author$project$Api$Types$ResourcePrediction = function (a) {
 	return {$: 'ResourcePrediction', a: a};
 };
@@ -7921,16 +7945,21 @@ var author$project$Api$Types$ResourceStop = function (a) {
 var author$project$Api$Types$ResourceTrip = function (a) {
 	return {$: 'ResourceTrip', a: a};
 };
+var author$project$Api$Types$ResourceVehicle = function (a) {
+	return {$: 'ResourceVehicle', a: a};
+};
 var author$project$Api$Decoders$resourceDecoder = A2(
 	elm$json$Json$Decode$andThen,
 	function (typeString) {
 		switch (typeString) {
 			case 'prediction':
 				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourcePrediction, author$project$Api$Decoders$predictionDecoder);
-			case 'trip':
-				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceTrip, author$project$Api$Decoders$tripDecoder);
 			case 'stop':
 				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceStop, author$project$Api$Decoders$stopDecoder);
+			case 'trip':
+				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceTrip, author$project$Api$Decoders$tripDecoder);
+			case 'vehicle':
+				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceVehicle, author$project$Api$Decoders$vehicleDecoder);
 			default:
 				var otherType = typeString;
 				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
@@ -7950,6 +7979,9 @@ var author$project$Api$Types$ResourceStopId = function (a) {
 var author$project$Api$Types$ResourceTripId = function (a) {
 	return {$: 'ResourceTripId', a: a};
 };
+var author$project$Api$Types$ResourceVehicleId = function (a) {
+	return {$: 'ResourceVehicleId', a: a};
+};
 var elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
@@ -7964,14 +7996,18 @@ var author$project$Api$Decoders$resourceIdDecoder = A2(
 				return elm$json$Json$Decode$succeed(
 					author$project$Api$Types$ResourcePredictionId(
 						author$project$Api$Types$PredictionId(id)));
-			case 'trip':
-				return elm$json$Json$Decode$succeed(
-					author$project$Api$Types$ResourceTripId(
-						author$project$Api$Types$TripId(id)));
 			case 'stop':
 				return elm$json$Json$Decode$succeed(
 					author$project$Api$Types$ResourceStopId(
 						author$project$Api$Types$StopId(id)));
+			case 'trip':
+				return elm$json$Json$Decode$succeed(
+					author$project$Api$Types$ResourceTripId(
+						author$project$Api$Types$TripId(id)));
+			case 'vehicle':
+				return elm$json$Json$Decode$succeed(
+					author$project$Api$Types$ResourceVehicleId(
+						author$project$Api$Types$VehicleId(id)));
 			default:
 				var otherType = typeString;
 				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
@@ -8311,7 +8347,7 @@ var author$project$Api$Stream$Failure = function (a) {
 var author$project$Api$Stream$Success = function (a) {
 	return {$: 'Success', a: a};
 };
-var author$project$Api$Stream$emptyData = {predictions: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty};
+var author$project$Api$Stream$emptyData = {predictions: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty, vehicles: pzp1997$assoc_list$AssocList$empty};
 var elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -8355,6 +8391,13 @@ var author$project$Api$Stream$insertResource = F2(
 					{
 						predictions: A3(pzp1997$assoc_list$AssocList$insert, prediction.id, prediction, apiData.predictions)
 					});
+			case 'ResourceStop':
+				var stop = resource.a;
+				return _Utils_update(
+					apiData,
+					{
+						stops: A3(pzp1997$assoc_list$AssocList$insert, stop.id, stop, apiData.stops)
+					});
 			case 'ResourceTrip':
 				var trip = resource.a;
 				return _Utils_update(
@@ -8363,11 +8406,11 @@ var author$project$Api$Stream$insertResource = F2(
 						trips: A3(pzp1997$assoc_list$AssocList$insert, trip.id, trip, apiData.trips)
 					});
 			default:
-				var stop = resource.a;
+				var vehicle = resource.a;
 				return _Utils_update(
 					apiData,
 					{
-						stops: A3(pzp1997$assoc_list$AssocList$insert, stop.id, stop, apiData.stops)
+						vehicles: A3(pzp1997$assoc_list$AssocList$insert, vehicle.id, vehicle, apiData.vehicles)
 					});
 		}
 	});
@@ -8404,6 +8447,44 @@ var pzp1997$assoc_list$AssocList$member = F2(
 			return false;
 		}
 	});
+var author$project$Api$Stream$removeResource = F2(
+	function (resourceId, apiData) {
+		switch (resourceId.$) {
+			case 'ResourcePredictionId':
+				var predictionId = resourceId.a;
+				return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? elm$core$Maybe$Just(
+					_Utils_update(
+						apiData,
+						{
+							predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
+						})) : elm$core$Maybe$Nothing;
+			case 'ResourceStopId':
+				var stopId = resourceId.a;
+				return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? elm$core$Maybe$Just(
+					_Utils_update(
+						apiData,
+						{
+							stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
+						})) : elm$core$Maybe$Nothing;
+			case 'ResourceTripId':
+				var tripId = resourceId.a;
+				return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? elm$core$Maybe$Just(
+					_Utils_update(
+						apiData,
+						{
+							trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
+						})) : elm$core$Maybe$Nothing;
+			default:
+				var vehicleId = resourceId.a;
+				return A2(pzp1997$assoc_list$AssocList$member, vehicleId, apiData.vehicles) ? elm$core$Maybe$Just(
+					_Utils_update(
+						apiData,
+						{
+							vehicles: A2(pzp1997$assoc_list$AssocList$remove, vehicleId, apiData.vehicles)
+						})) : elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Debug$toString = _Debug_toString;
 var author$project$Api$Stream$update = F3(
 	function (currentTime, eventDecodeResult, apiResult) {
 		var _n0 = _Utils_Tuple2(eventDecodeResult, apiResult);
@@ -8451,43 +8532,15 @@ var author$project$Api$Stream$update = F3(
 								default:
 									var resourceId = _n0.a.a.a;
 									var apiData = _n0.b.a.apiData;
-									switch (resourceId.$) {
-										case 'ResourcePredictionId':
-											var predictionId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? author$project$Api$Stream$Success(
-												{
-													apiData: _Utils_update(
-														apiData,
-														{
-															predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
-														}),
-													lastUpdated: currentTime
-												}) : author$project$Api$Stream$Failure(
-												author$project$Api$Stream$BadOrder('Remove unknown prediction id'));
-										case 'ResourceTripId':
-											var tripId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? author$project$Api$Stream$Success(
-												{
-													apiData: _Utils_update(
-														apiData,
-														{
-															trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
-														}),
-													lastUpdated: currentTime
-												}) : author$project$Api$Stream$Failure(
-												author$project$Api$Stream$BadOrder('Remove unknown trip id'));
-										default:
-											var stopId = resourceId.a;
-											return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? author$project$Api$Stream$Success(
-												{
-													apiData: _Utils_update(
-														apiData,
-														{
-															stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
-														}),
-													lastUpdated: currentTime
-												}) : author$project$Api$Stream$Failure(
-												author$project$Api$Stream$BadOrder('Remove unknown stop id'));
+									var _n3 = A2(author$project$Api$Stream$removeResource, resourceId, apiData);
+									if (_n3.$ === 'Nothing') {
+										return author$project$Api$Stream$Failure(
+											author$project$Api$Stream$BadOrder(
+												'Remove nonexistent resource id ' + elm$core$Debug$toString(resourceId)));
+									} else {
+										var updatedApiData = _n3.a;
+										return author$project$Api$Stream$Success(
+											{apiData: updatedApiData, lastUpdated: currentTime});
 									}
 							}
 					}
@@ -18974,7 +19027,25 @@ var author$project$Api$Stream$predictionsForSelection = F2(
 						function ($) {
 							return $.headsign;
 						},
-						A2(pzp1997$assoc_list$AssocList$get, prediction.tripId, apiData.trips))
+						A2(pzp1997$assoc_list$AssocList$get, prediction.tripId, apiData.trips)),
+					vehicleLabel: A2(
+						elm$core$Maybe$map,
+						function (_n0) {
+							var vehicleId = _n0.a;
+							return A2(
+								elm$core$Maybe$withDefault,
+								vehicleId,
+								A2(
+									elm$core$Maybe$map,
+									function ($) {
+										return $.label;
+									},
+									A2(
+										pzp1997$assoc_list$AssocList$get,
+										author$project$Api$Types$VehicleId(vehicleId),
+										apiData.vehicles)));
+						},
+						prediction.vehicleId)
 				};
 			},
 			A2(
@@ -19487,11 +19558,30 @@ var author$project$View$viewPredictions = F3(
 						{
 						header: mdgriffith$elm_ui$Element$none,
 						view: function (prediction) {
-							var _n1 = prediction.tripHeadsign;
+							var _n1 = prediction.vehicleLabel;
 							if (_n1.$ === 'Nothing') {
 								return mdgriffith$elm_ui$Element$none;
 							} else {
-								var headsign = _n1.a;
+								var vehicleLabel = _n1.a;
+								return A2(
+									mdgriffith$elm_ui$Element$el,
+									_List_fromArray(
+										[
+											mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
+										]),
+									mdgriffith$elm_ui$Element$text(vehicleLabel));
+							}
+						},
+						width: mdgriffith$elm_ui$Element$shrink
+					},
+						{
+						header: mdgriffith$elm_ui$Element$none,
+						view: function (prediction) {
+							var _n2 = prediction.tripHeadsign;
+							if (_n2.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var headsign = _n2.a;
 								return mdgriffith$elm_ui$Element$text(headsign);
 							}
 						},
@@ -19531,7 +19621,6 @@ var author$project$View$viewSelections = F4(
 				A3(author$project$View$viewSelection, currentTime, stopNames, apiData),
 				selections));
 	});
-var elm$core$Debug$toString = _Debug_toString;
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var mdgriffith$elm_ui$Internal$Model$Max = F2(
@@ -19868,4 +19957,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId, platformCode : Maybe.Maybe String.String }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceTrip":["Api.Types.Trip"],"ResourceStop":["Api.Types.Stop"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceTripId":["Api.Types.TripId"],"ResourceStopId":["Api.Types.StopId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId, platformCode : Maybe.Maybe String.String }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId, vehicleId : Maybe.Maybe Api.Types.VehicleId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"},"Api.Types.Vehicle":{"args":[],"type":"{ id : Api.Types.VehicleId, label : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceStop":["Api.Types.Stop"],"ResourceTrip":["Api.Types.Trip"],"ResourceVehicle":["Api.Types.Vehicle"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceStopId":["Api.Types.StopId"],"ResourceTripId":["Api.Types.TripId"],"ResourceVehicleId":["Api.Types.VehicleId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Api.Types.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}}}}})}});}(this));
