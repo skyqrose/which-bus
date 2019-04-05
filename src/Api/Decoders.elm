@@ -9,6 +9,8 @@ module Api.Decoders exposing
     , stopIdDecoder
     , tripDecoder
     , tripIdDecoder
+    , vehicleDecoder
+    , vehicleIdDecoder
     )
 
 import Api.Types exposing (..)
@@ -35,6 +37,9 @@ resourceIdDecoder =
                     "trip" ->
                         Decode.succeed (ResourceTripId (TripId id))
 
+                    "vehicle" ->
+                        Decode.succeed (ResourceVehicleId (VehicleId id))
+
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
             )
@@ -54,6 +59,9 @@ resourceDecoder =
 
                     "trip" ->
                         Decode.map ResourceTrip tripDecoder
+
+                    "vehicle" ->
+                        Decode.map ResourceVehicle vehicleDecoder
 
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
@@ -97,6 +105,11 @@ tripIdDecoder =
     Decode.map TripId Decode.string
 
 
+vehicleIdDecoder : Decode.Decoder VehicleId
+vehicleIdDecoder =
+    Decode.map VehicleId Decode.string
+
+
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     checkType "prediction" Prediction
@@ -111,6 +124,7 @@ predictionDecoder =
         |> Pipeline.requiredAt [ "relationships", "stop", "data", "id" ] stopIdDecoder
         |> Pipeline.requiredAt [ "attributes", "direction_id" ] directionIdDecoder
         |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] tripIdDecoder
+        |> Pipeline.optionalAt [ "relationships", "vehicle", "data", "id" ] (Decode.map Just vehicleIdDecoder) Nothing
 
 
 stopDecoder : Decode.Decoder Stop
@@ -127,6 +141,13 @@ tripDecoder =
     checkType "trip" Trip
         |> Pipeline.required "id" tripIdDecoder
         |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
+
+
+vehicleDecoder : Decode.Decoder Vehicle
+vehicleDecoder =
+    checkType "vehicle" Vehicle
+        |> Pipeline.required "id" vehicleIdDecoder
+        |> Pipeline.requiredAt [ "attributes", "label" ] Decode.string
 
 
 {-| Fails decoding if the json api type is not as expected.

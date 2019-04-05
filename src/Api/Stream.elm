@@ -43,6 +43,7 @@ type alias ApiData =
     { predictions : Dict.Dict PredictionId Prediction
     , stops : Dict.Dict StopId Stop
     , trips : Dict.Dict TripId Trip
+    , vehicles : Dict.Dict VehicleId Vehicle
     }
 
 
@@ -68,6 +69,7 @@ emptyData =
     { predictions = Dict.empty
     , stops = Dict.empty
     , trips = Dict.empty
+    , vehicles = Dict.empty
     }
 
 
@@ -91,7 +93,7 @@ startStream selections =
                 "predictions"
                 [ ( "filter[route]", routeIds )
                 , ( "filter[stop]", stopIds )
-                , ( "include", "stop,trip" )
+                , ( "include", "stop,trip,vehicle" )
                 ]
     in
     startStreamPort url
@@ -165,6 +167,12 @@ insertResource resource apiData =
                     Dict.insert trip.id trip apiData.trips
             }
 
+        ResourceVehicle vehicle ->
+            { apiData
+                | vehicles =
+                    Dict.insert vehicle.id vehicle apiData.vehicles
+            }
+
 
 removeResource : ResourceId -> ApiData -> Maybe ApiData
 removeResource resourceId apiData =
@@ -197,6 +205,17 @@ removeResource resourceId apiData =
                     { apiData
                         | trips =
                             Dict.remove tripId apiData.trips
+                    }
+
+            else
+                Nothing
+
+        ResourceVehicleId vehicleId ->
+            if Dict.member vehicleId apiData.vehicles then
+                Just
+                    { apiData
+                        | vehicles =
+                            Dict.remove vehicleId apiData.vehicles
                     }
 
             else

@@ -9,6 +9,8 @@ module Api.Types exposing
     , StopId(..)
     , Trip
     , TripId(..)
+    , Vehicle
+    , VehicleId(..)
     )
 
 import Time
@@ -18,12 +20,14 @@ type ResourceId
     = ResourcePredictionId PredictionId
     | ResourceStopId StopId
     | ResourceTripId TripId
+    | ResourceVehicleId VehicleId
 
 
 type Resource
     = ResourcePrediction Prediction
     | ResourceStop Stop
     | ResourceTrip Trip
+    | ResourceVehicle Vehicle
 
 
 type DirectionId
@@ -47,6 +51,10 @@ type TripId
     = TripId String
 
 
+type VehicleId
+    = VehicleId String
+
+
 type alias Prediction =
     { id : PredictionId
     , time : Time.Posix
@@ -54,6 +62,7 @@ type alias Prediction =
     , stopId : StopId
     , directionId : DirectionId
     , tripId : TripId
+    , vehicleId : Maybe VehicleId
     }
 
 
@@ -68,4 +77,10 @@ type alias Stop =
 type alias Trip =
     { id : TripId
     , headsign : String
+    }
+
+
+type alias Vehicle =
+    { id : VehicleId
+    , label : String
     }
