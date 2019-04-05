@@ -41,8 +41,8 @@ type Error
 
 type alias ApiData =
     { predictions : Dict.Dict PredictionId Prediction
-    , trips : Dict.Dict TripId Trip
     , stops : Dict.Dict StopId Stop
+    , trips : Dict.Dict TripId Trip
     }
 
 
@@ -66,8 +66,8 @@ init selections =
 emptyData : ApiData
 emptyData =
     { predictions = Dict.empty
-    , trips = Dict.empty
     , stops = Dict.empty
+    , trips = Dict.empty
     }
 
 
@@ -130,48 +130,18 @@ update currentTime eventDecodeResult apiResult =
                 }
 
         ( Ok (Remove resourceId), Success { apiData } ) ->
-            case resourceId of
-                ResourcePredictionId predictionId ->
-                    if Dict.member predictionId apiData.predictions then
-                        Success
-                            { lastUpdated = currentTime
-                            , apiData =
-                                { apiData
-                                    | predictions =
-                                        Dict.remove predictionId apiData.predictions
-                                }
-                            }
+            case removeResource resourceId apiData of
+                Nothing ->
+                    Failure
+                        (BadOrder
+                            ("Remove nonexistent resource id " ++ Debug.toString resourceId)
+                        )
 
-                    else
-                        Failure (BadOrder "Remove unknown prediction id")
-
-                ResourceTripId tripId ->
-                    if Dict.member tripId apiData.trips then
-                        Success
-                            { lastUpdated = currentTime
-                            , apiData =
-                                { apiData
-                                    | trips =
-                                        Dict.remove tripId apiData.trips
-                                }
-                            }
-
-                    else
-                        Failure (BadOrder "Remove unknown trip id")
-
-                ResourceStopId stopId ->
-                    if Dict.member stopId apiData.stops then
-                        Success
-                            { lastUpdated = currentTime
-                            , apiData =
-                                { apiData
-                                    | stops =
-                                        Dict.remove stopId apiData.stops
-                                }
-                            }
-
-                    else
-                        Failure (BadOrder "Remove unknown stop id")
+                Just updatedApiData ->
+                    Success
+                        { lastUpdated = currentTime
+                        , apiData = updatedApiData
+                        }
 
 
 insertResource : Resource -> ApiData -> ApiData
@@ -183,17 +153,54 @@ insertResource resource apiData =
                     Dict.insert prediction.id prediction apiData.predictions
             }
 
+        ResourceStop stop ->
+            { apiData
+                | stops =
+                    Dict.insert stop.id stop apiData.stops
+            }
+
         ResourceTrip trip ->
             { apiData
                 | trips =
                     Dict.insert trip.id trip apiData.trips
             }
 
-        ResourceStop stop ->
-            { apiData
-                | stops =
-                    Dict.insert stop.id stop apiData.stops
-            }
+
+removeResource : ResourceId -> ApiData -> Maybe ApiData
+removeResource resourceId apiData =
+    case resourceId of
+        ResourcePredictionId predictionId ->
+            if Dict.member predictionId apiData.predictions then
+                Just
+                    { apiData
+                        | predictions =
+                            Dict.remove predictionId apiData.predictions
+                    }
+
+            else
+                Nothing
+
+        ResourceStopId stopId ->
+            if Dict.member stopId apiData.stops then
+                Just
+                    { apiData
+                        | stops =
+                            Dict.remove stopId apiData.stops
+                    }
+
+            else
+                Nothing
+
+        ResourceTripId tripId ->
+            if Dict.member tripId apiData.trips then
+                Just
+                    { apiData
+                        | trips =
+                            Dict.remove tripId apiData.trips
+                    }
+
+            else
+                Nothing
 
 
 predictionsForSelection : ApiData -> Selection -> List ShownPrediction

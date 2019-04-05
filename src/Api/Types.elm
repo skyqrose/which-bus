@@ -16,14 +16,19 @@ import Time
 
 type ResourceId
     = ResourcePredictionId PredictionId
-    | ResourceTripId TripId
     | ResourceStopId StopId
+    | ResourceTripId TripId
 
 
 type Resource
     = ResourcePrediction Prediction
-    | ResourceTrip Trip
     | ResourceStop Stop
+    | ResourceTrip Trip
+
+
+type DirectionId
+    = D0
+    | D1
 
 
 type PredictionId
@@ -38,9 +43,8 @@ type StopId
     = StopId String
 
 
-type DirectionId
-    = D0
-    | D1
+type TripId
+    = TripId String
 
 
 type alias Prediction =
@@ -53,19 +57,15 @@ type alias Prediction =
     }
 
 
-type TripId
-    = TripId String
-
-
-type alias Trip =
-    { id : TripId
-    , headsign : String
-    }
-
-
 type alias Stop =
     { id : StopId
     , name : String
     , parentStation : Maybe StopId
     , platformCode : Maybe String
+    }
+
+
+type alias Trip =
+    { id : TripId
+    , headsign : String
     }

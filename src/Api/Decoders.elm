@@ -29,11 +29,11 @@ resourceIdDecoder =
                     "prediction" ->
                         Decode.succeed (ResourcePredictionId (PredictionId id))
 
-                    "trip" ->
-                        Decode.succeed (ResourceTripId (TripId id))
-
                     "stop" ->
                         Decode.succeed (ResourceStopId (StopId id))
+
+                    "trip" ->
+                        Decode.succeed (ResourceTripId (TripId id))
 
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
@@ -49,35 +49,15 @@ resourceDecoder =
                     "prediction" ->
                         Decode.map ResourcePrediction predictionDecoder
 
-                    "trip" ->
-                        Decode.map ResourceTrip tripDecoder
-
                     "stop" ->
                         Decode.map ResourceStop stopDecoder
+
+                    "trip" ->
+                        Decode.map ResourceTrip tripDecoder
 
                     otherType ->
                         Decode.fail ("unrecognized type " ++ otherType)
             )
-
-
-predictionIdDecoder : Decode.Decoder PredictionId
-predictionIdDecoder =
-    Decode.map PredictionId Decode.string
-
-
-tripIdDecoder : Decode.Decoder TripId
-tripIdDecoder =
-    Decode.map TripId Decode.string
-
-
-stopIdDecoder : Decode.Decoder StopId
-stopIdDecoder =
-    Decode.map StopId Decode.string
-
-
-routeIdDecoder : Decode.Decoder RouteId
-routeIdDecoder =
-    Decode.map RouteId Decode.string
 
 
 directionIdDecoder : Decode.Decoder DirectionId
@@ -97,6 +77,26 @@ directionIdDecoder =
             )
 
 
+predictionIdDecoder : Decode.Decoder PredictionId
+predictionIdDecoder =
+    Decode.map PredictionId Decode.string
+
+
+routeIdDecoder : Decode.Decoder RouteId
+routeIdDecoder =
+    Decode.map RouteId Decode.string
+
+
+stopIdDecoder : Decode.Decoder StopId
+stopIdDecoder =
+    Decode.map StopId Decode.string
+
+
+tripIdDecoder : Decode.Decoder TripId
+tripIdDecoder =
+    Decode.map TripId Decode.string
+
+
 predictionDecoder : Decode.Decoder Prediction
 predictionDecoder =
     checkType "prediction" Prediction
@@ -113,13 +113,6 @@ predictionDecoder =
         |> Pipeline.requiredAt [ "relationships", "trip", "data", "id" ] tripIdDecoder
 
 
-tripDecoder : Decode.Decoder Trip
-tripDecoder =
-    checkType "trip" Trip
-        |> Pipeline.required "id" tripIdDecoder
-        |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
-
-
 stopDecoder : Decode.Decoder Stop
 stopDecoder =
     checkType "stop" Stop
@@ -127,6 +120,13 @@ stopDecoder =
         |> Pipeline.requiredAt [ "attributes", "name" ] Decode.string
         |> Pipeline.optionalAt [ "relationships", "parent_station", "data", "id" ] (Decode.map Just stopIdDecoder) Nothing
         |> Pipeline.optionalAt [ "attributes", "platform_code" ] (Decode.map Just Decode.string) Nothing
+
+
+tripDecoder : Decode.Decoder Trip
+tripDecoder =
+    checkType "trip" Trip
+        |> Pipeline.required "id" tripIdDecoder
+        |> Pipeline.requiredAt [ "attributes", "headsign" ] Decode.string
 
 
 {-| Fails decoding if the json api type is not as expected.
