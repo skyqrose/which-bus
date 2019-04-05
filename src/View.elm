@@ -173,6 +173,19 @@ viewPredictions currentTime apiData selection =
                                     El.text platformCode
                   }
                 , { header = El.none
+                  , width = El.shrink
+                  , view =
+                        \prediction ->
+                            case prediction.vehicleLabel of
+                                Nothing ->
+                                    El.none
+
+                                Just vehicleLabel ->
+                                    El.el
+                                        [ Font.size fontSmall ]
+                                        (El.text vehicleLabel)
+                  }
+                , { header = El.none
                   , width = El.fill
                   , view =
                         \prediction ->

@@ -240,6 +240,14 @@ predictionsForSelection apiData selection =
                     apiData.stops
                         |> Dict.get prediction.stopId
                         |> Maybe.andThen .platformCode
+                , vehicleLabel =
+                    prediction.vehicleId
+                        |> Maybe.map
+                            (\(VehicleId vehicleId) ->
+                                Dict.get (VehicleId vehicleId) apiData.vehicles
+                                    |> Maybe.map .label
+                                    |> Maybe.withDefault vehicleId
+                            )
                 }
             )
 

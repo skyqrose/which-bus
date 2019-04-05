@@ -18,4 +18,5 @@ type alias ShownPrediction =
     { time : Time.Posix
     , tripHeadsign : Maybe String
     , platformCode : Maybe String
+    , vehicleLabel : Maybe String
     }
