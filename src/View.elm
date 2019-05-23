@@ -133,7 +133,7 @@ viewPredictions currentTime apiData selection =
         predictions =
             Api.Stream.predictionsForSelection apiData selection
                 |> List.sortBy (.time >> Time.posixToMillis)
-                |> List.take 3
+                |> List.take 5
     in
     if List.isEmpty predictions then
         El.el
