@@ -19498,7 +19498,7 @@ var author$project$View$viewPredictions = F3(
 	function (currentTime, apiData, selection) {
 		var predictions = A2(
 			elm$core$List$take,
-			3,
+			5,
 			A2(
 				elm$core$List$sortBy,
 				A2(
