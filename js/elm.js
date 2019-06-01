@@ -7290,9 +7290,6 @@ var elm$parser$Parser$run = F2(
 				A2(elm$core$List$map, elm$parser$Parser$problemToDeadEnd, problems));
 		}
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
-};
 var elm$parser$Parser$Advanced$Bad = F2(
 	function (a, b) {
 		return {$: 'Bad', a: a, b: b};
@@ -7412,29 +7409,6 @@ var elm$parser$Parser$Advanced$keeper = F2(
 		return A3(elm$parser$Parser$Advanced$map2, elm$core$Basics$apL, parseFunc, parseArg);
 	});
 var elm$parser$Parser$keeper = elm$parser$Parser$Advanced$keeper;
-var elm$parser$Parser$Advanced$map = F2(
-	function (func, _n0) {
-		var parse = _n0.a;
-		return elm$parser$Parser$Advanced$Parser(
-			function (s0) {
-				var _n1 = parse(s0);
-				if (_n1.$ === 'Good') {
-					var p = _n1.a;
-					var a = _n1.b;
-					var s1 = _n1.c;
-					return A3(
-						elm$parser$Parser$Advanced$Good,
-						p,
-						func(a),
-						s1);
-				} else {
-					var p = _n1.a;
-					var x = _n1.b;
-					return A2(elm$parser$Parser$Advanced$Bad, p, x);
-				}
-			});
-	});
-var elm$parser$Parser$map = elm$parser$Parser$Advanced$map;
 var elm$parser$Parser$Advanced$Append = F2(
 	function (a, b) {
 		return {$: 'Append', a: a, b: b};
@@ -7492,6 +7466,9 @@ var elm$parser$Parser$Advanced$Token = F2(
 	function (a, b) {
 		return {$: 'Token', a: a, b: b};
 	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var elm$core$Basics$not = _Basics_not;
 var elm$core$String$isEmpty = function (string) {
 	return string === '';
@@ -7645,29 +7622,154 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$fromParts = F6(
 	function (monthYearDayMs, hour, minute, second, ms, utcOffsetMinutes) {
 		return elm$time$Time$millisToPosix((((monthYearDayMs + (((hour * 60) * 60) * 1000)) + (((minute - utcOffsetMinutes) * 60) * 1000)) + (second * 1000)) + ms);
 	});
+var elm$core$String$append = _String_append;
 var elm$core$String$toInt = _String_toInt;
-var rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt = function (quantity) {
-	return A2(
-		elm$parser$Parser$andThen,
-		function (str) {
-			if (_Utils_eq(
-				elm$core$String$length(str),
-				quantity)) {
-				var _n0 = elm$core$String$toInt(str);
-				if (_n0.$ === 'Just') {
-					var intVal = _n0.a;
-					return elm$parser$Parser$succeed(intVal);
+var elm$parser$Parser$Done = function (a) {
+	return {$: 'Done', a: a};
+};
+var elm$parser$Parser$Loop = function (a) {
+	return {$: 'Loop', a: a};
+};
+var elm$parser$Parser$UnexpectedChar = {$: 'UnexpectedChar'};
+var elm$parser$Parser$Advanced$chompIf = F2(
+	function (isGood, expecting) {
+		return elm$parser$Parser$Advanced$Parser(
+			function (s) {
+				var newOffset = A3(elm$parser$Parser$Advanced$isSubChar, isGood, s.offset, s.src);
+				return _Utils_eq(newOffset, -1) ? A2(
+					elm$parser$Parser$Advanced$Bad,
+					false,
+					A2(elm$parser$Parser$Advanced$fromState, s, expecting)) : (_Utils_eq(newOffset, -2) ? A3(
+					elm$parser$Parser$Advanced$Good,
+					true,
+					_Utils_Tuple0,
+					{col: 1, context: s.context, indent: s.indent, offset: s.offset + 1, row: s.row + 1, src: s.src}) : A3(
+					elm$parser$Parser$Advanced$Good,
+					true,
+					_Utils_Tuple0,
+					{col: s.col + 1, context: s.context, indent: s.indent, offset: newOffset, row: s.row, src: s.src}));
+			});
+	});
+var elm$parser$Parser$chompIf = function (isGood) {
+	return A2(elm$parser$Parser$Advanced$chompIf, isGood, elm$parser$Parser$UnexpectedChar);
+};
+var elm$parser$Parser$Advanced$map = F2(
+	function (func, _n0) {
+		var parse = _n0.a;
+		return elm$parser$Parser$Advanced$Parser(
+			function (s0) {
+				var _n1 = parse(s0);
+				if (_n1.$ === 'Good') {
+					var p = _n1.a;
+					var a = _n1.b;
+					var s1 = _n1.c;
+					return A3(
+						elm$parser$Parser$Advanced$Good,
+						p,
+						func(a),
+						s1);
 				} else {
-					return elm$parser$Parser$problem('Invalid integer: \"' + (str + '\"'));
+					var p = _n1.a;
+					var x = _n1.b;
+					return A2(elm$parser$Parser$Advanced$Bad, p, x);
+				}
+			});
+	});
+var elm$parser$Parser$map = elm$parser$Parser$Advanced$map;
+var elm$parser$Parser$Advanced$Done = function (a) {
+	return {$: 'Done', a: a};
+};
+var elm$parser$Parser$Advanced$Loop = function (a) {
+	return {$: 'Loop', a: a};
+};
+var elm$parser$Parser$toAdvancedStep = function (step) {
+	if (step.$ === 'Loop') {
+		var s = step.a;
+		return elm$parser$Parser$Advanced$Loop(s);
+	} else {
+		var a = step.a;
+		return elm$parser$Parser$Advanced$Done(a);
+	}
+};
+var elm$parser$Parser$Advanced$loopHelp = F4(
+	function (p, state, callback, s0) {
+		loopHelp:
+		while (true) {
+			var _n0 = callback(state);
+			var parse = _n0.a;
+			var _n1 = parse(s0);
+			if (_n1.$ === 'Good') {
+				var p1 = _n1.a;
+				var step = _n1.b;
+				var s1 = _n1.c;
+				if (step.$ === 'Loop') {
+					var newState = step.a;
+					var $temp$p = p || p1,
+						$temp$state = newState,
+						$temp$callback = callback,
+						$temp$s0 = s1;
+					p = $temp$p;
+					state = $temp$state;
+					callback = $temp$callback;
+					s0 = $temp$s0;
+					continue loopHelp;
+				} else {
+					var result = step.a;
+					return A3(elm$parser$Parser$Advanced$Good, p || p1, result, s1);
 				}
 			} else {
-				return elm$parser$Parser$problem(
-					'Expected ' + (elm$core$String$fromInt(quantity) + (' digits, but got ' + elm$core$String$fromInt(
-						elm$core$String$length(str)))));
+				var p1 = _n1.a;
+				var x = _n1.b;
+				return A2(elm$parser$Parser$Advanced$Bad, p || p1, x);
 			}
-		},
-		elm$parser$Parser$getChompedString(
-			elm$parser$Parser$chompWhile(elm$core$Char$isDigit)));
+		}
+	});
+var elm$parser$Parser$Advanced$loop = F2(
+	function (state, callback) {
+		return elm$parser$Parser$Advanced$Parser(
+			function (s) {
+				return A4(elm$parser$Parser$Advanced$loopHelp, false, state, callback, s);
+			});
+	});
+var elm$parser$Parser$loop = F2(
+	function (state, callback) {
+		return A2(
+			elm$parser$Parser$Advanced$loop,
+			state,
+			function (s) {
+				return A2(
+					elm$parser$Parser$map,
+					elm$parser$Parser$toAdvancedStep,
+					callback(s));
+			});
+	});
+var rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt = function (quantity) {
+	var helper = function (str) {
+		if (_Utils_eq(
+			elm$core$String$length(str),
+			quantity)) {
+			var _n0 = elm$core$String$toInt(str);
+			if (_n0.$ === 'Just') {
+				var intVal = _n0.a;
+				return A2(
+					elm$parser$Parser$map,
+					elm$parser$Parser$Done,
+					elm$parser$Parser$succeed(intVal));
+			} else {
+				return elm$parser$Parser$problem('Invalid integer: \"' + (str + '\"'));
+			}
+		} else {
+			return A2(
+				elm$parser$Parser$map,
+				function (nextChar) {
+					return elm$parser$Parser$Loop(
+						A2(elm$core$String$append, str, nextChar));
+				},
+				elm$parser$Parser$getChompedString(
+					elm$parser$Parser$chompIf(elm$core$Char$isDigit)));
+		}
+	};
+	return A2(elm$parser$Parser$loop, '', helper);
 };
 var rtfeldman$elm_iso8601_date_strings$Iso8601$epochYear = 1970;
 var rtfeldman$elm_iso8601_date_strings$Iso8601$invalidDay = function (day) {
@@ -7743,19 +7845,91 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$monthYearDayInMs = A2(
 						function (year, month, day) {
 							return _Utils_Tuple3(year, month, day);
 						})),
-				A2(
+				rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(4)),
+			elm$parser$Parser$oneOf(
+				_List_fromArray(
+					[
+						A2(
+						elm$parser$Parser$keeper,
+						A2(
+							elm$parser$Parser$ignorer,
+							elm$parser$Parser$succeed(elm$core$Basics$identity),
+							elm$parser$Parser$symbol('-')),
+						rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+						rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)
+					]))),
+		elm$parser$Parser$oneOf(
+			_List_fromArray(
+				[
+					A2(
+					elm$parser$Parser$keeper,
+					A2(
+						elm$parser$Parser$ignorer,
+						elm$parser$Parser$succeed(elm$core$Basics$identity),
+						elm$parser$Parser$symbol('-')),
+					rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+					rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)
+				]))));
+var rtfeldman$elm_iso8601_date_strings$Iso8601$utcOffsetInMinutes = function () {
+	var utcOffsetMinutesFromParts = F3(
+		function (multiplier, hours, minutes) {
+			return (multiplier * (hours * 60)) + minutes;
+		});
+	return A2(
+		elm$parser$Parser$keeper,
+		elm$parser$Parser$succeed(elm$core$Basics$identity),
+		elm$parser$Parser$oneOf(
+			_List_fromArray(
+				[
+					A2(
+					elm$parser$Parser$map,
+					function (_n0) {
+						return 0;
+					},
+					elm$parser$Parser$symbol('Z')),
+					A2(
+					elm$parser$Parser$keeper,
+					A2(
+						elm$parser$Parser$keeper,
+						A2(
+							elm$parser$Parser$keeper,
+							elm$parser$Parser$succeed(utcOffsetMinutesFromParts),
+							elm$parser$Parser$oneOf(
+								_List_fromArray(
+									[
+										A2(
+										elm$parser$Parser$map,
+										function (_n1) {
+											return 1;
+										},
+										elm$parser$Parser$symbol('+')),
+										A2(
+										elm$parser$Parser$map,
+										function (_n2) {
+											return -1;
+										},
+										elm$parser$Parser$symbol('-'))
+									]))),
+						rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+					elm$parser$Parser$oneOf(
+						_List_fromArray(
+							[
+								A2(
+								elm$parser$Parser$keeper,
+								A2(
+									elm$parser$Parser$ignorer,
+									elm$parser$Parser$succeed(elm$core$Basics$identity),
+									elm$parser$Parser$symbol(':')),
+								rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+								rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2),
+								elm$parser$Parser$succeed(0)
+							]))),
+					A2(
 					elm$parser$Parser$ignorer,
-					rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(4),
-					elm$parser$Parser$symbol('-'))),
-			A2(
-				elm$parser$Parser$ignorer,
-				rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2),
-				elm$parser$Parser$symbol('-'))),
-		rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)));
-var rtfeldman$elm_iso8601_date_strings$Iso8601$utcOffsetMinutesFromParts = F3(
-	function (multiplier, hours, minutes) {
-		return multiplier * ((hours * 60) + minutes);
-	});
+					elm$parser$Parser$succeed(0),
+					elm$parser$Parser$end)
+				])));
+}();
 var rtfeldman$elm_iso8601_date_strings$Iso8601$iso8601 = A2(
 	elm$parser$Parser$andThen,
 	function (datePart) {
@@ -7777,15 +7951,31 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$iso8601 = A2(
 										elm$parser$Parser$succeed(
 											rtfeldman$elm_iso8601_date_strings$Iso8601$fromParts(datePart)),
 										elm$parser$Parser$symbol('T')),
-									A2(
-										elm$parser$Parser$ignorer,
-										rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2),
-										elm$parser$Parser$symbol(':'))),
-								A2(
-									elm$parser$Parser$ignorer,
-									rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2),
-									elm$parser$Parser$symbol(':'))),
-							rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+									rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+								elm$parser$Parser$oneOf(
+									_List_fromArray(
+										[
+											A2(
+											elm$parser$Parser$keeper,
+											A2(
+												elm$parser$Parser$ignorer,
+												elm$parser$Parser$succeed(elm$core$Basics$identity),
+												elm$parser$Parser$symbol(':')),
+											rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+											rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)
+										]))),
+							elm$parser$Parser$oneOf(
+								_List_fromArray(
+									[
+										A2(
+										elm$parser$Parser$keeper,
+										A2(
+											elm$parser$Parser$ignorer,
+											elm$parser$Parser$succeed(elm$core$Basics$identity),
+											elm$parser$Parser$symbol(':')),
+										rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)),
+										rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2)
+									]))),
 						elm$parser$Parser$oneOf(
 							_List_fromArray(
 								[
@@ -7798,44 +7988,7 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$iso8601 = A2(
 									rtfeldman$elm_iso8601_date_strings$Iso8601$fractionsOfASecondInMs),
 									elm$parser$Parser$succeed(0)
 								]))),
-					elm$parser$Parser$oneOf(
-						_List_fromArray(
-							[
-								A2(
-								elm$parser$Parser$map,
-								function (_n0) {
-									return 0;
-								},
-								elm$parser$Parser$symbol('Z')),
-								A2(
-								elm$parser$Parser$keeper,
-								A2(
-									elm$parser$Parser$keeper,
-									A2(
-										elm$parser$Parser$keeper,
-										elm$parser$Parser$succeed(rtfeldman$elm_iso8601_date_strings$Iso8601$utcOffsetMinutesFromParts),
-										elm$parser$Parser$oneOf(
-											_List_fromArray(
-												[
-													A2(
-													elm$parser$Parser$map,
-													function (_n1) {
-														return 1;
-													},
-													elm$parser$Parser$symbol('+')),
-													A2(
-													elm$parser$Parser$map,
-													function (_n2) {
-														return -1;
-													},
-													elm$parser$Parser$symbol('-'))
-												]))),
-									A2(
-										elm$parser$Parser$ignorer,
-										rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2),
-										elm$parser$Parser$symbol(':'))),
-								rtfeldman$elm_iso8601_date_strings$Iso8601$paddedInt(2))
-							]))),
+					A2(elm$parser$Parser$ignorer, rtfeldman$elm_iso8601_date_strings$Iso8601$utcOffsetInMinutes, elm$parser$Parser$end)),
 					A2(
 					elm$parser$Parser$ignorer,
 					elm$parser$Parser$succeed(
