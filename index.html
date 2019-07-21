@@ -16,7 +16,7 @@
         var eventNames = ["reset", "add", "update", "remove"];
         var app = Elm.Main.init();
         var eventSource = undefined;
-        app.ports.startStreamPort.subscribe(function (url) {
+        app.ports.startStream.subscribe(function (url) {
             if (eventSource !== undefined) {
                 eventSource.close();
             }

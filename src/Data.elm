@@ -1,22 +1,10 @@
-module Data exposing
-    ( Selection
-    , ShownPrediction
-    )
+module Data exposing (Selection)
 
-import Api.Types as Api
-import Time
+import Mbta
 
 
 type alias Selection =
-    { routeId : Api.RouteId
-    , stopId : Api.StopId
-    , directionId : Maybe Api.DirectionId
-    }
-
-
-type alias ShownPrediction =
-    { time : Time.Posix
-    , tripHeadsign : Maybe String
-    , platformCode : Maybe String
-    , vehicleLabel : Maybe String
+    { routeId : Mbta.RouteId
+    , stopId : Mbta.StopId
+    , directionId : Maybe Mbta.DirectionId
     }

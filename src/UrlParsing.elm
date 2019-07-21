@@ -1,7 +1,7 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
-import Api.Types as Api
-import Data exposing (..)
+import Data exposing (Selection)
+import Mbta
 import Url
 import Url.Parser
 import Url.Parser.Query
@@ -30,23 +30,23 @@ parseSelection queryValue =
     case String.split "," queryValue of
         [ routeId, stopId ] ->
             Just
-                { routeId = Api.RouteId routeId
-                , stopId = Api.StopId stopId
+                { routeId = Mbta.RouteId routeId
+                , stopId = Mbta.StopId stopId
                 , directionId = Nothing
                 }
 
         [ routeId, stopId, "0" ] ->
             Just
-                { routeId = Api.RouteId routeId
-                , stopId = Api.StopId stopId
-                , directionId = Just Api.D0
+                { routeId = Mbta.RouteId routeId
+                , stopId = Mbta.StopId stopId
+                , directionId = Just Mbta.D0
                 }
 
         [ routeId, stopId, "1" ] ->
             Just
-                { routeId = Api.RouteId routeId
-                , stopId = Api.StopId stopId
-                , directionId = Just Api.D1
+                { routeId = Mbta.RouteId routeId
+                , stopId = Mbta.StopId stopId
+                , directionId = Just Mbta.D1
                 }
 
         _ ->
@@ -67,10 +67,10 @@ setSelectionsInUrl selections url =
 encodeSelectionAsQueryParam : Selection -> String
 encodeSelectionAsQueryParam selection =
     let
-        (Api.RouteId routeId) =
+        (Mbta.RouteId routeId) =
             selection.routeId
 
-        (Api.StopId stopId) =
+        (Mbta.StopId stopId) =
             selection.stopId
 
         directionId =
@@ -78,10 +78,10 @@ encodeSelectionAsQueryParam selection =
                 Nothing ->
                     ""
 
-                Just Api.D0 ->
+                Just Mbta.D0 ->
                     ",0"
 
-                Just Api.D1 ->
+                Just Mbta.D1 ->
                     ",1"
     in
     String.concat

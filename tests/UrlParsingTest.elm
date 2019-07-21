@@ -1,8 +1,8 @@
 module UrlParsingTest exposing (suite)
 
-import Api.Types as Api
-import Data exposing (..)
+import Data exposing (Selection)
 import Expect
+import Mbta
 import Test exposing (Test, describe, test)
 import Url
 import Url.Parser
@@ -26,8 +26,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId"
-                              , stopId = Api.StopId "stopId"
+                            [ { routeId = Mbta.RouteId "routeId"
+                              , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
                             ]
@@ -37,9 +37,9 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId"
-                              , stopId = Api.StopId "stopId"
-                              , directionId = Just Api.D1
+                            [ { routeId = Mbta.RouteId "routeId"
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
                               }
                             ]
             , test "doesn't take a selection with a bad directionId" <|
@@ -69,13 +69,13 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId1"
-                              , stopId = Api.StopId "stopId1"
+                            [ { routeId = Mbta.RouteId "routeId1"
+                              , stopId = Mbta.StopId "stopId1"
                               , directionId = Nothing
                               }
-                            , { routeId = Api.RouteId "routeId2"
-                              , stopId = Api.StopId "stopId2"
-                              , directionId = Just Api.D0
+                            , { routeId = Mbta.RouteId "routeId2"
+                              , stopId = Mbta.StopId "stopId2"
+                              , directionId = Just Mbta.D0
                               }
                             ]
             , test "includes a selection even if another is badly formatted" <|
@@ -84,8 +84,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId"
-                              , stopId = Api.StopId "stopId"
+                            [ { routeId = Mbta.RouteId "routeId"
+                              , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
                             ]
@@ -95,8 +95,8 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId"
-                              , stopId = Api.StopId "stopId"
+                            [ { routeId = Mbta.RouteId "routeId"
+                              , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
                             ]
@@ -106,8 +106,8 @@ suite =
                         |> fullUrlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Api.RouteId "routeId"
-                              , stopId = Api.StopId "stopId"
+                            [ { routeId = Mbta.RouteId "routeId"
+                              , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
                             ]
