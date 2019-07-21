@@ -1,0 +1,3 @@
+[submodule "elm-mbta-api"]
+	path = elm-mbta-api
+	url = git@github.com:skyqrose/elm-mbta-api.git
