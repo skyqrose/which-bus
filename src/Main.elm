@@ -4,7 +4,6 @@ import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
 import Data exposing (Selection)
-import Html
 import Json.Decode as Decode exposing (Decoder)
 import Mbta
 import Mbta.Api
@@ -42,7 +41,7 @@ init flags url key =
         selections =
             UrlParsing.parseSelectionsFromUrl url
 
-        ( initStreamData, streamUrl ) =
+        ( initStreamState, streamUrl ) =
             streamPredictions selections
     in
     ( { currentTime = Time.millisToPosix 0
@@ -53,7 +52,7 @@ init flags url key =
       , stopIdFormText = ""
       , directionIdFormValue = Nothing
       , stopNames = Dict.empty
-      , streamData = initStreamData
+      , streamState = initStreamState
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
@@ -83,13 +82,13 @@ update msg model =
                 newSelections =
                     UrlParsing.parseSelectionsFromUrl url
 
-                ( initStreamData, streamUrl ) =
+                ( initStreamState, streamUrl ) =
                     streamPredictions model.selections
             in
             ( { model
                 | url = url
                 , selections = newSelections
-                , streamData = initStreamData
+                , streamState = initStreamState
               }
             , Cmd.batch
                 [ startStream streamUrl
@@ -134,7 +133,7 @@ update msg model =
             ( { model
                 | stopNames =
                     result
-                        |> Result.map .data
+                        |> Result.map Mbta.Api.getPrimaryData
                         |> Result.withDefault []
                         |> List.map (\stop -> ( stop.id, stop.name ))
                         |> Dict.fromList
@@ -144,18 +143,18 @@ update msg model =
 
         StreamMsg eventString dataJson ->
             ( { model
-                | streamData = Mbta.Api.updateStream eventString dataJson model.streamData
+                | streamState = Mbta.Api.updateStream eventString dataJson model.streamState
               }
             , Cmd.none
             )
 
         RefreshStream ->
             let
-                ( initStreamData, streamUrl ) =
+                ( initStreamState, streamUrl ) =
                     streamPredictions model.selections
             in
             ( { model
-                | streamData = initStreamData
+                | streamState = initStreamState
               }
             , startStream streamUrl
             )
@@ -184,7 +183,7 @@ getStopNames selections =
         [ Mbta.Api.filterStopsByIds (List.map .stopId selections) ]
 
 
-streamPredictions : List Selection -> ( Mbta.Api.StreamData Mbta.Prediction, String )
+streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
 streamPredictions selections =
     let
         routeIds : List Mbta.RouteId

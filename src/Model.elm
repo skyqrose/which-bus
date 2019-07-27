@@ -25,7 +25,7 @@ type alias Model =
     , stopIdFormText : String
     , directionIdFormValue : Maybe Mbta.DirectionId
     , stopNames : StopNames
-    , streamData : Mbta.Api.StreamData Mbta.Prediction
+    , streamState : Mbta.Api.StreamState Mbta.Prediction
     }
 
 

@@ -38,55 +38,50 @@ ui model =
         , El.centerX
         , El.width (El.maximum 320 El.fill)
         ]
-        (case Mbta.Api.getStreamData model.streamData of
-            RemoteData.NotAsked ->
-                [ El.text "Error"
-                , El.text "NotAsked"
-                ]
-
-            RemoteData.Loading ->
+        (case Mbta.Api.streamResult model.streamState of
+            Mbta.Api.Loading ->
                 [ El.text "Loading..."
                 , addSelectionForm model
                 ]
 
-            RemoteData.Failure error ->
+            Mbta.Api.Loaded (Err error) ->
                 [ El.text "Error"
                 , El.text (Debug.toString error)
                 ]
 
-            RemoteData.Success ok ->
+            Mbta.Api.Loaded (Ok data) ->
                 [ viewSelections
                     model.currentTime
                     model.selections
                     model.stopNames
-                    ok
+                    data
                 , addSelectionForm model
                 , refreshButton model.currentTime (Time.millisToPosix 0) -- TODO lastupdated
                 ]
         )
 
 
-viewSelections : Time.Posix -> List Selection -> StopNames -> Mbta.Api.Ok (List Mbta.Prediction) -> Element Msg
-viewSelections currentTime selections stopNames ok =
+viewSelections : Time.Posix -> List Selection -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
+viewSelections currentTime selections stopNames data =
     El.column
         [ El.spacing unit
         , El.width El.fill
         ]
         (List.map
-            (viewSelection currentTime stopNames ok)
+            (viewSelection currentTime stopNames data)
             selections
         )
 
 
-viewSelection : Time.Posix -> StopNames -> Mbta.Api.Ok (List Mbta.Prediction) -> Selection -> Element Msg
-viewSelection currentTime stopNames ok selection =
+viewSelection : Time.Posix -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection currentTime stopNames data selection =
     El.column
         [ El.width El.fill
         , Border.width 1
         , Border.rounded 4
         ]
         [ selectionHeading stopNames selection
-        , viewPredictions currentTime ok selection
+        , viewPredictions currentTime data selection
         ]
 
 
@@ -133,11 +128,11 @@ selectionHeading stopNames selection =
         ]
 
 
-viewPredictions : Time.Posix -> Mbta.Api.Ok (List Mbta.Prediction) -> Selection -> Element msg
-viewPredictions currentTime ok selection =
+viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element msg
+viewPredictions currentTime data selection =
     let
         predictions =
-            ViewModel.predictionsForSelection ok selection
+            ViewModel.predictionsForSelection data selection
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 5
     in

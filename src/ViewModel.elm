@@ -17,16 +17,16 @@ type alias ShownPrediction =
     }
 
 
-predictionsForSelection : Mbta.Api.Ok (List Mbta.Prediction) -> Selection -> List ShownPrediction
-predictionsForSelection ok selection =
+predictionsForSelection : Mbta.Api.Data (List Mbta.Prediction) -> Selection -> List ShownPrediction
+predictionsForSelection data selection =
     let
         predictions : List Mbta.Prediction
         predictions =
-            ok.data
+            Mbta.Api.getPrimaryData data
     in
     predictions
         |> List.filter (predictionMatchesRouteId selection.routeId)
-        |> List.filter (predictionMatchesStop ok.included selection.stopId)
+        |> List.filter (predictionMatchesStop data selection.stopId)
         |> List.filter (predictionMatchesDirection selection.directionId)
         |> List.map
             (\prediction ->
@@ -41,17 +41,18 @@ predictionsForSelection ok selection =
                         ( Nothing, Nothing ) ->
                             Debug.todo "prediction missing arrival and departure times"
                 , tripHeadsign =
-                    ok.included
+                    data
                         |> Mbta.Api.getIncludedTrip prediction.tripId
                         |> Maybe.map .headsign
                 , platformCode =
-                    ok.included
+                    data
                         |> Mbta.Api.getIncludedStop prediction.stopId
                         |> Maybe.andThen .platformCode
                 , vehicleLabel =
                     Maybe.map
                         (\vehicleId ->
-                            Mbta.Api.getIncludedVehicle vehicleId ok.included
+                            data
+                                |> Mbta.Api.getIncludedVehicle vehicleId
                                 |> Maybe.map .label
                                 |> Maybe.withDefault
                                     (case vehicleId of
@@ -69,12 +70,12 @@ predictionMatchesRouteId routeId prediction =
     prediction.routeId == routeId
 
 
-predictionMatchesStop : Mbta.Api.Included -> Mbta.StopId -> Mbta.Prediction -> Bool
-predictionMatchesStop included queriedStop prediction =
+predictionMatchesStop : Mbta.Api.Data primary -> Mbta.StopId -> Mbta.Prediction -> Bool
+predictionMatchesStop dataWithStopsIncluded queriedStop prediction =
     (prediction.stopId == queriedStop)
         || (let
                 predictionParentStation =
-                    included
+                    dataWithStopsIncluded
                         |> Mbta.Api.getIncludedStop prediction.stopId
                         |> Maybe.andThen .parentStation
             in
