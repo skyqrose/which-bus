@@ -10,7 +10,6 @@ import Element.Input as Input
 import Mbta
 import Mbta.Api
 import Model exposing (..)
-import RemoteData
 import Time
 import ViewModel
 
