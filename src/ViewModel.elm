@@ -46,7 +46,7 @@ predictionsForSelection data selection =
                         |> Maybe.map .headsign
                 , platformCode =
                     data
-                        |> Mbta.Api.getIncludedStop prediction.stopId
+                        |> Mbta.Api.getIncludedStopStop prediction.stopId
                         |> Maybe.andThen .platformCode
                 , vehicleLabel =
                     Maybe.map
@@ -76,7 +76,7 @@ predictionMatchesStop dataWithStopsIncluded queriedStop prediction =
         || (let
                 predictionParentStation =
                     dataWithStopsIncluded
-                        |> Mbta.Api.getIncludedStop prediction.stopId
+                        |> Mbta.Api.getIncludedStopStop prediction.stopId
                         |> Maybe.andThen .parentStation
             in
             predictionParentStation == Just queriedStop

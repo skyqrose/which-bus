@@ -129,13 +129,13 @@ update msg model =
             , Cmd.none
             )
 
-        ReceiveStopNames result ->
+        ReceiveStopNames apiResult ->
             ( { model
                 | stopNames =
-                    result
+                    apiResult
                         |> Result.map Mbta.Api.getPrimaryData
                         |> Result.withDefault []
-                        |> List.map (\stop -> ( stop.id, stop.name ))
+                        |> List.map (\stop -> ( Mbta.stopId stop, Mbta.stopName stop ))
                         |> Dict.fromList
               }
             , Cmd.none
