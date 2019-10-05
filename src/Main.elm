@@ -83,7 +83,7 @@ update msg model =
                     UrlParsing.parseSelectionsFromUrl url
 
                 ( initStreamState, streamUrl ) =
-                    streamPredictions model.selections
+                    streamPredictions newSelections
             in
             ( { model
                 | url = url
