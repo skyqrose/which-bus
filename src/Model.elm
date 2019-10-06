@@ -26,6 +26,7 @@ type alias Model =
     , directionIdFormValue : Maybe Mbta.DirectionId
     , stopNames : StopNames
     , streamState : Mbta.Api.StreamState Mbta.Prediction
+    , lastUpdated : Maybe Time.Posix
     }
 
 

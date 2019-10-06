@@ -53,6 +53,7 @@ init flags url key =
       , directionIdFormValue = Nothing
       , stopNames = Dict.empty
       , streamState = initStreamState
+      , lastUpdated = Nothing
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
@@ -144,6 +145,7 @@ update msg model =
         StreamMsg eventString dataJson ->
             ( { model
                 | streamState = Mbta.Api.updateStream eventString dataJson model.streamState
+                , lastUpdated = Just model.currentTime
               }
             , Cmd.none
             )

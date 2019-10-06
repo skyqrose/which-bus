@@ -41,11 +41,13 @@ ui model =
             Mbta.Api.Loading ->
                 [ El.text "Loading..."
                 , addSelectionForm model
+                , refreshButton model
                 ]
 
             Mbta.Api.Loaded (Err error) ->
                 [ El.text "Error"
                 , El.text (Debug.toString error)
+                , refreshButton model
                 ]
 
             Mbta.Api.Loaded (Ok data) ->
@@ -55,7 +57,7 @@ ui model =
                     model.stopNames
                     data
                 , addSelectionForm model
-                , refreshButton model.currentTime (Time.millisToPosix 0) -- TODO lastupdated
+                , refreshButton model
                 ]
         )
 
@@ -282,14 +284,8 @@ label text =
     Input.labelAbove [] (El.text text)
 
 
-refreshButton : Time.Posix -> Time.Posix -> Element Msg
-refreshButton currentTime lastUpdated =
-    let
-        timeDifferenceMinutes =
-            (Time.posixToMillis currentTime - Time.posixToMillis lastUpdated)
-                // 1000
-                // 60
-    in
+refreshButton : Model -> Element Msg
+refreshButton model =
     El.row
         [ El.spacing unit
         , El.width El.fill
@@ -300,13 +296,24 @@ refreshButton currentTime lastUpdated =
             , label = El.text "Refresh"
             }
         , El.text
-            (String.concat
-                [ "Last updated\n"
-                , String.fromInt timeDifferenceMinutes
-                , " minutes ago"
-                ]
-            )
+            ("Last updated\n" ++ lastUpdatedText model.currentTime model.lastUpdated)
         ]
+
+
+lastUpdatedText : Time.Posix -> Maybe Time.Posix -> String
+lastUpdatedText currentTime lastUpdated =
+    case lastUpdated of
+        Nothing ->
+            "Never"
+
+        Just lastUpdatedTime ->
+            let
+                timeDifferenceMinutes =
+                    (Time.posixToMillis currentTime - Time.posixToMillis lastUpdatedTime)
+                        // 1000
+                        // 60
+            in
+            String.fromInt timeDifferenceMinutes ++ " minutes ago"
 
 
 {-| Pixels
