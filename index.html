@@ -28,7 +28,7 @@
                     console.log(eventName);
                     console.log(eventData);
                     app.ports.streamEventPort.send({
-                        event: eventName,
+                        eventName: eventName,
                         data: JSON.parse(eventData.data),
                     });
                 }, false);

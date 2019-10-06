@@ -20,7 +20,7 @@ import View exposing (view)
 port startStream : String -> Cmd msg
 
 
-port streamEventPort : (Decode.Value -> msg) -> Sub msg
+port streamEventPort : ({ eventName : String, data : Decode.Value } -> msg) -> Sub msg
 
 
 main : Program Decode.Value Model Msg
@@ -142,9 +142,9 @@ update msg model =
             , Cmd.none
             )
 
-        StreamMsg eventString dataJson ->
+        StreamMsg eventName dataJson ->
             ( { model
-                | streamState = Mbta.Api.updateStream eventString dataJson model.streamState
+                | streamState = Mbta.Api.updateStream eventName dataJson model.streamState
                 , lastUpdated = Just model.currentTime
               }
             , Cmd.none
@@ -209,22 +209,4 @@ streamPredictions selections =
 
 streamEventSub : Sub Msg
 streamEventSub =
-    let
-        msgDecoder : Decode.Decoder Msg
-        msgDecoder =
-            Decode.map2
-                StreamMsg
-                (Decode.field "event" Decode.string)
-                (Decode.field "data" Decode.value)
-
-        valueToMsg : Decode.Value -> Msg
-        valueToMsg =
-            \value ->
-                case Decode.decodeValue msgDecoder value of
-                    Ok msg ->
-                        msg
-
-                    Err e ->
-                        Debug.todo (Decode.errorToString e)
-    in
-    streamEventPort valueToMsg
+    streamEventPort (\{ eventName, data } -> StreamMsg eventName data)
