@@ -4,14 +4,14 @@ module Model exposing
     , StopNames
     )
 
-import Api.Stream
-import Api.Types as Api
 import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
-import Data exposing (..)
+import Data exposing (Selection)
 import Http
 import Json.Decode as Decode
+import Mbta
+import Mbta.Api
 import Time
 import Url exposing (Url)
 
@@ -23,9 +23,10 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
-    , directionIdFormValue : Maybe Api.DirectionId
+    , directionIdFormValue : Maybe Mbta.DirectionId
     , stopNames : StopNames
-    , apiResult : Api.Stream.ApiResult
+    , streamState : Mbta.Api.StreamState Mbta.Prediction
+    , lastUpdated : Maybe Time.Posix
     }
 
 
@@ -36,11 +37,11 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
-    | TypeDirection (Maybe Api.DirectionId)
-    | ReceiveStopNames (Result Http.Error (List Api.Stop))
-    | ApiMsg Api.Stream.Msg
+    | TypeDirection (Maybe Mbta.DirectionId)
+    | ReceiveStopNames (Mbta.Api.ApiResult (List Mbta.Stop))
+    | StreamMsg String Decode.Value
     | RefreshStream
 
 
 type alias StopNames =
-    Dict.Dict Api.StopId String
+    Dict.Dict Mbta.StopId String

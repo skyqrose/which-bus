@@ -1,17 +1,17 @@
 module View exposing (view)
 
-import Api.Stream
-import Api.Types as Api
 import AssocList as Dict
 import Browser
-import Data exposing (..)
+import Data exposing (Selection)
 import Element as El exposing (Element)
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Html exposing (Html)
+import Mbta
+import Mbta.Api
 import Model exposing (..)
 import Time
+import ViewModel
 
 
 view : Model -> Browser.Document Msg
@@ -37,60 +37,62 @@ ui model =
         , El.centerX
         , El.width (El.maximum 320 El.fill)
         ]
-        (case model.apiResult of
-            Api.Stream.Loading ->
+        (case Mbta.Api.streamResult model.streamState of
+            Mbta.Api.Loading ->
                 [ El.text "Loading..."
                 , addSelectionForm model
+                , refreshButton model
                 ]
 
-            Api.Stream.Failure error ->
+            Mbta.Api.Loaded (Err error) ->
                 [ El.text "Error"
                 , El.text (Debug.toString error)
+                , refreshButton model
                 ]
 
-            Api.Stream.Success { lastUpdated, apiData } ->
+            Mbta.Api.Loaded (Ok data) ->
                 [ viewSelections
                     model.currentTime
                     model.selections
                     model.stopNames
-                    apiData
+                    data
                 , addSelectionForm model
-                , refreshButton model.currentTime lastUpdated
+                , refreshButton model
                 ]
         )
 
 
-viewSelections : Time.Posix -> List Selection -> StopNames -> Api.Stream.ApiData -> Element Msg
-viewSelections currentTime selections stopNames apiData =
+viewSelections : Time.Posix -> List Selection -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
+viewSelections currentTime selections stopNames data =
     El.column
         [ El.spacing unit
         , El.width El.fill
         ]
         (List.map
-            (viewSelection currentTime stopNames apiData)
+            (viewSelection currentTime stopNames data)
             selections
         )
 
 
-viewSelection : Time.Posix -> StopNames -> Api.Stream.ApiData -> Selection -> Element Msg
-viewSelection currentTime stopNames apiData selection =
+viewSelection : Time.Posix -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection currentTime stopNames data selection =
     El.column
         [ El.width El.fill
         , Border.width 1
         , Border.rounded 4
         ]
         [ selectionHeading stopNames selection
-        , viewPredictions currentTime apiData selection
+        , viewPredictions currentTime data selection
         ]
 
 
 selectionHeading : StopNames -> Selection -> Element Msg
 selectionHeading stopNames selection =
     let
-        (Api.RouteId routeIdText) =
+        (Mbta.RouteId routeIdText) =
             selection.routeId
 
-        (Api.StopId stopIdText) =
+        (Mbta.StopId stopIdText) =
             selection.stopId
 
         directionText =
@@ -98,10 +100,10 @@ selectionHeading stopNames selection =
                 Nothing ->
                     ""
 
-                Just Api.D0 ->
+                Just Mbta.D0 ->
                     " - 0"
 
-                Just Api.D1 ->
+                Just Mbta.D1 ->
                     " - 1"
 
         stopName =
@@ -127,11 +129,11 @@ selectionHeading stopNames selection =
         ]
 
 
-viewPredictions : Time.Posix -> Api.Stream.ApiData -> Selection -> Element msg
-viewPredictions currentTime apiData selection =
+viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element msg
+viewPredictions currentTime data selection =
     let
         predictions =
-            Api.Stream.predictionsForSelection apiData selection
+            ViewModel.predictionsForSelection data selection
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 5
     in
@@ -200,7 +202,7 @@ viewPredictions currentTime apiData selection =
             }
 
 
-predictionTimeString : Time.Posix -> ShownPrediction -> String
+predictionTimeString : Time.Posix -> ViewModel.ShownPrediction -> String
 predictionTimeString currentTime prediction =
     let
         differenceMillis =
@@ -252,8 +254,8 @@ addSelectionForm model =
             { onChange = TypeDirection
             , options =
                 [ Input.option Nothing (El.text "None")
-                , Input.option (Just Api.D0) (El.text "0")
-                , Input.option (Just Api.D1) (El.text "1")
+                , Input.option (Just Mbta.D0) (El.text "0")
+                , Input.option (Just Mbta.D1) (El.text "1")
                 ]
             , selected = Just model.directionIdFormValue
             , label = label "Direction Id"
@@ -264,8 +266,8 @@ addSelectionForm model =
                 if model.routeIdFormText /= "" && model.stopIdFormText /= "" then
                     Just
                         (AddSelection
-                            { routeId = Api.RouteId model.routeIdFormText
-                            , stopId = Api.StopId model.stopIdFormText
+                            { routeId = Mbta.RouteId model.routeIdFormText
+                            , stopId = Mbta.StopId model.stopIdFormText
                             , directionId = model.directionIdFormValue
                             }
                         )
@@ -282,14 +284,8 @@ label text =
     Input.labelAbove [] (El.text text)
 
 
-refreshButton : Time.Posix -> Time.Posix -> Element Msg
-refreshButton currentTime lastUpdated =
-    let
-        timeDifferenceMinutes =
-            (Time.posixToMillis currentTime - Time.posixToMillis lastUpdated)
-                // 1000
-                // 60
-    in
+refreshButton : Model -> Element Msg
+refreshButton model =
     El.row
         [ El.spacing unit
         , El.width El.fill
@@ -300,13 +296,24 @@ refreshButton currentTime lastUpdated =
             , label = El.text "Refresh"
             }
         , El.text
-            (String.concat
-                [ "Last updated\n"
-                , String.fromInt timeDifferenceMinutes
-                , " minutes ago"
-                ]
-            )
+            ("Last updated\n" ++ lastUpdatedText model.currentTime model.lastUpdated)
         ]
+
+
+lastUpdatedText : Time.Posix -> Maybe Time.Posix -> String
+lastUpdatedText currentTime lastUpdated =
+    case lastUpdated of
+        Nothing ->
+            "Never"
+
+        Just lastUpdatedTime ->
+            let
+                timeDifferenceMinutes =
+                    (Time.posixToMillis currentTime - Time.posixToMillis lastUpdatedTime)
+                        // 1000
+                        // 60
+            in
+            String.fromInt timeDifferenceMinutes ++ " minutes ago"
 
 
 {-| Pixels
