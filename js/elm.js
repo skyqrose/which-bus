@@ -80,271 +80,6 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEBUG mode. Follow the advice at https://elm-lang.org/0.19.0/optimize for better performance and smaller assets.');
 
 
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = elm$core$Set$toList(x);
-		y = elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = elm$core$Dict$toList(x);
-		y = elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -790,6 +525,271 @@ function _Debug_regionToString(region)
 	}
 	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
+
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = elm$core$Set$toList(x);
+		y = elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = elm$core$Dict$toList(x);
+		y = elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? elm$core$Basics$LT : n ? elm$core$Basics$GT : elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === elm$core$Basics$EQ ? 0 : ord === elm$core$Basics$LT ? -1 : 1;
+	}));
+});
 
 
 
@@ -2488,69 +2488,6 @@ function _Http_track(router, xhr, tracker)
 	});
 }
 
-function _Url_percentEncode(string)
-{
-	return encodeURIComponent(string);
-}
-
-function _Url_percentDecode(string)
-{
-	try
-	{
-		return elm$core$Maybe$Just(decodeURIComponent(string));
-	}
-	catch (e)
-	{
-		return elm$core$Maybe$Nothing;
-	}
-}
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2(elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
-}
-
-
 
 
 // STRINGS
@@ -2679,6 +2616,170 @@ var _Parser_findSubString = F5(function(smallString, offset, row, col, bigString
 
 	return _Utils_Tuple3(newOffset, row, col);
 });
+
+
+// CREATE
+
+var _Regex_never = /.^/;
+
+var _Regex_fromStringWith = F2(function(options, string)
+{
+	var flags = 'g';
+	if (options.multiline) { flags += 'm'; }
+	if (options.caseInsensitive) { flags += 'i'; }
+
+	try
+	{
+		return elm$core$Maybe$Just(new RegExp(string, flags));
+	}
+	catch(error)
+	{
+		return elm$core$Maybe$Nothing;
+	}
+});
+
+
+// USE
+
+var _Regex_contains = F2(function(re, string)
+{
+	return string.match(re) !== null;
+});
+
+
+var _Regex_findAtMost = F3(function(n, re, str)
+{
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex == re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch
+				? elm$core$Maybe$Just(submatch)
+				: elm$core$Maybe$Nothing;
+		}
+		out.push(A4(elm$regex$Regex$Match, result[0], result.index, number, _List_fromArray(subs)));
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _List_fromArray(out);
+});
+
+
+var _Regex_replaceAtMost = F4(function(n, re, replacer, string)
+{
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch
+				? elm$core$Maybe$Just(submatch)
+				: elm$core$Maybe$Nothing;
+		}
+		return replacer(A4(elm$regex$Regex$Match, match, arguments[arguments.length - 2], count, _List_fromArray(submatches)));
+	}
+	return string.replace(re, jsReplacer);
+});
+
+var _Regex_splitAtMost = F3(function(n, re, str)
+{
+	var string = str;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		var result = re.exec(string);
+		if (!result) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _List_fromArray(out);
+});
+
+var _Regex_infinity = Infinity;
+
+
+function _Url_percentEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function _Url_percentDecode(string)
+{
+	try
+	{
+		return elm$core$Maybe$Just(decodeURIComponent(string));
+	}
+	catch (e)
+	{
+		return elm$core$Maybe$Nothing;
+	}
+}
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
+	});
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2(elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
 
 
 
@@ -5238,15 +5339,49 @@ function _Browser_load(url)
 		}
 	}));
 }
-var author$project$Api$Stream$Loading = {$: 'Loading'};
-var elm$core$Array$branchFactor = 32;
-var elm$core$Array$Array_elm_builtin = F4(
-	function (a, b, c, d) {
-		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+var author$project$Mbta$Api$Default = function (a) {
+	return {$: 'Default', a: a};
+};
+var elm$core$Maybe$Just = function (a) {
+	return {$: 'Just', a: a};
+};
+var author$project$Main$apiHost = author$project$Mbta$Api$Default(
+	{
+		apiKey: elm$core$Maybe$Just('3a6d67c08111426d8617a30340a9fad3')
 	});
+var author$project$Mbta$Api$Filter = function (a) {
+	return {$: 'Filter', a: a};
+};
+var elm$core$Basics$identity = function (x) {
+	return x;
+};
 var elm$core$Basics$EQ = {$: 'EQ'};
-var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Basics$LT = {$: 'LT'};
+var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var elm$core$Array$foldr = F3(
+	function (func, baseCase, _n0) {
+		var tree = _n0.c;
+		var tail = _n0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			elm$core$Elm$JsArray$foldr,
+			helper,
+			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var elm$core$Array$toList = function (array) {
+	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
+};
+var elm$core$Basics$GT = {$: 'GT'};
 var elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -5272,7 +5407,6 @@ var elm$core$Dict$foldr = F3(
 			}
 		}
 	});
-var elm$core$List$cons = _List_cons;
 var elm$core$Dict$toList = function (dict) {
 	return A3(
 		elm$core$Dict$foldr,
@@ -5300,48 +5434,9 @@ var elm$core$Set$toList = function (_n0) {
 	var dict = _n0.a;
 	return elm$core$Dict$keys(dict);
 };
-var elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var elm$core$Array$foldr = F3(
-	function (func, baseCase, _n0) {
-		var tree = _n0.c;
-		var tail = _n0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3(elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			elm$core$Elm$JsArray$foldr,
-			helper,
-			A3(elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
-	});
-var elm$core$Array$toList = function (array) {
-	return A3(elm$core$Array$foldr, elm$core$List$cons, _List_Nil, array);
-};
-var elm$core$Basics$ceiling = _Basics_ceiling;
-var elm$core$Basics$fdiv = _Basics_fdiv;
-var elm$core$Basics$logBase = F2(
-	function (base, number) {
-		return _Basics_log(number) / _Basics_log(base);
-	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
-var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
-	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
-var elm$core$Elm$JsArray$empty = _JsArray_empty;
-var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
-var elm$core$Array$Leaf = function (a) {
-	return {$: 'Leaf', a: a};
-};
-var elm$core$Array$SubTree = function (a) {
-	return {$: 'SubTree', a: a};
-};
-var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
+var elm$core$List$cons = _List_cons;
+var elm$core$Basics$add = _Basics_add;
+var elm$core$Basics$gt = _Utils_gt;
 var elm$core$List$foldl = F3(
 	function (func, acc, list) {
 		foldl:
@@ -5364,6 +5459,265 @@ var elm$core$List$foldl = F3(
 var elm$core$List$reverse = function (list) {
 	return A3(elm$core$List$foldl, elm$core$List$cons, _List_Nil, list);
 };
+var elm$core$List$foldrHelper = F4(
+	function (fn, acc, ctr, ls) {
+		if (!ls.b) {
+			return acc;
+		} else {
+			var a = ls.a;
+			var r1 = ls.b;
+			if (!r1.b) {
+				return A2(fn, a, acc);
+			} else {
+				var b = r1.a;
+				var r2 = r1.b;
+				if (!r2.b) {
+					return A2(
+						fn,
+						a,
+						A2(fn, b, acc));
+				} else {
+					var c = r2.a;
+					var r3 = r2.b;
+					if (!r3.b) {
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(fn, c, acc)));
+					} else {
+						var d = r3.a;
+						var r4 = r3.b;
+						var res = (ctr > 500) ? A3(
+							elm$core$List$foldl,
+							fn,
+							acc,
+							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
+						return A2(
+							fn,
+							a,
+							A2(
+								fn,
+								b,
+								A2(
+									fn,
+									c,
+									A2(fn, d, res))));
+					}
+				}
+			}
+		}
+	});
+var elm$core$List$foldr = F3(
+	function (fn, acc, ls) {
+		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
+	});
+var elm$core$List$map = F2(
+	function (f, xs) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, acc) {
+					return A2(
+						elm$core$List$cons,
+						f(x),
+						acc);
+				}),
+			_List_Nil,
+			xs);
+	});
+var author$project$Mbta$Api$filterByList = F3(
+	function (key, toString, values) {
+		return author$project$Mbta$Api$Filter(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					key,
+					A2(elm$core$List$map, toString, values))
+				]));
+	});
+var author$project$Mbta$Api$stopIdToString = function (_n0) {
+	var stopId = _n0.a;
+	return stopId;
+};
+var author$project$Mbta$Api$filterStopsByIds = function (stopIds) {
+	return A3(author$project$Mbta$Api$filterByList, 'id', author$project$Mbta$Api$stopIdToString, stopIds);
+};
+var author$project$JsonApi$ApiErrors = function (a) {
+	return {$: 'ApiErrors', a: a};
+};
+var author$project$JsonApi$DocumentDecoder = function (a) {
+	return {$: 'DocumentDecoder', a: a};
+};
+var author$project$JsonApi$ExpectedMany = {$: 'ExpectedMany'};
+var author$project$JsonApi$ResourceError = function (a) {
+	return {$: 'ResourceError', a: a};
+};
+var author$project$JsonApi$decodeResource = F2(
+	function (_n0, untypedResource) {
+		var documentDecoder = _n0.a;
+		return documentDecoder(untypedResource);
+	});
+var elm$core$Basics$apR = F2(
+	function (x, f) {
+		return f(x);
+	});
+var elm$core$Result$Ok = function (a) {
+	return {$: 'Ok', a: a};
+};
+var elm$core$Result$Err = function (a) {
+	return {$: 'Err', a: a};
+};
+var elm$core$Result$andThen = F2(
+	function (callback, result) {
+		if (result.$ === 'Ok') {
+			var value = result.a;
+			return callback(value);
+		} else {
+			var msg = result.a;
+			return elm$core$Result$Err(msg);
+		}
+	});
+var elm$core$Result$map = F2(
+	function (func, ra) {
+		if (ra.$ === 'Ok') {
+			var a = ra.a;
+			return elm$core$Result$Ok(
+				func(a));
+		} else {
+			var e = ra.a;
+			return elm$core$Result$Err(e);
+		}
+	});
+var author$project$JsonApi$decodeIncluded = F2(
+	function (_n0, untypedResources) {
+		var emptyIncluded = _n0.emptyIncluded;
+		var accumulator = _n0.accumulator;
+		return A3(
+			elm$core$List$foldl,
+			F2(
+				function (untypedResource, previousResult) {
+					return A2(
+						elm$core$Result$andThen,
+						function (previousIncluded) {
+							return A2(
+								elm$core$Result$map,
+								function (newAccumulator) {
+									return newAccumulator(previousIncluded);
+								},
+								A2(author$project$JsonApi$decodeResource, accumulator, untypedResource));
+						},
+						previousResult);
+				}),
+			elm$core$Result$Ok(emptyIncluded),
+			untypedResources);
+	});
+var elm$core$Result$map2 = F3(
+	function (func, ra, rb) {
+		if (ra.$ === 'Err') {
+			var x = ra.a;
+			return elm$core$Result$Err(x);
+		} else {
+			var a = ra.a;
+			if (rb.$ === 'Err') {
+				var x = rb.a;
+				return elm$core$Result$Err(x);
+			} else {
+				var b = rb.a;
+				return elm$core$Result$Ok(
+					A2(func, a, b));
+			}
+		}
+	});
+var elm$core$Result$mapError = F2(
+	function (f, result) {
+		if (result.$ === 'Ok') {
+			var v = result.a;
+			return elm$core$Result$Ok(v);
+		} else {
+			var e = result.a;
+			return elm$core$Result$Err(
+				f(e));
+		}
+	});
+var elm_community$result_extra$Result$Extra$combine = A2(
+	elm$core$List$foldr,
+	elm$core$Result$map2(elm$core$List$cons),
+	elm$core$Result$Ok(_List_Nil));
+var author$project$JsonApi$documentDecoderMany = F2(
+	function (includedDecoder, resourceDecoder) {
+		return author$project$JsonApi$DocumentDecoder(
+			function (untypedDocument) {
+				switch (untypedDocument.$) {
+					case 'DocumentOne':
+						return elm$core$Result$Err(author$project$JsonApi$ExpectedMany);
+					case 'DocumentMany':
+						var data = untypedDocument.a.data;
+						var included = untypedDocument.a.included;
+						return A2(
+							elm$core$Result$mapError,
+							author$project$JsonApi$ResourceError,
+							A3(
+								elm$core$Result$map2,
+								F2(
+									function (decodedData, decodedIncluded) {
+										return {data: decodedData, included: decodedIncluded};
+									}),
+								elm_community$result_extra$Result$Extra$combine(
+									A2(
+										elm$core$List$map,
+										author$project$JsonApi$decodeResource(resourceDecoder),
+										data)),
+								A2(author$project$JsonApi$decodeIncluded, includedDecoder, included)));
+					default:
+						var errors = untypedDocument.a;
+						return elm$core$Result$Err(
+							author$project$JsonApi$ApiErrors(errors));
+				}
+			});
+	});
+var author$project$JsonApi$DecodeDocumentError = function (a) {
+	return {$: 'DecodeDocumentError', a: a};
+};
+var author$project$JsonApi$HttpError = function (a) {
+	return {$: 'HttpError', a: a};
+};
+var author$project$JsonApi$decodeDocument = F2(
+	function (_n0, untypedDocument) {
+		var documentDecoder = _n0.a;
+		return documentDecoder(untypedDocument);
+	});
+var author$project$JsonApi$JsonApiDecodeError = function (a) {
+	return {$: 'JsonApiDecodeError', a: a};
+};
+var author$project$JsonApi$NoncompliantJson = function (a) {
+	return {$: 'NoncompliantJson', a: a};
+};
+var elm$core$Array$branchFactor = 32;
+var elm$core$Array$Array_elm_builtin = F4(
+	function (a, b, c, d) {
+		return {$: 'Array_elm_builtin', a: a, b: b, c: c, d: d};
+	});
+var elm$core$Basics$ceiling = _Basics_ceiling;
+var elm$core$Basics$fdiv = _Basics_fdiv;
+var elm$core$Basics$logBase = F2(
+	function (base, number) {
+		return _Basics_log(number) / _Basics_log(base);
+	});
+var elm$core$Basics$toFloat = _Basics_toFloat;
+var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
+	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
+var elm$core$Elm$JsArray$empty = _JsArray_empty;
+var elm$core$Array$empty = A4(elm$core$Array$Array_elm_builtin, 0, elm$core$Array$shiftStep, elm$core$Elm$JsArray$empty, elm$core$Elm$JsArray$empty);
+var elm$core$Array$Leaf = function (a) {
+	return {$: 'Leaf', a: a};
+};
+var elm$core$Array$SubTree = function (a) {
+	return {$: 'SubTree', a: a};
+};
+var elm$core$Elm$JsArray$initializeFromList = _JsArray_initializeFromList;
 var elm$core$Array$compressNodes = F2(
 	function (nodes, acc) {
 		compressNodes:
@@ -5386,10 +5740,6 @@ var elm$core$Array$compressNodes = F2(
 			}
 		}
 	});
-var elm$core$Basics$apR = F2(
-	function (x, f) {
-		return f(x);
-	});
 var elm$core$Basics$eq = _Utils_equal;
 var elm$core$Tuple$first = function (_n0) {
 	var x = _n0.a;
@@ -5411,13 +5761,11 @@ var elm$core$Array$treeFromBuilder = F2(
 			}
 		}
 	});
-var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$apL = F2(
 	function (f, x) {
 		return f(x);
 	});
 var elm$core$Basics$floor = _Basics_floor;
-var elm$core$Basics$gt = _Utils_gt;
 var elm$core$Basics$max = F2(
 	function (x, y) {
 		return (_Utils_cmp(x, y) > 0) ? x : y;
@@ -5491,16 +5839,7 @@ var elm$core$Array$initialize = F2(
 			return A5(elm$core$Array$initializeHelp, fn, initialFromIndex, len, _List_Nil, tail);
 		}
 	});
-var elm$core$Maybe$Just = function (a) {
-	return {$: 'Just', a: a};
-};
 var elm$core$Maybe$Nothing = {$: 'Nothing'};
-var elm$core$Result$Err = function (a) {
-	return {$: 'Err', a: a};
-};
-var elm$core$Result$Ok = function (a) {
-	return {$: 'Ok', a: a};
-};
 var elm$core$Basics$True = {$: 'True'};
 var elm$core$Result$isOk = function (result) {
 	if (result.$ === 'Ok') {
@@ -5714,158 +6053,25 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 			}
 		}
 	});
-var elm$json$Json$Encode$string = _Json_wrap;
-var author$project$Api$Stream$startStreamPort = _Platform_outgoingPort('startStreamPort', elm$json$Json$Encode$string);
-var elm$core$List$foldrHelper = F4(
-	function (fn, acc, ctr, ls) {
-		if (!ls.b) {
-			return acc;
-		} else {
-			var a = ls.a;
-			var r1 = ls.b;
-			if (!r1.b) {
-				return A2(fn, a, acc);
-			} else {
-				var b = r1.a;
-				var r2 = r1.b;
-				if (!r2.b) {
-					return A2(
-						fn,
-						a,
-						A2(fn, b, acc));
-				} else {
-					var c = r2.a;
-					var r3 = r2.b;
-					if (!r3.b) {
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(fn, c, acc)));
-					} else {
-						var d = r3.a;
-						var r4 = r3.b;
-						var res = (ctr > 500) ? A3(
-							elm$core$List$foldl,
-							fn,
-							acc,
-							elm$core$List$reverse(r4)) : A4(elm$core$List$foldrHelper, fn, acc, ctr + 1, r4);
-						return A2(
-							fn,
-							a,
-							A2(
-								fn,
-								b,
-								A2(
-									fn,
-									c,
-									A2(fn, d, res))));
-					}
-				}
-			}
-		}
-	});
-var elm$core$List$foldr = F3(
-	function (fn, acc, ls) {
-		return A4(elm$core$List$foldrHelper, fn, acc, 0, ls);
-	});
-var elm$core$List$map = F2(
-	function (f, xs) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, acc) {
-					return A2(
-						elm$core$List$cons,
-						f(x),
-						acc);
-				}),
-			_List_Nil,
-			xs);
-	});
-var elm$core$String$concat = function (strings) {
-	return A2(elm$core$String$join, '', strings);
-};
-var author$project$Api$Url$url = F2(
-	function (path, params) {
-		var base = 'https://api-v3.mbta.com/';
-		var apiKey = '3a6d67c08111426d8617a30340a9fad3';
-		var paramsWithKey = A2(
-			elm$core$List$cons,
-			_Utils_Tuple2('api_key', apiKey),
-			params);
-		return elm$core$String$concat(
-			_List_fromArray(
-				[
-					base,
-					path,
-					'?',
-					A2(
-					elm$core$String$join,
-					'&',
-					A2(
-						elm$core$List$map,
-						function (_n0) {
-							var param = _n0.a;
-							var value = _n0.b;
-							return param + ('=' + value);
-						},
-						paramsWithKey))
-				]));
-	});
-var author$project$Api$Stream$startStream = function (selections) {
-	var stopIds = A2(
-		elm$core$String$join,
-		',',
-		A2(
-			elm$core$List$map,
-			function (_n1) {
-				var stopId = _n1.a;
-				return stopId;
+var elm$json$Json$Decode$decodeValue = _Json_run;
+var author$project$JsonApi$decodeValue = F4(
+	function (untypedObjectDecoder, decodeObject, objectDecoder, jsonValue) {
+		return A2(
+			elm$core$Result$andThen,
+			function (untypedObject) {
+				return A2(
+					elm$core$Result$mapError,
+					author$project$JsonApi$JsonApiDecodeError,
+					A2(decodeObject, objectDecoder, untypedObject));
 			},
 			A2(
-				elm$core$List$map,
-				function ($) {
-					return $.stopId;
-				},
-				selections)));
-	var routeIds = A2(
-		elm$core$String$join,
-		',',
-		A2(
-			elm$core$List$map,
-			function (_n0) {
-				var routeId = _n0.a;
-				return routeId;
-			},
-			A2(
-				elm$core$List$map,
-				function ($) {
-					return $.routeId;
-				},
-				selections)));
-	var url = A2(
-		author$project$Api$Url$url,
-		'predictions',
-		_List_fromArray(
-			[
-				_Utils_Tuple2('filter[route]', routeIds),
-				_Utils_Tuple2('filter[stop]', stopIds),
-				_Utils_Tuple2('include', 'stop,trip,vehicle')
-			]));
-	return author$project$Api$Stream$startStreamPort(url);
-};
-var author$project$Api$Stream$init = function (selections) {
-	return _Utils_Tuple2(
-		author$project$Api$Stream$Loading,
-		author$project$Api$Stream$startStream(selections));
-};
+				elm$core$Result$mapError,
+				author$project$JsonApi$NoncompliantJson,
+				A2(elm$json$Json$Decode$decodeValue, untypedObjectDecoder, jsonValue)));
+	});
 var elm$json$Json$Decode$map2 = _Json_map2;
 var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom = elm$json$Json$Decode$map2(elm$core$Basics$apR);
 var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$decodeValue = _Json_run;
 var elm$json$Json$Decode$fail = _Json_fail;
 var elm$json$Json$Decode$null = _Json_decodeNull;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
@@ -5904,17 +6110,13 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder = F3(
 		return A2(elm$json$Json$Decode$andThen, handleResult, elm$json$Json$Decode$value);
 	});
 var elm$json$Json$Decode$field = _Json_decodeField;
-var elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
-	});
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt = F4(
-	function (path, valDecoder, fallback, decoder) {
+var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional = F4(
+	function (key, valDecoder, fallback, decoder) {
 		return A2(
 			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
 			A3(
 				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalDecoder,
-				A2(elm$json$Json$Decode$at, path, elm$json$Json$Decode$value),
+				A2(elm$json$Json$Decode$field, key, elm$json$Json$Decode$value),
 				valDecoder,
 				fallback),
 			decoder);
@@ -5926,108 +6128,43 @@ var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required = F3(
 			A2(elm$json$Json$Decode$field, key, valDecoder),
 			decoder);
 	});
-var NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt = F3(
-	function (path, valDecoder, decoder) {
-		return A2(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-			A2(elm$json$Json$Decode$at, path, valDecoder),
-			decoder);
-	});
-var elm$json$Json$Decode$string = _Json_decodeString;
-var author$project$Api$Decoders$checkType = F2(
-	function (expectedTypeString, resourceConstructor) {
-		return A2(
-			elm$json$Json$Decode$andThen,
-			function (actualTypeString) {
-				return _Utils_eq(expectedTypeString, actualTypeString) ? elm$json$Json$Decode$succeed(resourceConstructor) : elm$json$Json$Decode$fail('expected type ' + (expectedTypeString + (' but got ' + actualTypeString)));
-			},
-			A2(
-				elm$json$Json$Decode$at,
-				_List_fromArray(
-					['type']),
-				elm$json$Json$Decode$string));
-	});
-var author$project$Api$Types$StopId = function (a) {
-	return {$: 'StopId', a: a};
+var author$project$JsonApi$Untyped$DocumentApiErrors = function (a) {
+	return {$: 'DocumentApiErrors', a: a};
 };
-var elm$core$Basics$identity = function (x) {
-	return x;
+var author$project$JsonApi$Untyped$DocumentMany = function (a) {
+	return {$: 'DocumentMany', a: a};
 };
-var elm$json$Json$Decode$map = _Json_map1;
-var author$project$Api$Decoders$stopIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$StopId, elm$json$Json$Decode$string);
-var author$project$Api$Types$Stop = F4(
-	function (id, name, parentStation, platformCode) {
-		return {id: id, name: name, parentStation: parentStation, platformCode: platformCode};
-	});
-var author$project$Api$Decoders$stopDecoder = A4(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
-	_List_fromArray(
-		['attributes', 'platform_code']),
-	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, elm$json$Json$Decode$string),
-	elm$core$Maybe$Nothing,
-	A4(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
-		_List_fromArray(
-			['relationships', 'parent_station', 'data', 'id']),
-		A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$stopIdDecoder),
-		elm$core$Maybe$Nothing,
-		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-			_List_fromArray(
-				['attributes', 'name']),
-			elm$json$Json$Decode$string,
-			A3(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-				'id',
-				author$project$Api$Decoders$stopIdDecoder,
-				A2(author$project$Api$Decoders$checkType, 'stop', author$project$Api$Types$Stop)))));
-var elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return elm$core$Result$Err(
-				f(e));
-		}
-	});
-var elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
+var author$project$JsonApi$Untyped$DocumentOne = function (a) {
+	return {$: 'DocumentOne', a: a};
+};
+var author$project$JsonApi$Untyped$Resource = F3(
+	function (id, attributes, relationships) {
+		return {attributes: attributes, id: id, relationships: relationships};
 	});
 var elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var elm$core$Dict$empty = elm$core$Dict$RBEmpty_elm_builtin;
-var elm$core$Basics$compare = _Utils_compare;
-var elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
+var elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
 		while (true) {
 			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return elm$core$Maybe$Nothing;
+				return acc;
 			} else {
 				var key = dict.b;
 				var value = dict.c;
 				var left = dict.d;
 				var right = dict.e;
-				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
-				switch (_n1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3(elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
 			}
 		}
 	});
@@ -6036,6 +6173,7 @@ var elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
 		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
 	});
+var elm$core$Basics$compare = _Utils_compare;
 var elm$core$Dict$Red = {$: 'Red'};
 var elm$core$Dict$balance = F5(
 	function (color, key, value, left, right) {
@@ -6137,6 +6275,189 @@ var elm$core$Dict$insert = F3(
 		} else {
 			var x = _n0;
 			return x;
+		}
+	});
+var author$project$JsonApi$Untyped$filterDict = function (dict) {
+	return A3(
+		elm$core$Dict$foldl,
+		F3(
+			function (key, maybeValue, newDict) {
+				if (maybeValue.$ === 'Nothing') {
+					return newDict;
+				} else {
+					var value = maybeValue.a;
+					return A3(elm$core$Dict$insert, key, value, newDict);
+				}
+			}),
+		elm$core$Dict$empty,
+		dict);
+};
+var author$project$JsonApi$Untyped$RelationshipMany = function (a) {
+	return {$: 'RelationshipMany', a: a};
+};
+var author$project$JsonApi$Untyped$RelationshipOne = function (a) {
+	return {$: 'RelationshipOne', a: a};
+};
+var author$project$JsonApi$Untyped$ResourceId = F2(
+	function (resourceType, id) {
+		return {id: id, resourceType: resourceType};
+	});
+var elm$json$Json$Decode$string = _Json_decodeString;
+var author$project$JsonApi$Untyped$resourceIdDecoder = A3(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'id',
+	elm$json$Json$Decode$string,
+	A3(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'type',
+		elm$json$Json$Decode$string,
+		elm$json$Json$Decode$succeed(author$project$JsonApi$Untyped$ResourceId)));
+var elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var elm$json$Json$Decode$list = _Json_decodeList;
+var elm$json$Json$Decode$map = _Json_map1;
+var author$project$JsonApi$Untyped$relationshipDecoder = elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			A2(
+			elm$json$Json$Decode$field,
+			'data',
+			A2(
+				elm$json$Json$Decode$map,
+				elm$core$Maybe$Just,
+				elm$json$Json$Decode$oneOf(
+					_List_fromArray(
+						[
+							elm$json$Json$Decode$null(
+							author$project$JsonApi$Untyped$RelationshipOne(elm$core$Maybe$Nothing)),
+							A2(
+							elm$json$Json$Decode$map,
+							A2(elm$core$Basics$composeL, author$project$JsonApi$Untyped$RelationshipOne, elm$core$Maybe$Just),
+							author$project$JsonApi$Untyped$resourceIdDecoder),
+							A2(
+							elm$json$Json$Decode$map,
+							author$project$JsonApi$Untyped$RelationshipMany,
+							elm$json$Json$Decode$list(author$project$JsonApi$Untyped$resourceIdDecoder))
+						])))),
+			elm$json$Json$Decode$succeed(elm$core$Maybe$Nothing)
+		]));
+var elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		elm$core$List$foldl,
+		F2(
+			function (_n0, dict) {
+				var key = _n0.a;
+				var value = _n0.b;
+				return A3(elm$core$Dict$insert, key, value, dict);
+			}),
+		elm$core$Dict$empty,
+		assocs);
+};
+var elm$json$Json$Decode$keyValuePairs = _Json_decodeKeyValuePairs;
+var elm$json$Json$Decode$dict = function (decoder) {
+	return A2(
+		elm$json$Json$Decode$map,
+		elm$core$Dict$fromList,
+		elm$json$Json$Decode$keyValuePairs(decoder));
+};
+var author$project$JsonApi$Untyped$relationshipsDecoder = A2(
+	elm$json$Json$Decode$map,
+	author$project$JsonApi$Untyped$filterDict,
+	elm$json$Json$Decode$dict(author$project$JsonApi$Untyped$relationshipDecoder));
+var author$project$JsonApi$Untyped$resourceDecoder = A4(
+	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+	'relationships',
+	author$project$JsonApi$Untyped$relationshipsDecoder,
+	elm$core$Dict$empty,
+	A4(
+		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+		'attributes',
+		elm$json$Json$Decode$dict(elm$json$Json$Decode$value),
+		elm$core$Dict$empty,
+		A2(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
+			author$project$JsonApi$Untyped$resourceIdDecoder,
+			elm$json$Json$Decode$succeed(author$project$JsonApi$Untyped$Resource))));
+var author$project$JsonApi$Untyped$documentDecoder = elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'errors',
+			elm$json$Json$Decode$list(elm$json$Json$Decode$value),
+			elm$json$Json$Decode$succeed(author$project$JsonApi$Untyped$DocumentApiErrors)),
+			A4(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+			'included',
+			elm$json$Json$Decode$list(author$project$JsonApi$Untyped$resourceDecoder),
+			_List_Nil,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'data',
+				author$project$JsonApi$Untyped$resourceDecoder,
+				elm$json$Json$Decode$succeed(
+					F2(
+						function (data, included) {
+							return author$project$JsonApi$Untyped$DocumentOne(
+								{data: data, included: included});
+						})))),
+			A4(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+			'included',
+			elm$json$Json$Decode$list(author$project$JsonApi$Untyped$resourceDecoder),
+			_List_Nil,
+			A3(
+				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'data',
+				elm$json$Json$Decode$list(author$project$JsonApi$Untyped$resourceDecoder),
+				elm$json$Json$Decode$succeed(
+					F2(
+						function (data, included) {
+							return author$project$JsonApi$Untyped$DocumentMany(
+								{data: data, included: included});
+						}))))
+		]));
+var author$project$JsonApi$decodeDocumentValue = F2(
+	function (documentDecoder, jsonValue) {
+		return A4(author$project$JsonApi$decodeValue, author$project$JsonApi$Untyped$documentDecoder, author$project$JsonApi$decodeDocument, documentDecoder, jsonValue);
+	});
+var elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
+var elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _n1 = A2(elm$core$Basics$compare, targetKey, key);
+				switch (_n1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
 		}
 	});
 var elm$core$Dict$getMin = function (dict) {
@@ -6521,17 +6842,6 @@ var elm$core$Maybe$isJust = function (maybe) {
 };
 var elm$core$Platform$sendToApp = _Platform_sendToApp;
 var elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var elm$core$Result$map = F2(
-	function (func, ra) {
-		if (ra.$ === 'Ok') {
-			var a = ra.a;
-			return elm$core$Result$Ok(
-				func(a));
-		} else {
-			var e = ra.a;
-			return elm$core$Result$Err(e);
-		}
-	});
 var elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6606,6 +6916,26 @@ var elm$http$Http$expectJson = F2(
 						elm$json$Json$Decode$errorToString,
 						A2(elm$json$Json$Decode$decodeString, decoder, string));
 				}));
+	});
+var author$project$JsonApi$expectJsonApi = F2(
+	function (toMsg, documentDecoder) {
+		var httpResultToJsonApiResult = function (httpResult) {
+			if (httpResult.$ === 'Ok') {
+				var jsonValue = httpResult.a;
+				return A2(
+					elm$core$Result$mapError,
+					author$project$JsonApi$DecodeDocumentError,
+					A2(author$project$JsonApi$decodeDocumentValue, documentDecoder, jsonValue));
+			} else {
+				var httpError = httpResult.a;
+				return elm$core$Result$Err(
+					author$project$JsonApi$HttpError(httpError));
+			}
+		};
+		return A2(
+			elm$http$Http$expectJson,
+			A2(elm$core$Basics$composeR, httpResultToJsonApiResult, toMsg),
+			elm$json$Json$Decode$value);
 	});
 var elm$http$Http$emptyBody = _Http_emptyBody;
 var elm$http$Http$Request = function (a) {
@@ -6804,430 +7134,188 @@ var elm$http$Http$get = function (r) {
 	return elm$http$Http$request(
 		{body: elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: elm$core$Maybe$Nothing, tracker: elm$core$Maybe$Nothing, url: r.url});
 };
-var elm$json$Json$Decode$list = _Json_decodeList;
-var author$project$Api$Request$getStops = F2(
-	function (msg, stopIds) {
-		var stopIdsParam = A2(
-			elm$core$String$join,
-			',',
-			A2(
-				elm$core$List$map,
-				function (_n0) {
-					var stopId = _n0.a;
-					return stopId;
-				},
-				stopIds));
-		var url = A2(
-			author$project$Api$Url$url,
-			'stops',
-			_List_fromArray(
-				[
-					_Utils_Tuple2('filter[id]', stopIdsParam)
-				]));
+var author$project$JsonApi$get = F3(
+	function (toMsg, documentDecoder, url) {
 		return elm$http$Http$get(
 			{
-				expect: A2(
-					elm$http$Http$expectJson,
-					msg,
-					A2(
-						elm$json$Json$Decode$at,
-						_List_fromArray(
-							['data']),
-						elm$json$Json$Decode$list(author$project$Api$Decoders$stopDecoder))),
+				expect: A2(author$project$JsonApi$expectJsonApi, toMsg, documentDecoder),
 				url: url
 			});
 	});
-var author$project$Model$ReceiveStopNames = function (a) {
-	return {$: 'ReceiveStopNames', a: a};
-};
-var author$project$Main$getStopNames = function (selections) {
-	return A2(
-		author$project$Api$Request$getStops,
-		author$project$Model$ReceiveStopNames,
-		A2(
-			elm$core$List$map,
-			function ($) {
-				return $.stopId;
-			},
-			selections));
-};
-var author$project$Model$Tick = function (a) {
-	return {$: 'Tick', a: a};
-};
-var author$project$Api$Types$D0 = {$: 'D0'};
-var author$project$Api$Types$D1 = {$: 'D1'};
-var author$project$Api$Types$RouteId = function (a) {
-	return {$: 'RouteId', a: a};
-};
-var author$project$UrlParsing$parseSelection = function (queryValue) {
-	var _n0 = A2(elm$core$String$split, ',', queryValue);
-	_n0$3:
-	while (true) {
-		if (_n0.b && _n0.b.b) {
-			if (!_n0.b.b.b) {
-				var routeId = _n0.a;
-				var _n1 = _n0.b;
-				var stopId = _n1.a;
-				return elm$core$Maybe$Just(
-					{
-						directionId: elm$core$Maybe$Nothing,
-						routeId: author$project$Api$Types$RouteId(routeId),
-						stopId: author$project$Api$Types$StopId(stopId)
-					});
-			} else {
-				if (!_n0.b.b.b.b) {
-					switch (_n0.b.b.a) {
-						case '0':
-							var routeId = _n0.a;
-							var _n2 = _n0.b;
-							var stopId = _n2.a;
-							var _n3 = _n2.b;
-							return elm$core$Maybe$Just(
-								{
-									directionId: elm$core$Maybe$Just(author$project$Api$Types$D0),
-									routeId: author$project$Api$Types$RouteId(routeId),
-									stopId: author$project$Api$Types$StopId(stopId)
-								});
-						case '1':
-							var routeId = _n0.a;
-							var _n4 = _n0.b;
-							var stopId = _n4.a;
-							var _n5 = _n4.b;
-							return elm$core$Maybe$Just(
-								{
-									directionId: elm$core$Maybe$Just(author$project$Api$Types$D1),
-									routeId: author$project$Api$Types$RouteId(routeId),
-									stopId: author$project$Api$Types$StopId(stopId)
-								});
-						default:
-							break _n0$3;
-					}
-				} else {
-					break _n0$3;
-				}
-			}
-		} else {
-			break _n0$3;
-		}
-	}
-	return elm$core$Maybe$Nothing;
-};
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var elm$url$Url$Parser$Internal$Parser = function (a) {
-	return {$: 'Parser', a: a};
-};
-var elm$url$Url$Parser$Query$custom = F2(
-	function (key, func) {
-		return elm$url$Url$Parser$Internal$Parser(
-			function (dict) {
-				return func(
-					A2(
-						elm$core$Maybe$withDefault,
-						_List_Nil,
-						A2(elm$core$Dict$get, key, dict)));
-			});
-	});
-var author$project$UrlParsing$selectionsQueryParser = A2(
-	elm$url$Url$Parser$Query$custom,
-	'stop',
-	elm$core$List$filterMap(author$project$UrlParsing$parseSelection));
-var elm$url$Url$Parser$Parser = function (a) {
-	return {$: 'Parser', a: a};
-};
-var elm$url$Url$Parser$State = F5(
-	function (visited, unvisited, params, frag, value) {
-		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
-	});
-var elm$url$Url$Parser$query = function (_n0) {
-	var queryParser = _n0.a;
-	return elm$url$Url$Parser$Parser(
-		function (_n1) {
-			var visited = _n1.visited;
-			var unvisited = _n1.unvisited;
-			var params = _n1.params;
-			var frag = _n1.frag;
-			var value = _n1.value;
-			return _List_fromArray(
-				[
-					A5(
-					elm$url$Url$Parser$State,
-					visited,
-					unvisited,
-					params,
-					frag,
-					value(
-						queryParser(params)))
-				]);
-		});
-};
-var author$project$UrlParsing$selectionsUrlParser = elm$url$Url$Parser$query(author$project$UrlParsing$selectionsQueryParser);
-var elm$url$Url$Parser$getFirstMatch = function (states) {
-	getFirstMatch:
-	while (true) {
-		if (!states.b) {
-			return elm$core$Maybe$Nothing;
-		} else {
-			var state = states.a;
-			var rest = states.b;
-			var _n1 = state.unvisited;
-			if (!_n1.b) {
-				return elm$core$Maybe$Just(state.value);
-			} else {
-				if ((_n1.a === '') && (!_n1.b.b)) {
-					return elm$core$Maybe$Just(state.value);
-				} else {
-					var $temp$states = rest;
-					states = $temp$states;
-					continue getFirstMatch;
-				}
-			}
-		}
-	}
-};
-var elm$url$Url$Parser$removeFinalEmpty = function (segments) {
-	if (!segments.b) {
-		return _List_Nil;
-	} else {
-		if ((segments.a === '') && (!segments.b.b)) {
-			return _List_Nil;
-		} else {
-			var segment = segments.a;
-			var rest = segments.b;
-			return A2(
-				elm$core$List$cons,
-				segment,
-				elm$url$Url$Parser$removeFinalEmpty(rest));
-		}
-	}
-};
-var elm$url$Url$Parser$preparePath = function (path) {
-	var _n0 = A2(elm$core$String$split, '/', path);
-	if (_n0.b && (_n0.a === '')) {
-		var segments = _n0.b;
-		return elm$url$Url$Parser$removeFinalEmpty(segments);
-	} else {
-		var segments = _n0;
-		return elm$url$Url$Parser$removeFinalEmpty(segments);
-	}
-};
-var elm$url$Url$percentDecode = _Url_percentDecode;
-var elm$url$Url$Parser$addToParametersHelp = F2(
-	function (value, maybeList) {
-		if (maybeList.$ === 'Nothing') {
-			return elm$core$Maybe$Just(
-				_List_fromArray(
-					[value]));
-		} else {
-			var list = maybeList.a;
-			return elm$core$Maybe$Just(
-				A2(elm$core$List$cons, value, list));
-		}
-	});
-var elm$url$Url$Parser$addParam = F2(
-	function (segment, dict) {
-		var _n0 = A2(elm$core$String$split, '=', segment);
-		if ((_n0.b && _n0.b.b) && (!_n0.b.b.b)) {
-			var rawKey = _n0.a;
-			var _n1 = _n0.b;
-			var rawValue = _n1.a;
-			var _n2 = elm$url$Url$percentDecode(rawKey);
-			if (_n2.$ === 'Nothing') {
-				return dict;
-			} else {
-				var key = _n2.a;
-				var _n3 = elm$url$Url$percentDecode(rawValue);
-				if (_n3.$ === 'Nothing') {
-					return dict;
-				} else {
-					var value = _n3.a;
-					return A3(
-						elm$core$Dict$update,
-						key,
-						elm$url$Url$Parser$addToParametersHelp(value),
-						dict);
-				}
-			}
-		} else {
-			return dict;
-		}
-	});
-var elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
-	if (maybeQuery.$ === 'Nothing') {
-		return elm$core$Dict$empty;
-	} else {
-		var qry = maybeQuery.a;
-		return A3(
-			elm$core$List$foldr,
-			elm$url$Url$Parser$addParam,
-			elm$core$Dict$empty,
-			A2(elm$core$String$split, '&', qry));
-	}
-};
-var elm$url$Url$Parser$parse = F2(
-	function (_n0, url) {
-		var parser = _n0.a;
-		return elm$url$Url$Parser$getFirstMatch(
-			parser(
-				A5(
-					elm$url$Url$Parser$State,
-					_List_Nil,
-					elm$url$Url$Parser$preparePath(url.path),
-					elm$url$Url$Parser$prepareQuery(url.query),
-					url.fragment,
-					elm$core$Basics$identity)));
-	});
-var author$project$UrlParsing$parseSelectionsFromUrl = function (url) {
-	return A2(
-		elm$core$Maybe$withDefault,
-		_List_Nil,
-		A2(
-			elm$url$Url$Parser$parse,
-			author$project$UrlParsing$selectionsUrlParser,
-			_Utils_update(
-				url,
-				{path: '/'})));
-};
-var elm$core$Platform$Cmd$batch = _Platform_batch;
-var elm$core$Task$Perform = function (a) {
-	return {$: 'Perform', a: a};
-};
-var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
-var elm$core$Task$map = F2(
-	function (func, taskA) {
-		return A2(
-			elm$core$Task$andThen,
-			function (a) {
-				return elm$core$Task$succeed(
-					func(a));
-			},
-			taskA);
-	});
-var elm$core$Task$spawnCmd = F2(
-	function (router, _n0) {
-		var task = _n0.a;
-		return _Scheduler_spawn(
-			A2(
-				elm$core$Task$andThen,
-				elm$core$Platform$sendToApp(router),
-				task));
-	});
-var elm$core$Task$onEffects = F3(
-	function (router, commands, state) {
-		return A2(
-			elm$core$Task$map,
-			function (_n0) {
-				return _Utils_Tuple0;
-			},
-			elm$core$Task$sequence(
-				A2(
-					elm$core$List$map,
-					elm$core$Task$spawnCmd(router),
-					commands)));
-	});
-var elm$core$Task$onSelfMsg = F3(
-	function (_n0, _n1, _n2) {
-		return elm$core$Task$succeed(_Utils_Tuple0);
-	});
-var elm$core$Task$cmdMap = F2(
-	function (tagger, _n0) {
-		var task = _n0.a;
-		return elm$core$Task$Perform(
-			A2(elm$core$Task$map, tagger, task));
-	});
-_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
-var elm$core$Task$command = _Platform_leaf('Task');
-var elm$core$Task$perform = F2(
-	function (toMessage, task) {
-		return elm$core$Task$command(
-			elm$core$Task$Perform(
-				A2(elm$core$Task$map, toMessage, task)));
-	});
-var elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var elm$time$Time$millisToPosix = elm$time$Time$Posix;
-var elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
-};
-var elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
-};
-var elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
-	});
-var elm$time$Time$customZone = elm$time$Time$Zone;
-var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
 var pzp1997$assoc_list$AssocList$D = function (a) {
 	return {$: 'D', a: a};
 };
 var pzp1997$assoc_list$AssocList$empty = pzp1997$assoc_list$AssocList$D(_List_Nil);
-var author$project$Main$init = F3(
-	function (flags, url, key) {
-		var selections = author$project$UrlParsing$parseSelectionsFromUrl(url);
-		var _n0 = author$project$Api$Stream$init(selections);
-		var initApiResult = _n0.a;
-		var initApiCmd = _n0.b;
-		return _Utils_Tuple2(
-			{
-				apiResult: initApiResult,
-				currentTime: elm$time$Time$millisToPosix(0),
-				directionIdFormValue: elm$core$Maybe$Nothing,
-				navigationKey: key,
-				routeIdFormText: '',
-				selections: selections,
-				stopIdFormText: '',
-				stopNames: pzp1997$assoc_list$AssocList$empty,
-				url: url
-			},
-			elm$core$Platform$Cmd$batch(
-				_List_fromArray(
-					[
-						A2(elm$core$Task$perform, author$project$Model$Tick, elm$time$Time$now),
-						initApiCmd,
-						author$project$Main$getStopNames(selections)
-					])));
+var author$project$Mbta$Mixed$empty = {alerts: pzp1997$assoc_list$AssocList$empty, facilities: pzp1997$assoc_list$AssocList$empty, lines: pzp1997$assoc_list$AssocList$empty, liveFacilities: pzp1997$assoc_list$AssocList$empty, predictions: pzp1997$assoc_list$AssocList$empty, routePatterns: pzp1997$assoc_list$AssocList$empty, routes: pzp1997$assoc_list$AssocList$empty, schedules: pzp1997$assoc_list$AssocList$empty, services: pzp1997$assoc_list$AssocList$empty, shapes: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty, vehicles: pzp1997$assoc_list$AssocList$empty};
+var author$project$JsonApi$ResourceDecoder = function (a) {
+	return {$: 'ResourceDecoder', a: a};
+};
+var author$project$JsonApi$ResourceIdError = function (a) {
+	return {$: 'ResourceIdError', a: a};
+};
+var author$project$JsonApi$byType = function (resourceDecoders) {
+	return author$project$JsonApi$ResourceDecoder(
+		function (untypedResource) {
+			var _n0 = A2(elm$core$Dict$get, untypedResource.id.resourceType, resourceDecoders);
+			if (_n0.$ === 'Just') {
+				var resourceDecoder = _n0.a;
+				return A2(author$project$JsonApi$decodeResource, resourceDecoder, untypedResource);
+			} else {
+				return elm$core$Result$Err(
+					author$project$JsonApi$ResourceIdError(
+						{
+							actualIdValue: untypedResource.id.id,
+							actualType: untypedResource.id.resourceType,
+							expectedType: elm$core$Dict$keys(resourceDecoders)
+						}));
+			}
+		});
+};
+var author$project$JsonApi$map = F2(
+	function (f, resourceDecoder) {
+		return author$project$JsonApi$ResourceDecoder(
+			function (untypedResource) {
+				return A2(
+					elm$core$Result$map,
+					f,
+					A2(author$project$JsonApi$decodeResource, resourceDecoder, untypedResource));
+			});
 	});
-var elm$json$Json$Decode$int = _Json_decodeInt;
-var author$project$Api$Decoders$directionIdDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (x) {
-		switch (x) {
-			case 0:
-				return elm$json$Json$Decode$succeed(author$project$Api$Types$D0);
-			case 1:
-				return elm$json$Json$Decode$succeed(author$project$Api$Types$D1);
-			default:
-				return elm$json$Json$Decode$fail(
-					'unrecognized direction_id ' + elm$core$String$fromInt(x));
-		}
-	},
-	elm$json$Json$Decode$int);
-var author$project$Api$Types$PredictionId = function (a) {
-	return {$: 'PredictionId', a: a};
+var author$project$Mbta$stopId = function (stop) {
+	switch (stop.$) {
+		case 'Stop_0_Stop':
+			var stop_stop = stop.a;
+			return stop_stop.id;
+		case 'Stop_1_Station':
+			var stop_station = stop.a;
+			return stop_station.id;
+		case 'Stop_2_Entrance':
+			var stop_entrance = stop.a;
+			return stop_entrance.id;
+		default:
+			var stop_node = stop.a;
+			return stop_node.id;
+	}
 };
-var author$project$Api$Decoders$predictionIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$PredictionId, elm$json$Json$Decode$string);
-var author$project$Api$Decoders$routeIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$RouteId, elm$json$Json$Decode$string);
-var author$project$Api$Types$TripId = function (a) {
-	return {$: 'TripId', a: a};
-};
-var author$project$Api$Decoders$tripIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$TripId, elm$json$Json$Decode$string);
-var author$project$Api$Types$VehicleId = function (a) {
-	return {$: 'VehicleId', a: a};
-};
-var author$project$Api$Decoders$vehicleIdDecoder = A2(elm$json$Json$Decode$map, author$project$Api$Types$VehicleId, elm$json$Json$Decode$string);
-var author$project$Api$Types$Prediction = F7(
-	function (id, time, routeId, stopId, directionId, tripId, vehicleId) {
-		return {directionId: directionId, id: id, routeId: routeId, stopId: stopId, time: time, tripId: tripId, vehicleId: vehicleId};
+var author$project$JsonApi$AttributeDecodeError = F2(
+	function (a, b) {
+		return {$: 'AttributeDecodeError', a: a, b: b};
 	});
+var author$project$JsonApi$AttributeMissing = function (a) {
+	return {$: 'AttributeMissing', a: a};
+};
+var author$project$JsonApi$custom = F2(
+	function (resourceDecoder, constructorDecoder) {
+		return author$project$JsonApi$ResourceDecoder(
+			function (untypedResource) {
+				return A3(
+					elm$core$Result$map2,
+					F2(
+						function (x, consructor) {
+							return consructor(x);
+						}),
+					A2(author$project$JsonApi$decodeResource, resourceDecoder, untypedResource),
+					A2(author$project$JsonApi$decodeResource, constructorDecoder, untypedResource));
+			});
+	});
+var author$project$JsonApi$attribute = F2(
+	function (attributeName, attributeDecoder) {
+		return author$project$JsonApi$custom(
+			author$project$JsonApi$ResourceDecoder(
+				function (untypedResource) {
+					var _n0 = A2(elm$core$Dict$get, attributeName, untypedResource.attributes);
+					if (_n0.$ === 'Just') {
+						var attributeJson = _n0.a;
+						return A2(
+							elm$core$Result$mapError,
+							author$project$JsonApi$AttributeDecodeError(attributeName),
+							A2(elm$json$Json$Decode$decodeValue, attributeDecoder, attributeJson));
+					} else {
+						return elm$core$Result$Err(
+							author$project$JsonApi$AttributeMissing(attributeName));
+					}
+				}));
+	});
+var elm$json$Json$Decode$nullable = function (decoder) {
+	return elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				elm$json$Json$Decode$null(elm$core$Maybe$Nothing),
+				A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder)
+			]));
+};
+var author$project$JsonApi$attributeMaybe = F2(
+	function (attributeName, attributeDecoder) {
+		return author$project$JsonApi$custom(
+			author$project$JsonApi$ResourceDecoder(
+				function (untypedResource) {
+					var _n0 = A2(elm$core$Dict$get, attributeName, untypedResource.attributes);
+					if (_n0.$ === 'Just') {
+						var attributeJson = _n0.a;
+						return A2(
+							elm$core$Result$mapError,
+							author$project$JsonApi$AttributeDecodeError(attributeName),
+							A2(
+								elm$json$Json$Decode$decodeValue,
+								elm$json$Json$Decode$nullable(attributeDecoder),
+								attributeJson));
+					} else {
+						return elm$core$Result$Ok(elm$core$Maybe$Nothing);
+					}
+				}));
+	});
+var author$project$JsonApi$decodeId = F2(
+	function (_n0, untypedId) {
+		var documentDecoder = _n0.a;
+		return documentDecoder(untypedId);
+	});
+var author$project$JsonApi$id = function (idDecoder_) {
+	return author$project$JsonApi$custom(
+		author$project$JsonApi$ResourceDecoder(
+			function (untypedResource) {
+				return A2(
+					elm$core$Result$mapError,
+					author$project$JsonApi$ResourceIdError,
+					A2(author$project$JsonApi$decodeId, idDecoder_, untypedResource.id));
+			}));
+};
+var author$project$JsonApi$succeed = function (constructor) {
+	return author$project$JsonApi$ResourceDecoder(
+		function (untypedResource) {
+			return elm$core$Result$Ok(constructor);
+		});
+};
+var author$project$Mbta$Alert = function (id) {
+	return function (url) {
+		return function (shortHeader) {
+			return function (header) {
+				return function (description) {
+					return function (createdAt) {
+						return function (updatedAt) {
+							return function (timeframe) {
+								return function (activePeriod) {
+									return function (severity) {
+										return function (serviceEffect) {
+											return function (lifecycle) {
+												return function (effect) {
+													return function (cause) {
+														return function (informedEntities) {
+															return {activePeriod: activePeriod, cause: cause, createdAt: createdAt, description: description, effect: effect, header: header, id: id, informedEntities: informedEntities, lifecycle: lifecycle, serviceEffect: serviceEffect, severity: severity, shortHeader: shortHeader, timeframe: timeframe, updatedAt: updatedAt, url: url};
+														};
+													};
+												};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
 var elm$parser$Parser$deadEndsToString = function (deadEnds) {
 	return 'TODO deadEndsToString';
 };
@@ -7618,6 +7706,10 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$fractionsOfASecondInMs = A2(
 	},
 	elm$parser$Parser$getChompedString(
 		elm$parser$Parser$chompWhile(elm$core$Char$isDigit)));
+var elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var elm$time$Time$millisToPosix = elm$time$Time$Posix;
 var rtfeldman$elm_iso8601_date_strings$Iso8601$fromParts = F6(
 	function (monthYearDayMs, hour, minute, second, ms, utcOffsetMinutes) {
 		return elm$time$Time$millisToPosix((((monthYearDayMs + (((hour * 60) * 60) * 1000)) + (((minute - utcOffsetMinutes) * 60) * 1000)) + (second * 1000)) + ms);
@@ -8014,217 +8106,2743 @@ var rtfeldman$elm_iso8601_date_strings$Iso8601$decoder = A2(
 		}
 	},
 	elm$json$Json$Decode$string);
-var author$project$Api$Decoders$predictionDecoder = A4(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optionalAt,
+var author$project$Mbta$Decode$activePeriod = A3(
+	elm$json$Json$Decode$map2,
+	F2(
+		function (start, end) {
+			return {end: end, start: start};
+		}),
+	A2(elm$json$Json$Decode$field, 'start', rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
+	A2(
+		elm$json$Json$Decode$field,
+		'end',
+		elm$json$Json$Decode$nullable(rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)));
+var author$project$JsonApi$IdDecoder = function (a) {
+	return {$: 'IdDecoder', a: a};
+};
+var author$project$JsonApi$idDecoder = F2(
+	function (typeString, idConstructor) {
+		return author$project$JsonApi$IdDecoder(
+			function (untypedResourceId) {
+				return _Utils_eq(untypedResourceId.resourceType, typeString) ? elm$core$Result$Ok(
+					idConstructor(untypedResourceId.id)) : elm$core$Result$Err(
+					{
+						actualIdValue: untypedResourceId.id,
+						actualType: untypedResourceId.resourceType,
+						expectedType: _List_fromArray(
+							[typeString])
+					});
+			});
+	});
+var author$project$Mbta$AlertId = function (a) {
+	return {$: 'AlertId', a: a};
+};
+var author$project$Mbta$Decode$alertId = A2(author$project$JsonApi$idDecoder, 'alert', author$project$Mbta$AlertId);
+var author$project$DecodeHelpers$enum = F2(
+	function (primitiveDecoder, cases) {
+		return A2(
+			elm$json$Json$Decode$andThen,
+			function (primitive) {
+				var _n0 = A2(
+					elm$core$Dict$get,
+					primitive,
+					elm$core$Dict$fromList(cases));
+				if (_n0.$ === 'Just') {
+					var result = _n0.a;
+					return elm$json$Json$Decode$succeed(result);
+				} else {
+					return elm$json$Json$Decode$fail('unrecognized case');
+				}
+			},
+			primitiveDecoder);
+	});
+var author$project$Mbta$Alert_New = {$: 'Alert_New'};
+var author$project$Mbta$Alert_Ongoing = {$: 'Alert_Ongoing'};
+var author$project$Mbta$Alert_OngoingUpcoming = {$: 'Alert_OngoingUpcoming'};
+var author$project$Mbta$Alert_Upcoming = {$: 'Alert_Upcoming'};
+var author$project$Mbta$Decode$alertLifecycle = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$string,
 	_List_fromArray(
-		['relationships', 'vehicle', 'data', 'id']),
-	A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, author$project$Api$Decoders$vehicleIdDecoder),
-	elm$core$Maybe$Nothing,
+		[
+			_Utils_Tuple2('NEW', author$project$Mbta$Alert_New),
+			_Utils_Tuple2('ONGOING', author$project$Mbta$Alert_Ongoing),
+			_Utils_Tuple2('ONGOING_UPCOMING', author$project$Mbta$Alert_OngoingUpcoming),
+			_Utils_Tuple2('UPCOMING', author$project$Mbta$Alert_Upcoming)
+		]));
+var author$project$Mbta$FacilityId = function (a) {
+	return {$: 'FacilityId', a: a};
+};
+var author$project$Mbta$InformedEntity = F7(
+	function (activities, routeType, routeId, directionId, tripId, stopId, facilityId) {
+		return {activities: activities, directionId: directionId, facilityId: facilityId, routeId: routeId, routeType: routeType, stopId: stopId, tripId: tripId};
+	});
+var author$project$Mbta$RouteId = function (a) {
+	return {$: 'RouteId', a: a};
+};
+var author$project$Mbta$StopId = function (a) {
+	return {$: 'StopId', a: a};
+};
+var author$project$Mbta$TripId = function (a) {
+	return {$: 'TripId', a: a};
+};
+var author$project$Mbta$D0 = {$: 'D0'};
+var author$project$Mbta$D1 = {$: 'D1'};
+var elm$json$Json$Decode$int = _Json_decodeInt;
+var author$project$Mbta$Decode$directionId = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$D0),
+			_Utils_Tuple2(1, author$project$Mbta$D1)
+		]));
+var author$project$Mbta$Activity_Board = {$: 'Activity_Board'};
+var author$project$Mbta$Activity_BringingBike = {$: 'Activity_BringingBike'};
+var author$project$Mbta$Activity_Exit = {$: 'Activity_Exit'};
+var author$project$Mbta$Activity_ParkCar = {$: 'Activity_ParkCar'};
+var author$project$Mbta$Activity_Ride = {$: 'Activity_Ride'};
+var author$project$Mbta$Activity_StoreBike = {$: 'Activity_StoreBike'};
+var author$project$Mbta$Activity_UsingEscalator = {$: 'Activity_UsingEscalator'};
+var author$project$Mbta$Activity_UsingWheelchair = {$: 'Activity_UsingWheelchair'};
+var author$project$Mbta$Decode$informedEntityActivity = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$string,
+	_List_fromArray(
+		[
+			_Utils_Tuple2('BOARD', author$project$Mbta$Activity_Board),
+			_Utils_Tuple2('BRINGING_BIKE', author$project$Mbta$Activity_BringingBike),
+			_Utils_Tuple2('EXIT', author$project$Mbta$Activity_Exit),
+			_Utils_Tuple2('PARK_CAR', author$project$Mbta$Activity_ParkCar),
+			_Utils_Tuple2('RIDE', author$project$Mbta$Activity_Ride),
+			_Utils_Tuple2('STORE_BIKE', author$project$Mbta$Activity_StoreBike),
+			_Utils_Tuple2('USING_ESCALATOR', author$project$Mbta$Activity_UsingEscalator),
+			_Utils_Tuple2('USING_WHEELCHAIR', author$project$Mbta$Activity_UsingWheelchair)
+		]));
+var author$project$Mbta$Decode$pipelineMaybe = F2(
+	function (field, decoder) {
+		return A3(
+			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$optional,
+			field,
+			A2(elm$json$Json$Decode$map, elm$core$Maybe$Just, decoder),
+			elm$core$Maybe$Nothing);
+	});
+var author$project$Mbta$RouteType_0_LightRail = {$: 'RouteType_0_LightRail'};
+var author$project$Mbta$RouteType_1_HeavyRail = {$: 'RouteType_1_HeavyRail'};
+var author$project$Mbta$RouteType_2_CommuterRail = {$: 'RouteType_2_CommuterRail'};
+var author$project$Mbta$RouteType_3_Bus = {$: 'RouteType_3_Bus'};
+var author$project$Mbta$RouteType_4_Ferry = {$: 'RouteType_4_Ferry'};
+var author$project$Mbta$Decode$routeType = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$RouteType_0_LightRail),
+			_Utils_Tuple2(1, author$project$Mbta$RouteType_1_HeavyRail),
+			_Utils_Tuple2(2, author$project$Mbta$RouteType_2_CommuterRail),
+			_Utils_Tuple2(3, author$project$Mbta$RouteType_3_Bus),
+			_Utils_Tuple2(4, author$project$Mbta$RouteType_4_Ferry)
+		]));
+var author$project$Mbta$Decode$informedEntity = A3(
+	author$project$Mbta$Decode$pipelineMaybe,
+	'facility',
+	A2(elm$json$Json$Decode$map, author$project$Mbta$FacilityId, elm$json$Json$Decode$string),
 	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-		_List_fromArray(
-			['relationships', 'trip', 'data', 'id']),
-		author$project$Api$Decoders$tripIdDecoder,
+		author$project$Mbta$Decode$pipelineMaybe,
+		'stop',
+		A2(elm$json$Json$Decode$map, author$project$Mbta$StopId, elm$json$Json$Decode$string),
 		A3(
-			NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-			_List_fromArray(
-				['attributes', 'direction_id']),
-			author$project$Api$Decoders$directionIdDecoder,
+			author$project$Mbta$Decode$pipelineMaybe,
+			'trip',
+			A2(elm$json$Json$Decode$map, author$project$Mbta$TripId, elm$json$Json$Decode$string),
 			A3(
-				NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-				_List_fromArray(
-					['relationships', 'stop', 'data', 'id']),
-				author$project$Api$Decoders$stopIdDecoder,
+				author$project$Mbta$Decode$pipelineMaybe,
+				'direction_id',
+				author$project$Mbta$Decode$directionId,
 				A3(
-					NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-					_List_fromArray(
-						['relationships', 'route', 'data', 'id']),
-					author$project$Api$Decoders$routeIdDecoder,
-					A2(
-						NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$custom,
-						elm$json$Json$Decode$oneOf(
-							_List_fromArray(
-								[
-									A2(
-									elm$json$Json$Decode$at,
-									_List_fromArray(
-										['attributes', 'arrival_time']),
-									rtfeldman$elm_iso8601_date_strings$Iso8601$decoder),
-									A2(
-									elm$json$Json$Decode$at,
-									_List_fromArray(
-										['attributes', 'departure_time']),
-									rtfeldman$elm_iso8601_date_strings$Iso8601$decoder)
-								])),
+					author$project$Mbta$Decode$pipelineMaybe,
+					'route',
+					A2(elm$json$Json$Decode$map, author$project$Mbta$RouteId, elm$json$Json$Decode$string),
+					A3(
+						author$project$Mbta$Decode$pipelineMaybe,
+						'route_type',
+						author$project$Mbta$Decode$routeType,
 						A3(
 							NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-							'id',
-							author$project$Api$Decoders$predictionIdDecoder,
-							A2(author$project$Api$Decoders$checkType, 'prediction', author$project$Api$Types$Prediction))))))));
-var author$project$Api$Types$Trip = F2(
-	function (id, headsign) {
-		return {headsign: headsign, id: id};
-	});
-var author$project$Api$Decoders$tripDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
-	_List_fromArray(
-		['attributes', 'headsign']),
-	elm$json$Json$Decode$string,
+							'activities',
+							elm$json$Json$Decode$list(author$project$Mbta$Decode$informedEntityActivity),
+							elm$json$Json$Decode$succeed(author$project$Mbta$InformedEntity))))))));
+var author$project$Mbta$Decode$alert = A3(
+	author$project$JsonApi$attribute,
+	'informed_entity',
+	elm$json$Json$Decode$list(author$project$Mbta$Decode$informedEntity),
 	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'id',
-		author$project$Api$Decoders$tripIdDecoder,
-		A2(author$project$Api$Decoders$checkType, 'trip', author$project$Api$Types$Trip)));
-var author$project$Api$Types$Vehicle = F2(
-	function (id, label) {
-		return {id: id, label: label};
+		author$project$JsonApi$attribute,
+		'cause',
+		elm$json$Json$Decode$string,
+		A3(
+			author$project$JsonApi$attribute,
+			'effect',
+			elm$json$Json$Decode$string,
+			A3(
+				author$project$JsonApi$attribute,
+				'lifecycle',
+				author$project$Mbta$Decode$alertLifecycle,
+				A3(
+					author$project$JsonApi$attribute,
+					'service_effect',
+					elm$json$Json$Decode$string,
+					A3(
+						author$project$JsonApi$attribute,
+						'severity',
+						elm$json$Json$Decode$int,
+						A3(
+							author$project$JsonApi$attribute,
+							'active_period',
+							elm$json$Json$Decode$list(author$project$Mbta$Decode$activePeriod),
+							A3(
+								author$project$JsonApi$attributeMaybe,
+								'timeframe',
+								elm$json$Json$Decode$string,
+								A3(
+									author$project$JsonApi$attribute,
+									'updated_at',
+									rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+									A3(
+										author$project$JsonApi$attribute,
+										'created_at',
+										rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+										A3(
+											author$project$JsonApi$attributeMaybe,
+											'description',
+											elm$json$Json$Decode$string,
+											A3(
+												author$project$JsonApi$attribute,
+												'header',
+												elm$json$Json$Decode$string,
+												A3(
+													author$project$JsonApi$attribute,
+													'short_header',
+													elm$json$Json$Decode$string,
+													A3(
+														author$project$JsonApi$attributeMaybe,
+														'url',
+														elm$json$Json$Decode$string,
+														A2(
+															author$project$JsonApi$id,
+															author$project$Mbta$Decode$alertId,
+															author$project$JsonApi$succeed(author$project$Mbta$Alert))))))))))))))));
+var author$project$JsonApi$RelationshipIdError = F2(
+	function (a, b) {
+		return {$: 'RelationshipIdError', a: a, b: b};
 	});
-var author$project$Api$Decoders$vehicleDecoder = A3(
-	NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$requiredAt,
+var author$project$JsonApi$RelationshipNumberError = F2(
+	function (a, b) {
+		return {$: 'RelationshipNumberError', a: a, b: b};
+	});
+var author$project$JsonApi$relationshipMaybe = F2(
+	function (relationshipName, relatedIdDecoder) {
+		return author$project$JsonApi$custom(
+			author$project$JsonApi$ResourceDecoder(
+				function (untypedResource) {
+					var _n0 = A2(elm$core$Dict$get, relationshipName, untypedResource.relationships);
+					if (_n0.$ === 'Just') {
+						if (_n0.a.$ === 'RelationshipOne') {
+							var maybeRelatedId = _n0.a.a;
+							if (maybeRelatedId.$ === 'Nothing') {
+								return elm$core$Result$Ok(elm$core$Maybe$Nothing);
+							} else {
+								var relatedId = maybeRelatedId.a;
+								return A2(
+									elm$core$Result$mapError,
+									author$project$JsonApi$RelationshipIdError(relationshipName),
+									A2(
+										elm$core$Result$map,
+										elm$core$Maybe$Just,
+										A2(author$project$JsonApi$decodeId, relatedIdDecoder, relatedId)));
+							}
+						} else {
+							return elm$core$Result$Err(
+								A2(author$project$JsonApi$RelationshipNumberError, relationshipName, 'Expected one or zero relationship but got a list'));
+						}
+					} else {
+						return elm$core$Result$Ok(elm$core$Maybe$Nothing);
+					}
+				}));
+	});
+var author$project$Mbta$Facility = F7(
+	function (id, stopId, longName, shortName, facilityType, latLng, properties) {
+		return {facilityType: facilityType, id: id, latLng: latLng, longName: longName, properties: properties, shortName: shortName, stopId: stopId};
+	});
+var author$project$Mbta$FacilityType = function (a) {
+	return {$: 'FacilityType', a: a};
+};
+var author$project$JsonApi$OneOf = function (a) {
+	return {$: 'OneOf', a: a};
+};
+var author$project$JsonApi$oneOf = function (resourceDecoders) {
+	return author$project$JsonApi$ResourceDecoder(
+		function (untypedResource) {
+			return A2(
+				elm$core$Result$mapError,
+				A2(elm$core$Basics$composeR, elm$core$List$reverse, author$project$JsonApi$OneOf),
+				A3(
+					elm$core$List$foldl,
+					F2(
+						function (resourceDecoder, previousResult) {
+							if (previousResult.$ === 'Err') {
+								var errors = previousResult.a;
+								var _n1 = A2(author$project$JsonApi$decodeResource, resourceDecoder, untypedResource);
+								if (_n1.$ === 'Err') {
+									var newError = _n1.a;
+									return elm$core$Result$Err(
+										A2(elm$core$List$cons, newError, errors));
+								} else {
+									var resource = _n1.a;
+									return elm$core$Result$Ok(resource);
+								}
+							} else {
+								var resource = previousResult.a;
+								return elm$core$Result$Ok(resource);
+							}
+						}),
+					elm$core$Result$Err(_List_Nil),
+					resourceDecoders));
+		});
+};
+var author$project$Mbta$Decode$attributeOneOf = F2(
+	function (attributeNames, attributeDecoder) {
+		return author$project$JsonApi$oneOf(
+			A2(
+				elm$core$List$map,
+				function (attributeName) {
+					return A3(
+						author$project$JsonApi$attribute,
+						attributeName,
+						attributeDecoder,
+						author$project$JsonApi$succeed(elm$core$Basics$identity));
+				},
+				attributeNames));
+	});
+var author$project$Mbta$Decode$facilityId = A2(author$project$JsonApi$idDecoder, 'facility', author$project$Mbta$FacilityId);
+var author$project$Mbta$FacilityProperty_Int = function (a) {
+	return {$: 'FacilityProperty_Int', a: a};
+};
+var author$project$Mbta$FacilityProperty_Null = {$: 'FacilityProperty_Null'};
+var author$project$Mbta$FacilityProperty_String = function (a) {
+	return {$: 'FacilityProperty_String', a: a};
+};
+var author$project$Mbta$Decode$facilityPropertyValue = elm$json$Json$Decode$oneOf(
 	_List_fromArray(
-		['attributes', 'label']),
-	elm$json$Json$Decode$string,
-	A3(
-		NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'id',
-		author$project$Api$Decoders$vehicleIdDecoder,
-		A2(author$project$Api$Decoders$checkType, 'vehicle', author$project$Api$Types$Vehicle)));
-var author$project$Api$Types$ResourcePrediction = function (a) {
-	return {$: 'ResourcePrediction', a: a};
-};
-var author$project$Api$Types$ResourceStop = function (a) {
-	return {$: 'ResourceStop', a: a};
-};
-var author$project$Api$Types$ResourceTrip = function (a) {
-	return {$: 'ResourceTrip', a: a};
-};
-var author$project$Api$Types$ResourceVehicle = function (a) {
-	return {$: 'ResourceVehicle', a: a};
-};
-var author$project$Api$Decoders$resourceDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (typeString) {
-		switch (typeString) {
-			case 'prediction':
-				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourcePrediction, author$project$Api$Decoders$predictionDecoder);
-			case 'stop':
-				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceStop, author$project$Api$Decoders$stopDecoder);
-			case 'trip':
-				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceTrip, author$project$Api$Decoders$tripDecoder);
-			case 'vehicle':
-				return A2(elm$json$Json$Decode$map, author$project$Api$Types$ResourceVehicle, author$project$Api$Decoders$vehicleDecoder);
-			default:
-				var otherType = typeString;
-				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
-		}
-	},
-	A2(
-		elm$json$Json$Decode$at,
-		_List_fromArray(
-			['type']),
-		elm$json$Json$Decode$string));
-var author$project$Api$Types$ResourcePredictionId = function (a) {
-	return {$: 'ResourcePredictionId', a: a};
-};
-var author$project$Api$Types$ResourceStopId = function (a) {
-	return {$: 'ResourceStopId', a: a};
-};
-var author$project$Api$Types$ResourceTripId = function (a) {
-	return {$: 'ResourceTripId', a: a};
-};
-var author$project$Api$Types$ResourceVehicleId = function (a) {
-	return {$: 'ResourceVehicleId', a: a};
+		[
+			A2(elm$json$Json$Decode$map, author$project$Mbta$FacilityProperty_String, elm$json$Json$Decode$string),
+			A2(elm$json$Json$Decode$map, author$project$Mbta$FacilityProperty_Int, elm$json$Json$Decode$int),
+			elm$json$Json$Decode$null(author$project$Mbta$FacilityProperty_Null)
+		]));
+var author$project$Mbta$Decode$group = function (nameValuePairs) {
+	return A3(
+		elm$core$List$foldr,
+		F2(
+			function (_n0, dict) {
+				var name = _n0.a;
+				var value = _n0.b;
+				return A3(
+					elm$core$Dict$update,
+					name,
+					function (maybeExistingValues) {
+						if (maybeExistingValues.$ === 'Nothing') {
+							return elm$core$Maybe$Just(
+								_List_fromArray(
+									[value]));
+						} else {
+							var existingValues = maybeExistingValues.a;
+							return elm$core$Maybe$Just(
+								A2(elm$core$List$cons, value, existingValues));
+						}
+					},
+					dict);
+			}),
+		elm$core$Dict$empty,
+		nameValuePairs);
 };
 var elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
 	});
-var author$project$Api$Decoders$resourceIdDecoder = A2(
-	elm$json$Json$Decode$andThen,
+var author$project$Mbta$Decode$facilityProperties = A2(
+	elm$json$Json$Decode$map,
+	author$project$Mbta$Decode$group,
+	elm$json$Json$Decode$list(
+		A3(
+			elm$json$Json$Decode$map2,
+			elm$core$Tuple$pair,
+			A2(elm$json$Json$Decode$field, 'name', elm$json$Json$Decode$string),
+			A2(elm$json$Json$Decode$field, 'value', author$project$Mbta$Decode$facilityPropertyValue))));
+var author$project$JsonApi$andThen = F2(
+	function (secondDecoder, firstDecoder) {
+		return author$project$JsonApi$ResourceDecoder(
+			function (untypedResource) {
+				return A2(
+					elm$core$Result$andThen,
+					function (first) {
+						return A2(
+							author$project$JsonApi$decodeResource,
+							secondDecoder(first),
+							untypedResource);
+					},
+					A2(author$project$JsonApi$decodeResource, firstDecoder, untypedResource));
+			});
+	});
+var author$project$JsonApi$Failure = function (a) {
+	return {$: 'Failure', a: a};
+};
+var author$project$JsonApi$fail = function (message) {
+	return author$project$JsonApi$ResourceDecoder(
+		function (untypedResource) {
+			return elm$core$Result$Err(
+				author$project$JsonApi$Failure(message));
+		});
+};
+var elm$json$Json$Decode$float = _Json_decodeFloat;
+var author$project$Mbta$Decode$maybeLatLng = A2(
+	author$project$JsonApi$andThen,
 	function (_n0) {
-		var typeString = _n0.a;
-		var id = _n0.b;
-		switch (typeString) {
-			case 'prediction':
-				return elm$json$Json$Decode$succeed(
-					author$project$Api$Types$ResourcePredictionId(
-						author$project$Api$Types$PredictionId(id)));
-			case 'stop':
-				return elm$json$Json$Decode$succeed(
-					author$project$Api$Types$ResourceStopId(
-						author$project$Api$Types$StopId(id)));
-			case 'trip':
-				return elm$json$Json$Decode$succeed(
-					author$project$Api$Types$ResourceTripId(
-						author$project$Api$Types$TripId(id)));
-			case 'vehicle':
-				return elm$json$Json$Decode$succeed(
-					author$project$Api$Types$ResourceVehicleId(
-						author$project$Api$Types$VehicleId(id)));
-			default:
-				var otherType = typeString;
-				return elm$json$Json$Decode$fail('unrecognized type ' + otherType);
+		var maybeLat = _n0.a;
+		var maybeLng = _n0.b;
+		var _n1 = _Utils_Tuple2(maybeLat, maybeLng);
+		if (_n1.a.$ === 'Just') {
+			if (_n1.b.$ === 'Just') {
+				var lat = _n1.a.a;
+				var lng = _n1.b.a;
+				return author$project$JsonApi$succeed(
+					elm$core$Maybe$Just(
+						{latitude: lat, longitude: lng}));
+			} else {
+				var lat = _n1.a.a;
+				var _n4 = _n1.b;
+				return author$project$JsonApi$fail('longitude is missing but latitude exists');
+			}
+		} else {
+			if (_n1.b.$ === 'Nothing') {
+				var _n2 = _n1.a;
+				var _n3 = _n1.b;
+				return author$project$JsonApi$succeed(elm$core$Maybe$Nothing);
+			} else {
+				var _n5 = _n1.a;
+				var lng = _n1.b.a;
+				return author$project$JsonApi$fail('latitude is missing but longitude exists');
+			}
 		}
 	},
 	A3(
-		elm$json$Json$Decode$map2,
-		elm$core$Tuple$pair,
-		A2(
-			elm$json$Json$Decode$at,
-			_List_fromArray(
-				['type']),
-			elm$json$Json$Decode$string),
-		A2(
-			elm$json$Json$Decode$at,
-			_List_fromArray(
-				['id']),
-			elm$json$Json$Decode$string)));
-var author$project$Api$Stream$Insert = function (a) {
-	return {$: 'Insert', a: a};
-};
-var author$project$Api$Stream$Remove = function (a) {
-	return {$: 'Remove', a: a};
-};
-var author$project$Api$Stream$Reset = function (a) {
-	return {$: 'Reset', a: a};
-};
-var author$project$Api$Stream$eventDataDecoder = function (eventName) {
-	switch (eventName) {
-		case 'reset':
-			return A2(
-				elm$json$Json$Decode$map,
-				author$project$Api$Stream$Reset,
-				elm$json$Json$Decode$list(author$project$Api$Decoders$resourceDecoder));
-		case 'add':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Insert, author$project$Api$Decoders$resourceDecoder);
-		case 'update':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Insert, author$project$Api$Decoders$resourceDecoder);
-		case 'remove':
-			return A2(elm$json$Json$Decode$map, author$project$Api$Stream$Remove, author$project$Api$Decoders$resourceIdDecoder);
-		default:
-			return elm$json$Json$Decode$fail('unrecognized event name ' + eventName);
+		author$project$JsonApi$attributeMaybe,
+		'longitude',
+		elm$json$Json$Decode$float,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'latitude',
+			elm$json$Json$Decode$float,
+			author$project$JsonApi$succeed(elm$core$Tuple$pair))));
+var author$project$Mbta$Decode$stopId = A2(author$project$JsonApi$idDecoder, 'stop', author$project$Mbta$StopId);
+var author$project$Mbta$Decode$facility = A3(
+	author$project$JsonApi$attribute,
+	'properties',
+	author$project$Mbta$Decode$facilityProperties,
+	A2(
+		author$project$JsonApi$custom,
+		author$project$Mbta$Decode$maybeLatLng,
+		A3(
+			author$project$JsonApi$attribute,
+			'type',
+			A2(elm$json$Json$Decode$map, author$project$Mbta$FacilityType, elm$json$Json$Decode$string),
+			A2(
+				author$project$JsonApi$custom,
+				A2(
+					author$project$Mbta$Decode$attributeOneOf,
+					_List_fromArray(
+						['short_name', 'long_name']),
+					elm$json$Json$Decode$string),
+				A2(
+					author$project$JsonApi$custom,
+					A2(
+						author$project$Mbta$Decode$attributeOneOf,
+						_List_fromArray(
+							['long_name', 'short_name']),
+						elm$json$Json$Decode$string),
+					A3(
+						author$project$JsonApi$relationshipMaybe,
+						'stop',
+						author$project$Mbta$Decode$stopId,
+						A2(
+							author$project$JsonApi$id,
+							author$project$Mbta$Decode$facilityId,
+							author$project$JsonApi$succeed(author$project$Mbta$Facility))))))));
+var author$project$Mbta$Line = F6(
+	function (id, shortName, longName, sortOrder, color, textColor) {
+		return {color: color, id: id, longName: longName, shortName: shortName, sortOrder: sortOrder, textColor: textColor};
+	});
+var author$project$DecodeHelpers$fromResult = function (result) {
+	if (result.$ === 'Ok') {
+		var x = result.a;
+		return elm$json$Json$Decode$succeed(x);
+	} else {
+		var e = result.a;
+		return elm$json$Json$Decode$fail(e);
 	}
 };
-var author$project$Api$Stream$streamEventDecoder = A2(
-	elm$json$Json$Decode$andThen,
-	function (eventName) {
-		return A2(
-			elm$json$Json$Decode$field,
-			'data',
-			author$project$Api$Stream$eventDataDecoder(eventName));
-	},
-	A2(elm$json$Json$Decode$field, 'event', elm$json$Json$Decode$string));
-var author$project$Api$Stream$streamEventPort = _Platform_incomingPort('streamEventPort', elm$json$Json$Decode$value);
-var author$project$Api$Stream$subscriptions = function (msg) {
-	return author$project$Api$Stream$streamEventPort(
+var avh4$elm_color$Color$RgbaSpace = F4(
+	function (a, b, c, d) {
+		return {$: 'RgbaSpace', a: a, b: b, c: c, d: d};
+	});
+var avh4$elm_color$Color$rgb = F3(
+	function (r, g, b) {
+		return A4(avh4$elm_color$Color$RgbaSpace, r, g, b, 1.0);
+	});
+var avh4$elm_color$Color$rgba = F4(
+	function (r, g, b, a) {
+		return A4(avh4$elm_color$Color$RgbaSpace, r, g, b, a);
+	});
+var elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return elm$core$Maybe$Just(x);
+	} else {
+		return elm$core$Maybe$Nothing;
+	}
+};
+var elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Result$fromMaybe = F2(
+	function (err, maybe) {
+		if (maybe.$ === 'Just') {
+			var v = maybe.a;
+			return elm$core$Result$Ok(v);
+		} else {
+			return elm$core$Result$Err(err);
+		}
+	});
+var elm$core$String$fromList = _String_fromList;
+var elm$core$String$foldr = _String_foldr;
+var elm$core$String$toList = function (string) {
+	return A3(elm$core$String$foldr, elm$core$List$cons, _List_Nil, string);
+};
+var elm$core$String$toLower = _String_toLower;
+var elm$regex$Regex$Match = F4(
+	function (match, index, number, submatches) {
+		return {index: index, match: match, number: number, submatches: submatches};
+	});
+var elm$regex$Regex$findAtMost = _Regex_findAtMost;
+var elm$regex$Regex$fromStringWith = _Regex_fromStringWith;
+var elm$regex$Regex$fromString = function (string) {
+	return A2(
+		elm$regex$Regex$fromStringWith,
+		{caseInsensitive: false, multiline: false},
+		string);
+};
+var elm$core$String$reverse = _String_reverse;
+var fredcy$elm_parseint$ParseInt$InvalidRadix = function (a) {
+	return {$: 'InvalidRadix', a: a};
+};
+var fredcy$elm_parseint$ParseInt$InvalidChar = function (a) {
+	return {$: 'InvalidChar', a: a};
+};
+var fredcy$elm_parseint$ParseInt$OutOfRange = function (a) {
+	return {$: 'OutOfRange', a: a};
+};
+var fredcy$elm_parseint$ParseInt$charOffset = F2(
+	function (basis, c) {
+		return elm$core$Char$toCode(c) - elm$core$Char$toCode(basis);
+	});
+var fredcy$elm_parseint$ParseInt$isBetween = F3(
+	function (lower, upper, c) {
+		var ci = elm$core$Char$toCode(c);
+		return (_Utils_cmp(
+			elm$core$Char$toCode(lower),
+			ci) < 1) && (_Utils_cmp(
+			ci,
+			elm$core$Char$toCode(upper)) < 1);
+	});
+var fredcy$elm_parseint$ParseInt$intFromChar = F2(
+	function (radix, c) {
+		var validInt = function (i) {
+			return (_Utils_cmp(i, radix) < 0) ? elm$core$Result$Ok(i) : elm$core$Result$Err(
+				fredcy$elm_parseint$ParseInt$OutOfRange(c));
+		};
+		var toInt = A3(
+			fredcy$elm_parseint$ParseInt$isBetween,
+			_Utils_chr('0'),
+			_Utils_chr('9'),
+			c) ? elm$core$Result$Ok(
+			A2(
+				fredcy$elm_parseint$ParseInt$charOffset,
+				_Utils_chr('0'),
+				c)) : (A3(
+			fredcy$elm_parseint$ParseInt$isBetween,
+			_Utils_chr('a'),
+			_Utils_chr('z'),
+			c) ? elm$core$Result$Ok(
+			10 + A2(
+				fredcy$elm_parseint$ParseInt$charOffset,
+				_Utils_chr('a'),
+				c)) : (A3(
+			fredcy$elm_parseint$ParseInt$isBetween,
+			_Utils_chr('A'),
+			_Utils_chr('Z'),
+			c) ? elm$core$Result$Ok(
+			10 + A2(
+				fredcy$elm_parseint$ParseInt$charOffset,
+				_Utils_chr('A'),
+				c)) : elm$core$Result$Err(
+			fredcy$elm_parseint$ParseInt$InvalidChar(c))));
+		return A2(elm$core$Result$andThen, validInt, toInt);
+	});
+var fredcy$elm_parseint$ParseInt$parseIntR = F2(
+	function (radix, rstring) {
+		var _n0 = elm$core$String$uncons(rstring);
+		if (_n0.$ === 'Nothing') {
+			return elm$core$Result$Ok(0);
+		} else {
+			var _n1 = _n0.a;
+			var c = _n1.a;
+			var rest = _n1.b;
+			return A2(
+				elm$core$Result$andThen,
+				function (ci) {
+					return A2(
+						elm$core$Result$andThen,
+						function (ri) {
+							return elm$core$Result$Ok(ci + (ri * radix));
+						},
+						A2(fredcy$elm_parseint$ParseInt$parseIntR, radix, rest));
+				},
+				A2(fredcy$elm_parseint$ParseInt$intFromChar, radix, c));
+		}
+	});
+var fredcy$elm_parseint$ParseInt$parseIntRadix = F2(
+	function (radix, string) {
+		return ((2 <= radix) && (radix <= 36)) ? A2(
+			fredcy$elm_parseint$ParseInt$parseIntR,
+			radix,
+			elm$core$String$reverse(string)) : elm$core$Result$Err(
+			fredcy$elm_parseint$ParseInt$InvalidRadix(radix));
+	});
+var fredcy$elm_parseint$ParseInt$parseIntHex = fredcy$elm_parseint$ParseInt$parseIntRadix(16);
+var elm$core$Basics$pow = _Basics_pow;
+var noahzgordon$elm_color_extra$Color$Convert$roundToPlaces = F2(
+	function (places, number) {
+		var multiplier = A2(elm$core$Basics$pow, 10, places);
+		return elm$core$Basics$round(number * multiplier) / multiplier;
+	});
+var noahzgordon$elm_color_extra$Color$Convert$hexToColor = function () {
+	var pattern = '' + ('^' + ('#?' + ('(?:' + ('(?:([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2}))' + ('|' + ('(?:([a-f\\d])([a-f\\d])([a-f\\d]))' + ('|' + ('(?:([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2}))' + ('|' + ('(?:([a-f\\d])([a-f\\d])([a-f\\d])([a-f\\d]))' + (')' + '$')))))))))));
+	var extend = function (token) {
+		var _n6 = elm$core$String$toList(token);
+		if (_n6.b && (!_n6.b.b)) {
+			var token_ = _n6.a;
+			return elm$core$String$fromList(
+				_List_fromArray(
+					[token_, token_]));
+		} else {
+			return token;
+		}
+	};
+	return A2(
+		elm$core$Basics$composeR,
+		elm$core$String$toLower,
 		A2(
 			elm$core$Basics$composeR,
-			elm$json$Json$Decode$decodeValue(author$project$Api$Stream$streamEventDecoder),
-			msg));
+			function (str) {
+				return A2(
+					elm$core$Maybe$map,
+					function (regex) {
+						return A3(elm$regex$Regex$findAtMost, 1, regex, str);
+					},
+					elm$regex$Regex$fromString(pattern));
+			},
+			A2(
+				elm$core$Basics$composeR,
+				elm$core$Maybe$andThen(elm$core$List$head),
+				A2(
+					elm$core$Basics$composeR,
+					elm$core$Maybe$map(
+						function ($) {
+							return $.submatches;
+						}),
+					A2(
+						elm$core$Basics$composeR,
+						elm$core$Maybe$map(
+							elm$core$List$filterMap(elm$core$Basics$identity)),
+						A2(
+							elm$core$Basics$composeR,
+							elm$core$Result$fromMaybe('Parsing hex regex failed'),
+							elm$core$Result$andThen(
+								function (colors) {
+									var _n0 = A2(
+										elm$core$List$map,
+										A2(
+											elm$core$Basics$composeR,
+											extend,
+											A2(
+												elm$core$Basics$composeR,
+												fredcy$elm_parseint$ParseInt$parseIntHex,
+												elm$core$Result$map(elm$core$Basics$toFloat))),
+										colors);
+									_n0$2:
+									while (true) {
+										if (((((_n0.b && (_n0.a.$ === 'Ok')) && _n0.b.b) && (_n0.b.a.$ === 'Ok')) && _n0.b.b.b) && (_n0.b.b.a.$ === 'Ok')) {
+											if (_n0.b.b.b.b) {
+												if ((_n0.b.b.b.a.$ === 'Ok') && (!_n0.b.b.b.b.b)) {
+													var r = _n0.a.a;
+													var _n1 = _n0.b;
+													var g = _n1.a.a;
+													var _n2 = _n1.b;
+													var b = _n2.a.a;
+													var _n3 = _n2.b;
+													var a = _n3.a.a;
+													return elm$core$Result$Ok(
+														A4(
+															avh4$elm_color$Color$rgba,
+															r / 255,
+															g / 255,
+															b / 255,
+															A2(noahzgordon$elm_color_extra$Color$Convert$roundToPlaces, 2, a / 255)));
+												} else {
+													break _n0$2;
+												}
+											} else {
+												var r = _n0.a.a;
+												var _n4 = _n0.b;
+												var g = _n4.a.a;
+												var _n5 = _n4.b;
+												var b = _n5.a.a;
+												return elm$core$Result$Ok(
+													A3(avh4$elm_color$Color$rgb, r / 255, g / 255, b / 255));
+											}
+										} else {
+											break _n0$2;
+										}
+									}
+									return elm$core$Result$Err('Parsing ints from hex failed');
+								})))))));
+}();
+var author$project$Mbta$Decode$color = A2(
+	elm$json$Json$Decode$andThen,
+	author$project$DecodeHelpers$fromResult,
+	A2(elm$json$Json$Decode$map, noahzgordon$elm_color_extra$Color$Convert$hexToColor, elm$json$Json$Decode$string));
+var author$project$Mbta$LineId = function (a) {
+	return {$: 'LineId', a: a};
 };
-var author$project$Model$ApiMsg = function (a) {
-	return {$: 'ApiMsg', a: a};
+var author$project$Mbta$Decode$lineId = A2(author$project$JsonApi$idDecoder, 'line', author$project$Mbta$LineId);
+var author$project$Mbta$Decode$line = A3(
+	author$project$JsonApi$attribute,
+	'text_color',
+	author$project$Mbta$Decode$color,
+	A3(
+		author$project$JsonApi$attribute,
+		'color',
+		author$project$Mbta$Decode$color,
+		A3(
+			author$project$JsonApi$attribute,
+			'sort_order',
+			elm$json$Json$Decode$int,
+			A3(
+				author$project$JsonApi$attribute,
+				'long_name',
+				elm$json$Json$Decode$string,
+				A3(
+					author$project$JsonApi$attribute,
+					'short_name',
+					elm$json$Json$Decode$string,
+					A2(
+						author$project$JsonApi$id,
+						author$project$Mbta$Decode$lineId,
+						author$project$JsonApi$succeed(author$project$Mbta$Line)))))));
+var author$project$Mbta$LiveFacility = F3(
+	function (id, updatedAt, properties) {
+		return {id: id, properties: properties, updatedAt: updatedAt};
+	});
+var author$project$Mbta$Decode$liveFacilityId = A2(author$project$JsonApi$idDecoder, 'live-facility', author$project$Mbta$FacilityId);
+var author$project$Mbta$Decode$liveFacility = A3(
+	author$project$JsonApi$attribute,
+	'properties',
+	author$project$Mbta$Decode$facilityProperties,
+	A3(
+		author$project$JsonApi$attribute,
+		'updated_at',
+		rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+		A2(
+			author$project$JsonApi$id,
+			author$project$Mbta$Decode$liveFacilityId,
+			author$project$JsonApi$succeed(author$project$Mbta$LiveFacility))));
+var author$project$JsonApi$relationshipMany = F2(
+	function (relationshipName, relatedIdDecoder) {
+		return author$project$JsonApi$custom(
+			author$project$JsonApi$ResourceDecoder(
+				function (untypedResource) {
+					var _n0 = A2(elm$core$Dict$get, relationshipName, untypedResource.relationships);
+					if (_n0.$ === 'Just') {
+						if (_n0.a.$ === 'RelationshipMany') {
+							var relatedIds = _n0.a.a;
+							return A2(
+								elm$core$Result$mapError,
+								author$project$JsonApi$RelationshipIdError(relationshipName),
+								elm_community$result_extra$Result$Extra$combine(
+									A2(
+										elm$core$List$map,
+										author$project$JsonApi$decodeId(relatedIdDecoder),
+										relatedIds)));
+						} else {
+							return elm$core$Result$Err(
+								A2(author$project$JsonApi$RelationshipNumberError, relationshipName, 'Expected a list of relationships but only got one'));
+						}
+					} else {
+						return elm$core$Result$Ok(_List_Nil);
+					}
+				}));
+	});
+var author$project$JsonApi$relationshipOne = F2(
+	function (relationshipName, relatedIdDecoder) {
+		return author$project$JsonApi$custom(
+			author$project$JsonApi$ResourceDecoder(
+				function (untypedResource) {
+					var _n0 = A2(elm$core$Dict$get, relationshipName, untypedResource.relationships);
+					if (((_n0.$ === 'Just') && (_n0.a.$ === 'RelationshipOne')) && (_n0.a.a.$ === 'Just')) {
+						var relatedId = _n0.a.a.a;
+						return A2(
+							elm$core$Result$mapError,
+							author$project$JsonApi$RelationshipIdError(relationshipName),
+							A2(author$project$JsonApi$decodeId, relatedIdDecoder, relatedId));
+					} else {
+						return elm$core$Result$Err(
+							A2(author$project$JsonApi$RelationshipNumberError, relationshipName, 'Expected exactly one relationship'));
+					}
+				}));
+	});
+var author$project$Mbta$Prediction = function (id) {
+	return function (routeId) {
+		return function (tripId) {
+			return function (stopId) {
+				return function (stopSequence) {
+					return function (scheduleId) {
+						return function (vehicleId) {
+							return function (alertIds) {
+								return function (arrivalTime) {
+									return function (departureTime) {
+										return function (status) {
+											return function (directionId) {
+												return function (scheduleRelationship) {
+													return {alertIds: alertIds, arrivalTime: arrivalTime, departureTime: departureTime, directionId: directionId, id: id, routeId: routeId, scheduleId: scheduleId, scheduleRelationship: scheduleRelationship, status: status, stopId: stopId, stopSequence: stopSequence, tripId: tripId, vehicleId: vehicleId};
+												};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
 };
+var author$project$Mbta$PredictionId = function (a) {
+	return {$: 'PredictionId', a: a};
+};
+var author$project$Mbta$Decode$predictionId = A2(author$project$JsonApi$idDecoder, 'prediction', author$project$Mbta$PredictionId);
+var author$project$Mbta$ScheduleRelationship_Added = {$: 'ScheduleRelationship_Added'};
+var author$project$Mbta$ScheduleRelationship_Cancelled = {$: 'ScheduleRelationship_Cancelled'};
+var author$project$Mbta$ScheduleRelationship_NoData = {$: 'ScheduleRelationship_NoData'};
+var author$project$Mbta$ScheduleRelationship_Scheduled = {$: 'ScheduleRelationship_Scheduled'};
+var author$project$Mbta$ScheduleRelationship_Skipped = {$: 'ScheduleRelationship_Skipped'};
+var author$project$Mbta$ScheduleRelationship_Unscheduled = {$: 'ScheduleRelationship_Unscheduled'};
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var author$project$Mbta$Decode$predictionScheduleRelatonship = A2(
+	elm$json$Json$Decode$map,
+	elm$core$Maybe$withDefault(author$project$Mbta$ScheduleRelationship_Scheduled),
+	elm$json$Json$Decode$nullable(
+		A2(
+			author$project$DecodeHelpers$enum,
+			elm$json$Json$Decode$string,
+			_List_fromArray(
+				[
+					_Utils_Tuple2('ADDED', author$project$Mbta$ScheduleRelationship_Added),
+					_Utils_Tuple2('CANCELLED', author$project$Mbta$ScheduleRelationship_Cancelled),
+					_Utils_Tuple2('NO_DATA', author$project$Mbta$ScheduleRelationship_NoData),
+					_Utils_Tuple2('SKIPPED', author$project$Mbta$ScheduleRelationship_Skipped),
+					_Utils_Tuple2('UNSCHEDULED', author$project$Mbta$ScheduleRelationship_Unscheduled)
+				]))));
+var author$project$Mbta$Decode$routeId = A2(author$project$JsonApi$idDecoder, 'route', author$project$Mbta$RouteId);
+var author$project$Mbta$ScheduleId = function (a) {
+	return {$: 'ScheduleId', a: a};
+};
+var author$project$Mbta$Decode$scheduleId = A2(author$project$JsonApi$idDecoder, 'schedule', author$project$Mbta$ScheduleId);
+var author$project$Mbta$StopSequence = function (a) {
+	return {$: 'StopSequence', a: a};
+};
+var author$project$Mbta$Decode$stopSequence = A2(elm$json$Json$Decode$map, author$project$Mbta$StopSequence, elm$json$Json$Decode$int);
+var author$project$Mbta$Decode$tripId = A2(author$project$JsonApi$idDecoder, 'trip', author$project$Mbta$TripId);
+var author$project$Mbta$VehicleId = function (a) {
+	return {$: 'VehicleId', a: a};
+};
+var author$project$Mbta$Decode$vehicleId = A2(author$project$JsonApi$idDecoder, 'vehicle', author$project$Mbta$VehicleId);
+var author$project$Mbta$Decode$prediction = A3(
+	author$project$JsonApi$attribute,
+	'schedule_relationship',
+	author$project$Mbta$Decode$predictionScheduleRelatonship,
+	A3(
+		author$project$JsonApi$attribute,
+		'direction_id',
+		author$project$Mbta$Decode$directionId,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'status',
+			elm$json$Json$Decode$string,
+			A3(
+				author$project$JsonApi$attributeMaybe,
+				'departure_time',
+				rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+				A3(
+					author$project$JsonApi$attributeMaybe,
+					'arrival_time',
+					rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+					A3(
+						author$project$JsonApi$relationshipMany,
+						'alert',
+						author$project$Mbta$Decode$alertId,
+						A3(
+							author$project$JsonApi$relationshipMaybe,
+							'vehicle',
+							author$project$Mbta$Decode$vehicleId,
+							A3(
+								author$project$JsonApi$relationshipMaybe,
+								'schedule',
+								author$project$Mbta$Decode$scheduleId,
+								A3(
+									author$project$JsonApi$attribute,
+									'stop_sequence',
+									author$project$Mbta$Decode$stopSequence,
+									A3(
+										author$project$JsonApi$relationshipOne,
+										'stop',
+										author$project$Mbta$Decode$stopId,
+										A3(
+											author$project$JsonApi$relationshipOne,
+											'trip',
+											author$project$Mbta$Decode$tripId,
+											A3(
+												author$project$JsonApi$relationshipOne,
+												'route',
+												author$project$Mbta$Decode$routeId,
+												A2(
+													author$project$JsonApi$id,
+													author$project$Mbta$Decode$predictionId,
+													author$project$JsonApi$succeed(author$project$Mbta$Prediction))))))))))))));
+var author$project$Mbta$Route = function (id) {
+	return function (routeType) {
+		return function (shortName) {
+			return function (longName) {
+				return function (description) {
+					return function (fareClass) {
+						return function (directions) {
+							return function (sortOrder) {
+								return function (textColor) {
+									return function (color) {
+										return {color: color, description: description, directions: directions, fareClass: fareClass, id: id, longName: longName, routeType: routeType, shortName: shortName, sortOrder: sortOrder, textColor: textColor};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var author$project$Mbta$Decode$routeDirections = A2(
+	author$project$JsonApi$andThen,
+	function (_n0) {
+		var names = _n0.a;
+		var destinations = _n0.b;
+		var _n1 = _Utils_Tuple2(names, destinations);
+		_n1$2:
+		while (true) {
+			if (_n1.a.$ === 'Just') {
+				if ((((((_n1.a.a.b && _n1.a.a.b.b) && (!_n1.a.a.b.b.b)) && (_n1.b.$ === 'Just')) && _n1.b.a.b) && _n1.b.a.b.b) && (!_n1.b.a.b.b.b)) {
+					var _n2 = _n1.a.a;
+					var d0_name = _n2.a;
+					var _n3 = _n2.b;
+					var d1_name = _n3.a;
+					var _n4 = _n1.b.a;
+					var d0_destination = _n4.a;
+					var _n5 = _n4.b;
+					var d1_destination = _n5.a;
+					return author$project$JsonApi$succeed(
+						elm$core$Maybe$Just(
+							{
+								d0: {destination: d0_destination, name: d0_name},
+								d1: {destination: d1_destination, name: d1_name}
+							}));
+				} else {
+					break _n1$2;
+				}
+			} else {
+				if (_n1.b.$ === 'Nothing') {
+					var _n6 = _n1.a;
+					var _n7 = _n1.b;
+					return author$project$JsonApi$succeed(elm$core$Maybe$Nothing);
+				} else {
+					break _n1$2;
+				}
+			}
+		}
+		return author$project$JsonApi$fail('expected exactly 2 direction_names and exactly 2 direction_destinations');
+	},
+	A3(
+		author$project$JsonApi$attributeMaybe,
+		'direction_destinations',
+		elm$json$Json$Decode$list(elm$json$Json$Decode$string),
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'direction_names',
+			elm$json$Json$Decode$list(elm$json$Json$Decode$string),
+			author$project$JsonApi$succeed(elm$core$Tuple$pair))));
+var author$project$Mbta$Decode$route = A3(
+	author$project$JsonApi$attribute,
+	'color',
+	author$project$Mbta$Decode$color,
+	A3(
+		author$project$JsonApi$attribute,
+		'text_color',
+		author$project$Mbta$Decode$color,
+		A3(
+			author$project$JsonApi$attribute,
+			'sort_order',
+			elm$json$Json$Decode$int,
+			A2(
+				author$project$JsonApi$custom,
+				author$project$Mbta$Decode$routeDirections,
+				A3(
+					author$project$JsonApi$attribute,
+					'fare_class',
+					elm$json$Json$Decode$string,
+					A3(
+						author$project$JsonApi$attribute,
+						'description',
+						elm$json$Json$Decode$string,
+						A3(
+							author$project$JsonApi$attribute,
+							'long_name',
+							elm$json$Json$Decode$string,
+							A3(
+								author$project$JsonApi$attribute,
+								'short_name',
+								elm$json$Json$Decode$string,
+								A3(
+									author$project$JsonApi$attribute,
+									'type',
+									author$project$Mbta$Decode$routeType,
+									A2(
+										author$project$JsonApi$id,
+										author$project$Mbta$Decode$routeId,
+										author$project$JsonApi$succeed(author$project$Mbta$Route)))))))))));
+var author$project$Mbta$RoutePattern = F8(
+	function (id, routeId, directionId, name, typicality, timeDesc, sortOrder, representativeTripId) {
+		return {directionId: directionId, id: id, name: name, representativeTripId: representativeTripId, routeId: routeId, sortOrder: sortOrder, timeDesc: timeDesc, typicality: typicality};
+	});
+var author$project$Mbta$RoutePatternId = function (a) {
+	return {$: 'RoutePatternId', a: a};
+};
+var author$project$Mbta$Decode$routePatternId = A2(author$project$JsonApi$idDecoder, 'route_pattern', author$project$Mbta$RoutePatternId);
+var author$project$Mbta$RoutePatternTypicality_0_NotDefined = {$: 'RoutePatternTypicality_0_NotDefined'};
+var author$project$Mbta$RoutePatternTypicality_1_Typical = {$: 'RoutePatternTypicality_1_Typical'};
+var author$project$Mbta$RoutePatternTypicality_2_Deviation = {$: 'RoutePatternTypicality_2_Deviation'};
+var author$project$Mbta$RoutePatternTypicality_3_Atypical = {$: 'RoutePatternTypicality_3_Atypical'};
+var author$project$Mbta$RoutePatternTypicality_4_Diversion = {$: 'RoutePatternTypicality_4_Diversion'};
+var author$project$Mbta$Decode$routePatternTypicality = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$RoutePatternTypicality_0_NotDefined),
+			_Utils_Tuple2(1, author$project$Mbta$RoutePatternTypicality_1_Typical),
+			_Utils_Tuple2(2, author$project$Mbta$RoutePatternTypicality_2_Deviation),
+			_Utils_Tuple2(3, author$project$Mbta$RoutePatternTypicality_3_Atypical),
+			_Utils_Tuple2(4, author$project$Mbta$RoutePatternTypicality_4_Diversion)
+		]));
+var author$project$Mbta$Decode$routePattern = A3(
+	author$project$JsonApi$relationshipOne,
+	'representative_trip',
+	author$project$Mbta$Decode$tripId,
+	A3(
+		author$project$JsonApi$attribute,
+		'sort_order',
+		elm$json$Json$Decode$int,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'time_desc',
+			elm$json$Json$Decode$string,
+			A3(
+				author$project$JsonApi$attribute,
+				'typicality',
+				author$project$Mbta$Decode$routePatternTypicality,
+				A3(
+					author$project$JsonApi$attribute,
+					'name',
+					elm$json$Json$Decode$string,
+					A3(
+						author$project$JsonApi$attribute,
+						'direction_id',
+						author$project$Mbta$Decode$directionId,
+						A3(
+							author$project$JsonApi$relationshipOne,
+							'route',
+							author$project$Mbta$Decode$routeId,
+							A2(
+								author$project$JsonApi$id,
+								author$project$Mbta$Decode$routePatternId,
+								author$project$JsonApi$succeed(author$project$Mbta$RoutePattern)))))))));
+var author$project$Mbta$Schedule = function (id) {
+	return function (routeId) {
+		return function (directionId) {
+			return function (tripId) {
+				return function (stopId) {
+					return function (stopSequence) {
+						return function (predictionId) {
+							return function (timepoint) {
+								return function (departureTime) {
+									return function (arrivalTime) {
+										return function (pickupType) {
+											return function (dropOffType) {
+												return {arrivalTime: arrivalTime, departureTime: departureTime, directionId: directionId, dropOffType: dropOffType, id: id, pickupType: pickupType, predictionId: predictionId, routeId: routeId, stopId: stopId, stopSequence: stopSequence, timepoint: timepoint, tripId: tripId};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var author$project$Mbta$PUDO_0_Regular = {$: 'PUDO_0_Regular'};
+var author$project$Mbta$PUDO_1_NotAllowed = {$: 'PUDO_1_NotAllowed'};
+var author$project$Mbta$PUDO_2_PhoneAgency = {$: 'PUDO_2_PhoneAgency'};
+var author$project$Mbta$PUDO_3_CoordinateWithDriver = {$: 'PUDO_3_CoordinateWithDriver'};
+var author$project$Mbta$Decode$pickupDropOffType = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$PUDO_0_Regular),
+			_Utils_Tuple2(1, author$project$Mbta$PUDO_1_NotAllowed),
+			_Utils_Tuple2(2, author$project$Mbta$PUDO_2_PhoneAgency),
+			_Utils_Tuple2(3, author$project$Mbta$PUDO_3_CoordinateWithDriver)
+		]));
+var elm$json$Json$Decode$bool = _Json_decodeBool;
+var author$project$Mbta$Decode$schedule = A3(
+	author$project$JsonApi$attribute,
+	'drop_off_type',
+	author$project$Mbta$Decode$pickupDropOffType,
+	A3(
+		author$project$JsonApi$attribute,
+		'pickup_type',
+		author$project$Mbta$Decode$pickupDropOffType,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'arrival_time',
+			rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+			A3(
+				author$project$JsonApi$attributeMaybe,
+				'departure_time',
+				rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+				A3(
+					author$project$JsonApi$attribute,
+					'timepoint',
+					elm$json$Json$Decode$bool,
+					A3(
+						author$project$JsonApi$relationshipMaybe,
+						'prediction',
+						author$project$Mbta$Decode$predictionId,
+						A3(
+							author$project$JsonApi$attribute,
+							'stop_sequence',
+							author$project$Mbta$Decode$stopSequence,
+							A3(
+								author$project$JsonApi$relationshipOne,
+								'stop',
+								author$project$Mbta$Decode$stopId,
+								A3(
+									author$project$JsonApi$relationshipOne,
+									'trip',
+									author$project$Mbta$Decode$tripId,
+									A3(
+										author$project$JsonApi$attribute,
+										'direction_id',
+										author$project$Mbta$Decode$directionId,
+										A3(
+											author$project$JsonApi$relationshipOne,
+											'route',
+											author$project$Mbta$Decode$routeId,
+											A2(
+												author$project$JsonApi$id,
+												author$project$Mbta$Decode$scheduleId,
+												author$project$JsonApi$succeed(author$project$Mbta$Schedule)))))))))))));
+var author$project$Mbta$Service = function (id) {
+	return function (description) {
+		return function (serviceType) {
+			return function (name) {
+				return function (typicality) {
+					return function (startDate) {
+						return function (endDate) {
+							return function (validDays) {
+								return function (addedDates) {
+									return function (removedDates) {
+										return {addedDates: addedDates, description: description, endDate: endDate, id: id, name: name, removedDates: removedDates, serviceType: serviceType, startDate: startDate, typicality: typicality, validDays: validDays};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var author$project$Mbta$ChangedDate = F2(
+	function (date, notes) {
+		return {date: date, notes: notes};
+	});
+var author$project$Mbta$ServiceDate = function (a) {
+	return {$: 'ServiceDate', a: a};
+};
+var author$project$Mbta$serviceDateFromIso8601 = author$project$Mbta$ServiceDate;
+var author$project$Mbta$Decode$serviceDate = A2(elm$json$Json$Decode$map, author$project$Mbta$serviceDateFromIso8601, elm$json$Json$Decode$string);
+var elm$core$String$concat = function (strings) {
+	return A2(elm$core$String$join, '', strings);
+};
+var author$project$Mbta$Decode$changedDates = F2(
+	function (datesAttribute, notesAttribute) {
+		return A2(
+			author$project$JsonApi$andThen,
+			function (_n0) {
+				var datesList = _n0.a;
+				var notesList = _n0.b;
+				return _Utils_eq(
+					elm$core$List$length(datesList),
+					elm$core$List$length(notesList)) ? author$project$JsonApi$succeed(
+					A3(elm$core$List$map2, author$project$Mbta$ChangedDate, datesList, notesList)) : author$project$JsonApi$fail(
+					elm$core$String$concat(
+						_List_fromArray(
+							['Couldn\'t match dates to notes. ', datesAttribute, ' and ', notesAttribute, ' were different lengths'])));
+			},
+			A3(
+				author$project$JsonApi$attribute,
+				notesAttribute,
+				elm$json$Json$Decode$list(
+					elm$json$Json$Decode$nullable(elm$json$Json$Decode$string)),
+				A3(
+					author$project$JsonApi$attribute,
+					datesAttribute,
+					elm$json$Json$Decode$list(author$project$Mbta$Decode$serviceDate),
+					author$project$JsonApi$succeed(elm$core$Tuple$pair))));
+	});
+var author$project$Mbta$ServiceId = function (a) {
+	return {$: 'ServiceId', a: a};
+};
+var author$project$Mbta$Decode$serviceId = A2(author$project$JsonApi$idDecoder, 'service', author$project$Mbta$ServiceId);
+var author$project$Mbta$ServiceType_Other = {$: 'ServiceType_Other'};
+var author$project$Mbta$ServiceType_Saturday = {$: 'ServiceType_Saturday'};
+var author$project$Mbta$ServiceType_Sunday = {$: 'ServiceType_Sunday'};
+var author$project$Mbta$ServiceType_Weekday = {$: 'ServiceType_Weekday'};
+var author$project$Mbta$Decode$serviceType = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$string,
+	_List_fromArray(
+		[
+			_Utils_Tuple2('Weekday', author$project$Mbta$ServiceType_Weekday),
+			_Utils_Tuple2('Saturday', author$project$Mbta$ServiceType_Saturday),
+			_Utils_Tuple2('Sunday', author$project$Mbta$ServiceType_Sunday),
+			_Utils_Tuple2('Other', author$project$Mbta$ServiceType_Other)
+		]));
+var author$project$Mbta$ServiceTypicality_0_NotDefined = {$: 'ServiceTypicality_0_NotDefined'};
+var author$project$Mbta$ServiceTypicality_1_Typical = {$: 'ServiceTypicality_1_Typical'};
+var author$project$Mbta$ServiceTypicality_2_ExtraService = {$: 'ServiceTypicality_2_ExtraService'};
+var author$project$Mbta$ServiceTypicality_3_ReducedHoliday = {$: 'ServiceTypicality_3_ReducedHoliday'};
+var author$project$Mbta$ServiceTypicality_4_PlannedDisruption = {$: 'ServiceTypicality_4_PlannedDisruption'};
+var author$project$Mbta$ServiceTypicality_5_WeatherDisruption = {$: 'ServiceTypicality_5_WeatherDisruption'};
+var author$project$Mbta$Decode$serviceTypicality = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$ServiceTypicality_0_NotDefined),
+			_Utils_Tuple2(1, author$project$Mbta$ServiceTypicality_1_Typical),
+			_Utils_Tuple2(2, author$project$Mbta$ServiceTypicality_2_ExtraService),
+			_Utils_Tuple2(3, author$project$Mbta$ServiceTypicality_3_ReducedHoliday),
+			_Utils_Tuple2(4, author$project$Mbta$ServiceTypicality_4_PlannedDisruption),
+			_Utils_Tuple2(5, author$project$Mbta$ServiceTypicality_5_WeatherDisruption)
+		]));
+var author$project$Mbta$Decode$service = A2(
+	author$project$JsonApi$custom,
+	A2(author$project$Mbta$Decode$changedDates, 'removed_dates', 'removed_dates_notes'),
+	A2(
+		author$project$JsonApi$custom,
+		A2(author$project$Mbta$Decode$changedDates, 'added_dates', 'added_dates_notes'),
+		A3(
+			author$project$JsonApi$attribute,
+			'valid_days',
+			elm$json$Json$Decode$list(elm$json$Json$Decode$int),
+			A3(
+				author$project$JsonApi$attribute,
+				'end_date',
+				author$project$Mbta$Decode$serviceDate,
+				A3(
+					author$project$JsonApi$attribute,
+					'start_date',
+					author$project$Mbta$Decode$serviceDate,
+					A3(
+						author$project$JsonApi$attribute,
+						'schedule_typicality',
+						author$project$Mbta$Decode$serviceTypicality,
+						A3(
+							author$project$JsonApi$attributeMaybe,
+							'schedule_name',
+							elm$json$Json$Decode$string,
+							A3(
+								author$project$JsonApi$attributeMaybe,
+								'schedule_type',
+								author$project$Mbta$Decode$serviceType,
+								A3(
+									author$project$JsonApi$attributeMaybe,
+									'description',
+									elm$json$Json$Decode$string,
+									A2(
+										author$project$JsonApi$id,
+										author$project$Mbta$Decode$serviceId,
+										author$project$JsonApi$succeed(author$project$Mbta$Service)))))))))));
+var author$project$Mbta$Shape = F7(
+	function (id, name, routeId, directionId, stopIds, priority, polyline) {
+		return {directionId: directionId, id: id, name: name, polyline: polyline, priority: priority, routeId: routeId, stopIds: stopIds};
+	});
+var author$project$Mbta$ShapeId = function (a) {
+	return {$: 'ShapeId', a: a};
+};
+var author$project$Mbta$Decode$shapeId = A2(author$project$JsonApi$idDecoder, 'shape', author$project$Mbta$ShapeId);
+var author$project$Mbta$Decode$shape = A3(
+	author$project$JsonApi$attribute,
+	'polyline',
+	elm$json$Json$Decode$string,
+	A3(
+		author$project$JsonApi$attribute,
+		'priority',
+		elm$json$Json$Decode$int,
+		A3(
+			author$project$JsonApi$relationshipMany,
+			'stops',
+			author$project$Mbta$Decode$stopId,
+			A3(
+				author$project$JsonApi$attribute,
+				'direction_id',
+				author$project$Mbta$Decode$directionId,
+				A3(
+					author$project$JsonApi$relationshipOne,
+					'route',
+					author$project$Mbta$Decode$routeId,
+					A3(
+						author$project$JsonApi$attribute,
+						'name',
+						elm$json$Json$Decode$string,
+						A2(
+							author$project$JsonApi$id,
+							author$project$Mbta$Decode$shapeId,
+							author$project$JsonApi$succeed(author$project$Mbta$Shape))))))));
+var author$project$Mbta$Stop_0_Stop = function (a) {
+	return {$: 'Stop_0_Stop', a: a};
+};
+var author$project$Mbta$Stop_1_Station = function (a) {
+	return {$: 'Stop_1_Station', a: a};
+};
+var author$project$Mbta$Stop_2_Entrance = function (a) {
+	return {$: 'Stop_2_Entrance', a: a};
+};
+var author$project$Mbta$Stop_3_Node = function (a) {
+	return {$: 'Stop_3_Node', a: a};
+};
+var author$project$Mbta$Stop_Entrance = F6(
+	function (id, name, description, wheelchairAccessible, latLng, parentStation) {
+		return {description: description, id: id, latLng: latLng, name: name, parentStation: parentStation, wheelchairAccessible: wheelchairAccessible};
+	});
+var author$project$Mbta$LatLng = F2(
+	function (latitude, longitude) {
+		return {latitude: latitude, longitude: longitude};
+	});
+var author$project$Mbta$Decode$latLng = A3(
+	author$project$JsonApi$attribute,
+	'longitude',
+	elm$json$Json$Decode$float,
+	A3(
+		author$project$JsonApi$attribute,
+		'latitude',
+		elm$json$Json$Decode$float,
+		author$project$JsonApi$succeed(author$project$Mbta$LatLng)));
+var author$project$Mbta$Accessible_0_NoInformation = {$: 'Accessible_0_NoInformation'};
+var author$project$Mbta$Accessible_1_Accessible = {$: 'Accessible_1_Accessible'};
+var author$project$Mbta$Accessible_2_Inaccessible = {$: 'Accessible_2_Inaccessible'};
+var author$project$Mbta$Decode$wheelchairAccessible = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$Accessible_0_NoInformation),
+			_Utils_Tuple2(1, author$project$Mbta$Accessible_1_Accessible),
+			_Utils_Tuple2(2, author$project$Mbta$Accessible_2_Inaccessible)
+		]));
+var author$project$Mbta$Decode$stopEntrance = A3(
+	author$project$JsonApi$relationshipOne,
+	'parent_station',
+	author$project$Mbta$Decode$stopId,
+	A2(
+		author$project$JsonApi$custom,
+		author$project$Mbta$Decode$latLng,
+		A3(
+			author$project$JsonApi$attribute,
+			'wheelchair_boarding',
+			author$project$Mbta$Decode$wheelchairAccessible,
+			A3(
+				author$project$JsonApi$attributeMaybe,
+				'description',
+				elm$json$Json$Decode$string,
+				A3(
+					author$project$JsonApi$attribute,
+					'name',
+					elm$json$Json$Decode$string,
+					A2(
+						author$project$JsonApi$id,
+						author$project$Mbta$Decode$stopId,
+						author$project$JsonApi$succeed(author$project$Mbta$Stop_Entrance)))))));
+var author$project$Mbta$Stop_Node = F5(
+	function (id, name, description, wheelchairAccessible, parentStation) {
+		return {description: description, id: id, name: name, parentStation: parentStation, wheelchairAccessible: wheelchairAccessible};
+	});
+var author$project$Mbta$Decode$stopNode = A3(
+	author$project$JsonApi$relationshipOne,
+	'parent_station',
+	author$project$Mbta$Decode$stopId,
+	A3(
+		author$project$JsonApi$attribute,
+		'wheelchair_boarding',
+		author$project$Mbta$Decode$wheelchairAccessible,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'description',
+			elm$json$Json$Decode$string,
+			A3(
+				author$project$JsonApi$attribute,
+				'name',
+				elm$json$Json$Decode$string,
+				A2(
+					author$project$JsonApi$id,
+					author$project$Mbta$Decode$stopId,
+					author$project$JsonApi$succeed(author$project$Mbta$Stop_Node))))));
+var author$project$Mbta$Stop_Station = F7(
+	function (id, name, description, wheelchairAccessible, latLng, address, childStops) {
+		return {address: address, childStops: childStops, description: description, id: id, latLng: latLng, name: name, wheelchairAccessible: wheelchairAccessible};
+	});
+var author$project$Mbta$Decode$stopStation = A3(
+	author$project$JsonApi$relationshipMany,
+	'child_stops',
+	author$project$Mbta$Decode$stopId,
+	A3(
+		author$project$JsonApi$attributeMaybe,
+		'address',
+		elm$json$Json$Decode$string,
+		A2(
+			author$project$JsonApi$custom,
+			author$project$Mbta$Decode$latLng,
+			A3(
+				author$project$JsonApi$attribute,
+				'wheelchair_boarding',
+				author$project$Mbta$Decode$wheelchairAccessible,
+				A3(
+					author$project$JsonApi$attributeMaybe,
+					'description',
+					elm$json$Json$Decode$string,
+					A3(
+						author$project$JsonApi$attribute,
+						'name',
+						elm$json$Json$Decode$string,
+						A2(
+							author$project$JsonApi$id,
+							author$project$Mbta$Decode$stopId,
+							author$project$JsonApi$succeed(author$project$Mbta$Stop_Station))))))));
+var author$project$Mbta$Stop_Stop = F9(
+	function (id, name, description, wheelchairAccessible, latLng, address, parentStation, platformCode, platformName) {
+		return {address: address, description: description, id: id, latLng: latLng, name: name, parentStation: parentStation, platformCode: platformCode, platformName: platformName, wheelchairAccessible: wheelchairAccessible};
+	});
+var author$project$Mbta$Decode$stopStop = A3(
+	author$project$JsonApi$attributeMaybe,
+	'platform_name',
+	elm$json$Json$Decode$string,
+	A3(
+		author$project$JsonApi$attributeMaybe,
+		'platform_code',
+		elm$json$Json$Decode$string,
+		A3(
+			author$project$JsonApi$relationshipMaybe,
+			'parent_station',
+			author$project$Mbta$Decode$stopId,
+			A3(
+				author$project$JsonApi$attributeMaybe,
+				'address',
+				elm$json$Json$Decode$string,
+				A2(
+					author$project$JsonApi$custom,
+					author$project$Mbta$Decode$latLng,
+					A3(
+						author$project$JsonApi$attribute,
+						'wheelchair_boarding',
+						author$project$Mbta$Decode$wheelchairAccessible,
+						A3(
+							author$project$JsonApi$attributeMaybe,
+							'description',
+							elm$json$Json$Decode$string,
+							A3(
+								author$project$JsonApi$attribute,
+								'name',
+								elm$json$Json$Decode$string,
+								A2(
+									author$project$JsonApi$id,
+									author$project$Mbta$Decode$stopId,
+									author$project$JsonApi$succeed(author$project$Mbta$Stop_Stop))))))))));
+var author$project$Mbta$StopType_0_Stop = {$: 'StopType_0_Stop'};
+var author$project$Mbta$StopType_1_Station = {$: 'StopType_1_Station'};
+var author$project$Mbta$StopType_2_Entrance = {$: 'StopType_2_Entrance'};
+var author$project$Mbta$StopType_3_Node = {$: 'StopType_3_Node'};
+var author$project$Mbta$Decode$stopType = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$StopType_0_Stop),
+			_Utils_Tuple2(1, author$project$Mbta$StopType_1_Station),
+			_Utils_Tuple2(2, author$project$Mbta$StopType_2_Entrance),
+			_Utils_Tuple2(3, author$project$Mbta$StopType_3_Node)
+		]));
+var author$project$Mbta$Decode$stop = A2(
+	author$project$JsonApi$andThen,
+	function (stopType_) {
+		switch (stopType_.$) {
+			case 'StopType_0_Stop':
+				return A2(author$project$JsonApi$map, author$project$Mbta$Stop_0_Stop, author$project$Mbta$Decode$stopStop);
+			case 'StopType_1_Station':
+				return A2(author$project$JsonApi$map, author$project$Mbta$Stop_1_Station, author$project$Mbta$Decode$stopStation);
+			case 'StopType_2_Entrance':
+				return A2(author$project$JsonApi$map, author$project$Mbta$Stop_2_Entrance, author$project$Mbta$Decode$stopEntrance);
+			default:
+				return A2(author$project$JsonApi$map, author$project$Mbta$Stop_3_Node, author$project$Mbta$Decode$stopNode);
+		}
+	},
+	A3(
+		author$project$JsonApi$attribute,
+		'location_type',
+		author$project$Mbta$Decode$stopType,
+		author$project$JsonApi$succeed(elm$core$Basics$identity)));
+var author$project$Mbta$Trip = function (id) {
+	return function (serviceId) {
+		return function (routeId) {
+			return function (directionId) {
+				return function (routePatternId) {
+					return function (name) {
+						return function (headsign) {
+							return function (shapeId) {
+								return function (wheelchairAccessible) {
+									return function (bikesAllowed) {
+										return function (blockId) {
+											return {bikesAllowed: bikesAllowed, blockId: blockId, directionId: directionId, headsign: headsign, id: id, name: name, routeId: routeId, routePatternId: routePatternId, serviceId: serviceId, shapeId: shapeId, wheelchairAccessible: wheelchairAccessible};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var author$project$Mbta$Bikes_0_NoInformation = {$: 'Bikes_0_NoInformation'};
+var author$project$Mbta$Bikes_1_Allowed = {$: 'Bikes_1_Allowed'};
+var author$project$Mbta$Bikes_2_NotAllowed = {$: 'Bikes_2_NotAllowed'};
+var author$project$Mbta$Decode$bikesAllowed = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$int,
+	_List_fromArray(
+		[
+			_Utils_Tuple2(0, author$project$Mbta$Bikes_0_NoInformation),
+			_Utils_Tuple2(1, author$project$Mbta$Bikes_1_Allowed),
+			_Utils_Tuple2(2, author$project$Mbta$Bikes_2_NotAllowed)
+		]));
+var author$project$Mbta$BlockId = function (a) {
+	return {$: 'BlockId', a: a};
+};
+var author$project$Mbta$Decode$blockId = A2(elm$json$Json$Decode$map, author$project$Mbta$BlockId, elm$json$Json$Decode$string);
+var author$project$Mbta$Decode$trip = A3(
+	author$project$JsonApi$attributeMaybe,
+	'block_id',
+	author$project$Mbta$Decode$blockId,
+	A3(
+		author$project$JsonApi$attribute,
+		'bikes_allowed',
+		author$project$Mbta$Decode$bikesAllowed,
+		A3(
+			author$project$JsonApi$attribute,
+			'wheelchair_accessible',
+			author$project$Mbta$Decode$wheelchairAccessible,
+			A3(
+				author$project$JsonApi$relationshipMaybe,
+				'shape',
+				author$project$Mbta$Decode$shapeId,
+				A3(
+					author$project$JsonApi$attribute,
+					'headsign',
+					elm$json$Json$Decode$string,
+					A3(
+						author$project$JsonApi$attribute,
+						'name',
+						elm$json$Json$Decode$string,
+						A3(
+							author$project$JsonApi$relationshipMaybe,
+							'route_pattern',
+							author$project$Mbta$Decode$routePatternId,
+							A3(
+								author$project$JsonApi$attribute,
+								'direction_id',
+								author$project$Mbta$Decode$directionId,
+								A3(
+									author$project$JsonApi$relationshipOne,
+									'route',
+									author$project$Mbta$Decode$routeId,
+									A3(
+										author$project$JsonApi$relationshipOne,
+										'service',
+										author$project$Mbta$Decode$serviceId,
+										A2(
+											author$project$JsonApi$id,
+											author$project$Mbta$Decode$tripId,
+											author$project$JsonApi$succeed(author$project$Mbta$Trip))))))))))));
+var author$project$Mbta$Vehicle = function (id) {
+	return function (label) {
+		return function (routeId) {
+			return function (directionId) {
+				return function (tripId) {
+					return function (stopId) {
+						return function (stopSequence) {
+							return function (currentStatus) {
+								return function (latLng) {
+									return function (speed) {
+										return function (bearing) {
+											return function (updatedAt) {
+												return {bearing: bearing, currentStatus: currentStatus, directionId: directionId, id: id, label: label, latLng: latLng, routeId: routeId, speed: speed, stopId: stopId, stopSequence: stopSequence, tripId: tripId, updatedAt: updatedAt};
+											};
+										};
+									};
+								};
+							};
+						};
+					};
+				};
+			};
+		};
+	};
+};
+var author$project$Mbta$InTransitTo = {$: 'InTransitTo'};
+var author$project$Mbta$IncomingAt = {$: 'IncomingAt'};
+var author$project$Mbta$StoppedAt = {$: 'StoppedAt'};
+var author$project$Mbta$Decode$currentStatus = A2(
+	author$project$DecodeHelpers$enum,
+	elm$json$Json$Decode$string,
+	_List_fromArray(
+		[
+			_Utils_Tuple2('INCOMING_AT', author$project$Mbta$IncomingAt),
+			_Utils_Tuple2('STOPPED_AT', author$project$Mbta$StoppedAt),
+			_Utils_Tuple2('IN_TRANSIT_TO', author$project$Mbta$InTransitTo)
+		]));
+var author$project$Mbta$Decode$vehicle = A3(
+	author$project$JsonApi$attribute,
+	'updated_at',
+	rtfeldman$elm_iso8601_date_strings$Iso8601$decoder,
+	A3(
+		author$project$JsonApi$attribute,
+		'bearing',
+		elm$json$Json$Decode$int,
+		A3(
+			author$project$JsonApi$attributeMaybe,
+			'speed',
+			elm$json$Json$Decode$float,
+			A2(
+				author$project$JsonApi$custom,
+				author$project$Mbta$Decode$latLng,
+				A3(
+					author$project$JsonApi$attribute,
+					'current_status',
+					author$project$Mbta$Decode$currentStatus,
+					A3(
+						author$project$JsonApi$attribute,
+						'current_stop_sequence',
+						author$project$Mbta$Decode$stopSequence,
+						A3(
+							author$project$JsonApi$relationshipOne,
+							'stop',
+							author$project$Mbta$Decode$stopId,
+							A3(
+								author$project$JsonApi$relationshipOne,
+								'trip',
+								author$project$Mbta$Decode$tripId,
+								A3(
+									author$project$JsonApi$attribute,
+									'direction_id',
+									author$project$Mbta$Decode$directionId,
+									A3(
+										author$project$JsonApi$relationshipOne,
+										'route',
+										author$project$Mbta$Decode$routeId,
+										A3(
+											author$project$JsonApi$attribute,
+											'label',
+											elm$json$Json$Decode$string,
+											A2(
+												author$project$JsonApi$id,
+												author$project$Mbta$Decode$vehicleId,
+												author$project$JsonApi$succeed(author$project$Mbta$Vehicle)))))))))))));
+var elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var pzp1997$assoc_list$AssocList$remove = F2(
+	function (targetKey, _n0) {
+		var alist = _n0.a;
+		return pzp1997$assoc_list$AssocList$D(
+			A2(
+				elm$core$List$filter,
+				function (_n1) {
+					var key = _n1.a;
+					return !_Utils_eq(key, targetKey);
+				},
+				alist));
+	});
+var pzp1997$assoc_list$AssocList$insert = F3(
+	function (key, value, dict) {
+		var _n0 = A2(pzp1997$assoc_list$AssocList$remove, key, dict);
+		var alteredAlist = _n0.a;
+		return pzp1997$assoc_list$AssocList$D(
+			A2(
+				elm$core$List$cons,
+				_Utils_Tuple2(key, value),
+				alteredAlist));
+	});
+var author$project$Mbta$Mixed$insert = author$project$JsonApi$byType(
+	elm$core$Dict$fromList(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'prediction',
+				A2(
+					author$project$JsonApi$map,
+					function (prediction) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									predictions: A3(pzp1997$assoc_list$AssocList$insert, prediction.id, prediction, included.predictions)
+								});
+						};
+					},
+					author$project$Mbta$Decode$prediction)),
+				_Utils_Tuple2(
+				'vehicle',
+				A2(
+					author$project$JsonApi$map,
+					function (vehicle) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									vehicles: A3(pzp1997$assoc_list$AssocList$insert, vehicle.id, vehicle, included.vehicles)
+								});
+						};
+					},
+					author$project$Mbta$Decode$vehicle)),
+				_Utils_Tuple2(
+				'route',
+				A2(
+					author$project$JsonApi$map,
+					function (route) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									routes: A3(pzp1997$assoc_list$AssocList$insert, route.id, route, included.routes)
+								});
+						};
+					},
+					author$project$Mbta$Decode$route)),
+				_Utils_Tuple2(
+				'route_pattern',
+				A2(
+					author$project$JsonApi$map,
+					function (routePattern) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									routePatterns: A3(pzp1997$assoc_list$AssocList$insert, routePattern.id, routePattern, included.routePatterns)
+								});
+						};
+					},
+					author$project$Mbta$Decode$routePattern)),
+				_Utils_Tuple2(
+				'line',
+				A2(
+					author$project$JsonApi$map,
+					function (line) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									lines: A3(pzp1997$assoc_list$AssocList$insert, line.id, line, included.lines)
+								});
+						};
+					},
+					author$project$Mbta$Decode$line)),
+				_Utils_Tuple2(
+				'schedule',
+				A2(
+					author$project$JsonApi$map,
+					function (schedule) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									schedules: A3(pzp1997$assoc_list$AssocList$insert, schedule.id, schedule, included.schedules)
+								});
+						};
+					},
+					author$project$Mbta$Decode$schedule)),
+				_Utils_Tuple2(
+				'trip',
+				A2(
+					author$project$JsonApi$map,
+					function (trip) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									trips: A3(pzp1997$assoc_list$AssocList$insert, trip.id, trip, included.trips)
+								});
+						};
+					},
+					author$project$Mbta$Decode$trip)),
+				_Utils_Tuple2(
+				'service',
+				A2(
+					author$project$JsonApi$map,
+					function (service) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									services: A3(pzp1997$assoc_list$AssocList$insert, service.id, service, included.services)
+								});
+						};
+					},
+					author$project$Mbta$Decode$service)),
+				_Utils_Tuple2(
+				'shape',
+				A2(
+					author$project$JsonApi$map,
+					function (shape) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									shapes: A3(pzp1997$assoc_list$AssocList$insert, shape.id, shape, included.shapes)
+								});
+						};
+					},
+					author$project$Mbta$Decode$shape)),
+				_Utils_Tuple2(
+				'stop',
+				A2(
+					author$project$JsonApi$map,
+					function (stop) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									stops: A3(
+										pzp1997$assoc_list$AssocList$insert,
+										author$project$Mbta$stopId(stop),
+										stop,
+										included.stops)
+								});
+						};
+					},
+					author$project$Mbta$Decode$stop)),
+				_Utils_Tuple2(
+				'facility',
+				A2(
+					author$project$JsonApi$map,
+					function (facility) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									facilities: A3(pzp1997$assoc_list$AssocList$insert, facility.id, facility, included.facilities)
+								});
+						};
+					},
+					author$project$Mbta$Decode$facility)),
+				_Utils_Tuple2(
+				'live-facility',
+				A2(
+					author$project$JsonApi$map,
+					function (liveFacility) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									liveFacilities: A3(pzp1997$assoc_list$AssocList$insert, liveFacility.id, liveFacility, included.liveFacilities)
+								});
+						};
+					},
+					author$project$Mbta$Decode$liveFacility)),
+				_Utils_Tuple2(
+				'alert',
+				A2(
+					author$project$JsonApi$map,
+					function (alert) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									alerts: A3(pzp1997$assoc_list$AssocList$insert, alert.id, alert, included.alerts)
+								});
+						};
+					},
+					author$project$Mbta$Decode$alert))
+			])));
+var author$project$Mbta$Api$includedDecoder = {accumulator: author$project$Mbta$Mixed$insert, emptyIncluded: author$project$Mbta$Mixed$empty};
+var author$project$JsonApi$documentData = function (document) {
+	return document.data;
+};
+var author$project$JsonApi$documentIncluded = function (document) {
+	return document.included;
+};
+var author$project$Mbta$Api$Data = function (a) {
+	return {$: 'Data', a: a};
+};
+var author$project$Mbta$Api$jsonApiDocumentToApiData = function (document) {
+	return author$project$Mbta$Api$Data(
+		{
+			included: author$project$JsonApi$documentIncluded(document),
+			primaryData: author$project$JsonApi$documentData(document)
+		});
+};
+var author$project$JsonApi$decodeErrorToString = F2(
+	function (jsonApiDecodeErrorToString, error) {
+		if (error.$ === 'NoncompliantJson') {
+			var decodeError = error.a;
+			return elm$json$Json$Decode$errorToString(decodeError);
+		} else {
+			var jsonApiDecodeError = error.a;
+			return jsonApiDecodeErrorToString(jsonApiDecodeError);
+		}
+	});
+var author$project$JsonApi$idErrorToString = function (idError) {
+	var expectedTypeMessage = function () {
+		var _n0 = idError.expectedType;
+		if (!_n0.b) {
+			return 'but the IdDecoder didn\'t know how to handle any types. Did you pass an empty Dict to byType?';
+		} else {
+			if (!_n0.b.b) {
+				var expectedType = _n0.a;
+				return 'as type ' + expectedType;
+			} else {
+				var multipleTypes = _n0;
+				return 'as any of these types: ' + A2(elm$core$String$join, ', ', multipleTypes);
+			}
+		}
+	}();
+	return elm$core$String$concat(
+		_List_fromArray(
+			['Tried to decode {type: ', idError.actualType, ', id: ', idError.actualIdValue, '} ', expectedTypeMessage]));
+};
+var author$project$JsonApi$resourceErrorToString = function (error) {
+	switch (error.$) {
+		case 'ResourceIdError':
+			var idError = error.a;
+			return 'Error decoding resource id: ' + author$project$JsonApi$idErrorToString(idError);
+		case 'AttributeMissing':
+			var attributeName = error.a;
+			return 'Expected attribute ' + (attributeName + ', but it\'s missing');
+		case 'AttributeDecodeError':
+			var attributeName = error.a;
+			var decodeError = error.b;
+			return elm$core$String$concat(
+				_List_fromArray(
+					[
+						'Failed to decode attribute ',
+						attributeName,
+						': ',
+						elm$json$Json$Decode$errorToString(decodeError)
+					]));
+		case 'RelationshipNumberError':
+			var relationshipName = error.a;
+			var message = error.b;
+			return elm$core$String$concat(
+				_List_fromArray(
+					['Error at relationship ', relationshipName, ': ', message]));
+		case 'RelationshipIdError':
+			var relationshipName = error.a;
+			var idError = error.b;
+			return elm$core$String$concat(
+				_List_fromArray(
+					[
+						'Couldn\'t decode id of relationship ',
+						relationshipName,
+						': ',
+						author$project$JsonApi$idErrorToString(idError)
+					]));
+		case 'Failure':
+			var message = error.a;
+			return message;
+		default:
+			var errors = error.a;
+			return elm$core$String$concat(
+				_List_fromArray(
+					[
+						'oneOf tried ',
+						elm$core$String$fromInt(
+						elm$core$List$length(errors)),
+						' decoders, but they all failed: [',
+						A2(
+						elm$core$String$join,
+						'; ',
+						A2(elm$core$List$map, author$project$JsonApi$resourceErrorToString, errors)),
+						']'
+					]));
+	}
+};
+var elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var author$project$JsonApi$documentErrorToString = function (documentError) {
+	switch (documentError.$) {
+		case 'ExpectedOne':
+			return 'Expected one resource but got a list';
+		case 'ExpectedMany':
+			return 'Expected a list of resources but only got one';
+		case 'ApiErrors':
+			var errors = documentError.a;
+			return 'API returned errors:\n' + A2(
+				elm$json$Json$Encode$encode,
+				2,
+				A2(elm$json$Json$Encode$list, elm$core$Basics$identity, errors));
+		default:
+			var resourceError = documentError.a;
+			return author$project$JsonApi$resourceErrorToString(resourceError);
+	}
+};
+var author$project$Mbta$Api$DecodeError = function (a) {
+	return {$: 'DecodeError', a: a};
+};
+var author$project$Mbta$Api$HttpError = function (a) {
+	return {$: 'HttpError', a: a};
+};
+var author$project$Mbta$Api$jsonApiErrorToApiError = function (jsonApiHttpError) {
+	if (jsonApiHttpError.$ === 'HttpError') {
+		var httpError = jsonApiHttpError.a;
+		return author$project$Mbta$Api$HttpError(httpError);
+	} else {
+		var decodeDocumentError = jsonApiHttpError.a;
+		return author$project$Mbta$Api$DecodeError(
+			A2(author$project$JsonApi$decodeErrorToString, author$project$JsonApi$documentErrorToString, decodeDocumentError));
+	}
+};
+var author$project$Mbta$Api$jsonApiResultToApiResult = function (jsonApiResult) {
+	return A2(
+		elm$core$Result$map,
+		author$project$Mbta$Api$jsonApiDocumentToApiData,
+		A2(elm$core$Result$mapError, author$project$Mbta$Api$jsonApiErrorToApiError, jsonApiResult));
+};
+var elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
+		}
+	});
+var elm$core$List$concat = function (lists) {
+	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
+};
+var elm$core$List$concatMap = F2(
+	function (f, list) {
+		return elm$core$List$concat(
+			A2(elm$core$List$map, f, list));
+	});
+var elm$url$Url$percentEncode = _Url_percentEncode;
+var elm$url$Url$Builder$QueryParameter = F2(
+	function (a, b) {
+		return {$: 'QueryParameter', a: a, b: b};
+	});
+var elm$url$Url$Builder$string = F2(
+	function (key, value) {
+		return A2(
+			elm$url$Url$Builder$QueryParameter,
+			elm$url$Url$percentEncode(key),
+			elm$url$Url$percentEncode(value));
+	});
+var author$project$Mbta$Api$filterQueryParameters = function (filters) {
+	return A2(
+		elm$core$List$concatMap,
+		function (_n0) {
+			var params = _n0.a;
+			return A2(
+				elm$core$List$map,
+				function (_n1) {
+					var name = _n1.a;
+					var values = _n1.b;
+					return A2(
+						elm$url$Url$Builder$string,
+						'filter[' + (name + ']'),
+						A2(elm$core$String$join, ',', values));
+				},
+				params);
+		},
+		filters);
+};
+var elm$core$List$singleton = function (value) {
+	return _List_fromArray(
+		[value]);
+};
+var author$project$Mbta$Api$includeQueryParameter = function (includes) {
+	if (!includes.b) {
+		return _List_Nil;
+	} else {
+		return elm$core$List$singleton(
+			A2(
+				elm$url$Url$Builder$string,
+				'include',
+				A2(
+					elm$core$String$join,
+					',',
+					A2(
+						elm$core$List$map,
+						function (_n1) {
+							var s = _n1.a;
+							return s;
+						},
+						includes))));
+	}
+};
+var elm$url$Url$Builder$toQueryPair = function (_n0) {
+	var key = _n0.a;
+	var value = _n0.b;
+	return key + ('=' + value);
+};
+var elm$url$Url$Builder$toQuery = function (parameters) {
+	if (!parameters.b) {
+		return '';
+	} else {
+		return '?' + A2(
+			elm$core$String$join,
+			'&',
+			A2(elm$core$List$map, elm$url$Url$Builder$toQueryPair, parameters));
+	}
+};
+var elm$url$Url$Builder$absolute = F2(
+	function (pathSegments, parameters) {
+		return '/' + (A2(elm$core$String$join, '/', pathSegments) + elm$url$Url$Builder$toQuery(parameters));
+	});
+var elm$url$Url$Builder$crossOrigin = F3(
+	function (prePath, pathSegments, parameters) {
+		return prePath + ('/' + (A2(elm$core$String$join, '/', pathSegments) + elm$url$Url$Builder$toQuery(parameters)));
+	});
+var author$project$Mbta$Api$makeUrl = F4(
+	function (host, path, filters, includes) {
+		switch (host.$) {
+			case 'Default':
+				var config = host.a;
+				var apiKeyQueryParam = function () {
+					var _n1 = config.apiKey;
+					if (_n1.$ === 'Nothing') {
+						return _List_Nil;
+					} else {
+						var key = _n1.a;
+						return _List_fromArray(
+							[
+								A2(elm$url$Url$Builder$string, 'api_key', key)
+							]);
+					}
+				}();
+				return A3(
+					elm$url$Url$Builder$crossOrigin,
+					'https://api-v3.mbta.com',
+					path,
+					elm$core$List$concat(
+						_List_fromArray(
+							[
+								apiKeyQueryParam,
+								author$project$Mbta$Api$includeQueryParameter(includes),
+								author$project$Mbta$Api$filterQueryParameters(filters)
+							])));
+			case 'SameOrigin':
+				var config = host.a;
+				return A2(
+					elm$url$Url$Builder$absolute,
+					_Utils_ap(config.basePath, path),
+					elm$core$List$concat(
+						_List_fromArray(
+							[
+								config.queryParameters,
+								author$project$Mbta$Api$includeQueryParameter(includes),
+								author$project$Mbta$Api$filterQueryParameters(filters)
+							])));
+			default:
+				var config = host.a;
+				return A3(
+					elm$url$Url$Builder$crossOrigin,
+					config.host,
+					_Utils_ap(config.basePath, path),
+					elm$core$List$concat(
+						_List_fromArray(
+							[
+								config.queryParameters,
+								author$project$Mbta$Api$includeQueryParameter(includes),
+								author$project$Mbta$Api$filterQueryParameters(filters)
+							])));
+		}
+	});
+var author$project$Mbta$Api$getList = F6(
+	function (toMsg, host, resourceDecoder, path, includes, filters) {
+		return A3(
+			author$project$JsonApi$get,
+			A2(elm$core$Basics$composeR, author$project$Mbta$Api$jsonApiResultToApiResult, toMsg),
+			A2(author$project$JsonApi$documentDecoderMany, author$project$Mbta$Api$includedDecoder, resourceDecoder),
+			A4(
+				author$project$Mbta$Api$makeUrl,
+				host,
+				_List_fromArray(
+					[path]),
+				filters,
+				includes));
+	});
+var author$project$Mbta$Api$getStops = F4(
+	function (toMsg, host, includes, filters) {
+		return A6(author$project$Mbta$Api$getList, toMsg, host, author$project$Mbta$Decode$stop, 'stops', includes, filters);
+	});
+var author$project$Model$ReceiveStopNames = function (a) {
+	return {$: 'ReceiveStopNames', a: a};
+};
+var author$project$Main$getStopNames = function (selections) {
+	return A4(
+		author$project$Mbta$Api$getStops,
+		author$project$Model$ReceiveStopNames,
+		author$project$Main$apiHost,
+		_List_Nil,
+		_List_fromArray(
+			[
+				author$project$Mbta$Api$filterStopsByIds(
+				A2(
+					elm$core$List$map,
+					function ($) {
+						return $.stopId;
+					},
+					selections))
+			]));
+};
+var elm$json$Json$Encode$string = _Json_wrap;
+var author$project$Main$startStream = _Platform_outgoingPort('startStream', elm$json$Json$Encode$string);
+var author$project$Mbta$Api$routeIdToString = function (_n0) {
+	var routeId = _n0.a;
+	return routeId;
+};
+var author$project$Mbta$Api$filterPredictionsByRouteIds = function (routeIds) {
+	return A3(author$project$Mbta$Api$filterByList, 'route', author$project$Mbta$Api$routeIdToString, routeIds);
+};
+var author$project$Mbta$Api$filterPredictionsByStopIds = function (stopIds) {
+	return A3(author$project$Mbta$Api$filterByList, 'stop', author$project$Mbta$Api$stopIdToString, stopIds);
+};
+var author$project$Mbta$Api$Include = function (a) {
+	return {$: 'Include', a: a};
+};
+var author$project$Mbta$Api$include = function (_n0) {
+	var s = _n0.a;
+	return author$project$Mbta$Api$Include(s);
+};
+var author$project$Mbta$Api$Relationship = function (a) {
+	return {$: 'Relationship', a: a};
+};
+var author$project$Mbta$Api$predictionStop = author$project$Mbta$Api$Relationship('stop');
+var author$project$Mbta$Api$predictionTrip = author$project$Mbta$Api$Relationship('trip');
+var author$project$Mbta$Api$predictionVehicle = author$project$Mbta$Api$Relationship('vehicle');
+var author$project$Mbta$Api$StreamResultInternal_Loading = {$: 'StreamResultInternal_Loading'};
+var author$project$Mbta$Api$StreamState = function (a) {
+	return {$: 'StreamState', a: a};
+};
+var elm$core$Tuple$second = function (_n0) {
+	var y = _n0.b;
+	return y;
+};
+var pzp1997$assoc_list$AssocList$values = function (_n0) {
+	var alist = _n0.a;
+	return A2(elm$core$List$map, elm$core$Tuple$second, alist);
+};
+var author$project$Mbta$Api$streamPredictions = F3(
+	function (host, includes, filters) {
+		return _Utils_Tuple2(
+			author$project$Mbta$Api$StreamState(
+				{
+					dataField: A2(
+						elm$core$Basics$composeR,
+						function ($) {
+							return $.predictions;
+						},
+						pzp1997$assoc_list$AssocList$values),
+					mixedResult: author$project$Mbta$Api$StreamResultInternal_Loading
+				}),
+			A4(
+				author$project$Mbta$Api$makeUrl,
+				host,
+				_List_fromArray(
+					['predictions']),
+				filters,
+				includes));
+	});
+var author$project$Main$streamPredictions = function (selections) {
+	var stopIds = A2(
+		elm$core$List$map,
+		function ($) {
+			return $.stopId;
+		},
+		selections);
+	var routeIds = A2(
+		elm$core$List$map,
+		function ($) {
+			return $.routeId;
+		},
+		selections);
+	return A3(
+		author$project$Mbta$Api$streamPredictions,
+		author$project$Main$apiHost,
+		_List_fromArray(
+			[
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionStop),
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionTrip),
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionVehicle)
+			]),
+		_List_fromArray(
+			[
+				author$project$Mbta$Api$filterPredictionsByRouteIds(routeIds),
+				author$project$Mbta$Api$filterPredictionsByStopIds(stopIds)
+			]));
+};
+var author$project$Model$Tick = function (a) {
+	return {$: 'Tick', a: a};
+};
+var author$project$UrlParsing$parseSelection = function (queryValue) {
+	var _n0 = A2(elm$core$String$split, ',', queryValue);
+	_n0$3:
+	while (true) {
+		if (_n0.b && _n0.b.b) {
+			if (!_n0.b.b.b) {
+				var routeId = _n0.a;
+				var _n1 = _n0.b;
+				var stopId = _n1.a;
+				return elm$core$Maybe$Just(
+					{
+						directionId: elm$core$Maybe$Nothing,
+						routeId: author$project$Mbta$RouteId(routeId),
+						stopId: author$project$Mbta$StopId(stopId)
+					});
+			} else {
+				if (!_n0.b.b.b.b) {
+					switch (_n0.b.b.a) {
+						case '0':
+							var routeId = _n0.a;
+							var _n2 = _n0.b;
+							var stopId = _n2.a;
+							var _n3 = _n2.b;
+							return elm$core$Maybe$Just(
+								{
+									directionId: elm$core$Maybe$Just(author$project$Mbta$D0),
+									routeId: author$project$Mbta$RouteId(routeId),
+									stopId: author$project$Mbta$StopId(stopId)
+								});
+						case '1':
+							var routeId = _n0.a;
+							var _n4 = _n0.b;
+							var stopId = _n4.a;
+							var _n5 = _n4.b;
+							return elm$core$Maybe$Just(
+								{
+									directionId: elm$core$Maybe$Just(author$project$Mbta$D1),
+									routeId: author$project$Mbta$RouteId(routeId),
+									stopId: author$project$Mbta$StopId(stopId)
+								});
+						default:
+							break _n0$3;
+					}
+				} else {
+					break _n0$3;
+				}
+			}
+		} else {
+			break _n0$3;
+		}
+	}
+	return elm$core$Maybe$Nothing;
+};
+var elm$url$Url$Parser$Internal$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
+var elm$url$Url$Parser$Query$custom = F2(
+	function (key, func) {
+		return elm$url$Url$Parser$Internal$Parser(
+			function (dict) {
+				return func(
+					A2(
+						elm$core$Maybe$withDefault,
+						_List_Nil,
+						A2(elm$core$Dict$get, key, dict)));
+			});
+	});
+var author$project$UrlParsing$selectionsQueryParser = A2(
+	elm$url$Url$Parser$Query$custom,
+	'stop',
+	elm$core$List$filterMap(author$project$UrlParsing$parseSelection));
+var elm$url$Url$Parser$Parser = function (a) {
+	return {$: 'Parser', a: a};
+};
+var elm$url$Url$Parser$State = F5(
+	function (visited, unvisited, params, frag, value) {
+		return {frag: frag, params: params, unvisited: unvisited, value: value, visited: visited};
+	});
+var elm$url$Url$Parser$query = function (_n0) {
+	var queryParser = _n0.a;
+	return elm$url$Url$Parser$Parser(
+		function (_n1) {
+			var visited = _n1.visited;
+			var unvisited = _n1.unvisited;
+			var params = _n1.params;
+			var frag = _n1.frag;
+			var value = _n1.value;
+			return _List_fromArray(
+				[
+					A5(
+					elm$url$Url$Parser$State,
+					visited,
+					unvisited,
+					params,
+					frag,
+					value(
+						queryParser(params)))
+				]);
+		});
+};
+var author$project$UrlParsing$selectionsUrlParser = elm$url$Url$Parser$query(author$project$UrlParsing$selectionsQueryParser);
+var elm$url$Url$Parser$getFirstMatch = function (states) {
+	getFirstMatch:
+	while (true) {
+		if (!states.b) {
+			return elm$core$Maybe$Nothing;
+		} else {
+			var state = states.a;
+			var rest = states.b;
+			var _n1 = state.unvisited;
+			if (!_n1.b) {
+				return elm$core$Maybe$Just(state.value);
+			} else {
+				if ((_n1.a === '') && (!_n1.b.b)) {
+					return elm$core$Maybe$Just(state.value);
+				} else {
+					var $temp$states = rest;
+					states = $temp$states;
+					continue getFirstMatch;
+				}
+			}
+		}
+	}
+};
+var elm$url$Url$Parser$removeFinalEmpty = function (segments) {
+	if (!segments.b) {
+		return _List_Nil;
+	} else {
+		if ((segments.a === '') && (!segments.b.b)) {
+			return _List_Nil;
+		} else {
+			var segment = segments.a;
+			var rest = segments.b;
+			return A2(
+				elm$core$List$cons,
+				segment,
+				elm$url$Url$Parser$removeFinalEmpty(rest));
+		}
+	}
+};
+var elm$url$Url$Parser$preparePath = function (path) {
+	var _n0 = A2(elm$core$String$split, '/', path);
+	if (_n0.b && (_n0.a === '')) {
+		var segments = _n0.b;
+		return elm$url$Url$Parser$removeFinalEmpty(segments);
+	} else {
+		var segments = _n0;
+		return elm$url$Url$Parser$removeFinalEmpty(segments);
+	}
+};
+var elm$url$Url$percentDecode = _Url_percentDecode;
+var elm$url$Url$Parser$addToParametersHelp = F2(
+	function (value, maybeList) {
+		if (maybeList.$ === 'Nothing') {
+			return elm$core$Maybe$Just(
+				_List_fromArray(
+					[value]));
+		} else {
+			var list = maybeList.a;
+			return elm$core$Maybe$Just(
+				A2(elm$core$List$cons, value, list));
+		}
+	});
+var elm$url$Url$Parser$addParam = F2(
+	function (segment, dict) {
+		var _n0 = A2(elm$core$String$split, '=', segment);
+		if ((_n0.b && _n0.b.b) && (!_n0.b.b.b)) {
+			var rawKey = _n0.a;
+			var _n1 = _n0.b;
+			var rawValue = _n1.a;
+			var _n2 = elm$url$Url$percentDecode(rawKey);
+			if (_n2.$ === 'Nothing') {
+				return dict;
+			} else {
+				var key = _n2.a;
+				var _n3 = elm$url$Url$percentDecode(rawValue);
+				if (_n3.$ === 'Nothing') {
+					return dict;
+				} else {
+					var value = _n3.a;
+					return A3(
+						elm$core$Dict$update,
+						key,
+						elm$url$Url$Parser$addToParametersHelp(value),
+						dict);
+				}
+			}
+		} else {
+			return dict;
+		}
+	});
+var elm$url$Url$Parser$prepareQuery = function (maybeQuery) {
+	if (maybeQuery.$ === 'Nothing') {
+		return elm$core$Dict$empty;
+	} else {
+		var qry = maybeQuery.a;
+		return A3(
+			elm$core$List$foldr,
+			elm$url$Url$Parser$addParam,
+			elm$core$Dict$empty,
+			A2(elm$core$String$split, '&', qry));
+	}
+};
+var elm$url$Url$Parser$parse = F2(
+	function (_n0, url) {
+		var parser = _n0.a;
+		return elm$url$Url$Parser$getFirstMatch(
+			parser(
+				A5(
+					elm$url$Url$Parser$State,
+					_List_Nil,
+					elm$url$Url$Parser$preparePath(url.path),
+					elm$url$Url$Parser$prepareQuery(url.query),
+					url.fragment,
+					elm$core$Basics$identity)));
+	});
+var author$project$UrlParsing$parseSelectionsFromUrl = function (url) {
+	return A2(
+		elm$core$Maybe$withDefault,
+		_List_Nil,
+		A2(
+			elm$url$Url$Parser$parse,
+			author$project$UrlParsing$selectionsUrlParser,
+			_Utils_update(
+				url,
+				{path: '/'})));
+};
+var elm$core$Platform$Cmd$batch = _Platform_batch;
+var elm$core$Task$Perform = function (a) {
+	return {$: 'Perform', a: a};
+};
+var elm$core$Task$init = elm$core$Task$succeed(_Utils_Tuple0);
+var elm$core$Task$map = F2(
+	function (func, taskA) {
+		return A2(
+			elm$core$Task$andThen,
+			function (a) {
+				return elm$core$Task$succeed(
+					func(a));
+			},
+			taskA);
+	});
+var elm$core$Task$spawnCmd = F2(
+	function (router, _n0) {
+		var task = _n0.a;
+		return _Scheduler_spawn(
+			A2(
+				elm$core$Task$andThen,
+				elm$core$Platform$sendToApp(router),
+				task));
+	});
+var elm$core$Task$onEffects = F3(
+	function (router, commands, state) {
+		return A2(
+			elm$core$Task$map,
+			function (_n0) {
+				return _Utils_Tuple0;
+			},
+			elm$core$Task$sequence(
+				A2(
+					elm$core$List$map,
+					elm$core$Task$spawnCmd(router),
+					commands)));
+	});
+var elm$core$Task$onSelfMsg = F3(
+	function (_n0, _n1, _n2) {
+		return elm$core$Task$succeed(_Utils_Tuple0);
+	});
+var elm$core$Task$cmdMap = F2(
+	function (tagger, _n0) {
+		var task = _n0.a;
+		return elm$core$Task$Perform(
+			A2(elm$core$Task$map, tagger, task));
+	});
+_Platform_effectManagers['Task'] = _Platform_createManager(elm$core$Task$init, elm$core$Task$onEffects, elm$core$Task$onSelfMsg, elm$core$Task$cmdMap);
+var elm$core$Task$command = _Platform_leaf('Task');
+var elm$core$Task$perform = F2(
+	function (toMessage, task) {
+		return elm$core$Task$command(
+			elm$core$Task$Perform(
+				A2(elm$core$Task$map, toMessage, task)));
+	});
+var elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var elm$time$Time$customZone = elm$time$Time$Zone;
+var elm$time$Time$now = _Time_now(elm$time$Time$millisToPosix);
+var author$project$Main$init = F3(
+	function (flags, url, key) {
+		var selections = author$project$UrlParsing$parseSelectionsFromUrl(url);
+		var _n0 = author$project$Main$streamPredictions(selections);
+		var initStreamState = _n0.a;
+		var streamUrl = _n0.b;
+		return _Utils_Tuple2(
+			{
+				currentTime: elm$time$Time$millisToPosix(0),
+				directionIdFormValue: elm$core$Maybe$Nothing,
+				lastUpdated: elm$core$Maybe$Nothing,
+				navigationKey: key,
+				routeIdFormText: '',
+				selections: selections,
+				stopIdFormText: '',
+				stopNames: pzp1997$assoc_list$AssocList$empty,
+				streamState: initStreamState,
+				url: url
+			},
+			elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						A2(elm$core$Task$perform, author$project$Model$Tick, elm$time$Time$now),
+						author$project$Main$startStream(streamUrl),
+						author$project$Main$getStopNames(selections)
+					])));
+	});
+var author$project$Main$streamEventPort = _Platform_incomingPort('streamEventPort', elm$json$Json$Decode$value);
+var author$project$Model$StreamMsg = F2(
+	function (a, b) {
+		return {$: 'StreamMsg', a: a, b: b};
+	});
+var elm$core$Debug$todo = _Debug_todo;
+var author$project$Main$streamEventSub = function () {
+	var msgDecoder = A3(
+		elm$json$Json$Decode$map2,
+		author$project$Model$StreamMsg,
+		A2(elm$json$Json$Decode$field, 'event', elm$json$Json$Decode$string),
+		A2(elm$json$Json$Decode$field, 'data', elm$json$Json$Decode$value));
+	var valueToMsg = function (value) {
+		var _n0 = A2(elm$json$Json$Decode$decodeValue, msgDecoder, value);
+		if (_n0.$ === 'Ok') {
+			var msg = _n0.a;
+			return msg;
+		} else {
+			var e = _n0.a;
+			return _Debug_todo(
+				'Main',
+				{
+					start: {line: 228, column: 25},
+					end: {line: 228, column: 35}
+				})(
+				elm$json$Json$Decode$errorToString(e));
+		}
+	};
+	return author$project$Main$streamEventPort(valueToMsg);
+}();
 var elm$core$Platform$Sub$batch = _Platform_batch;
 var elm$time$Time$Every = F2(
 	function (a, b) {
@@ -8236,31 +10854,6 @@ var elm$time$Time$State = F2(
 	});
 var elm$time$Time$init = elm$core$Task$succeed(
 	A2(elm$time$Time$State, elm$core$Dict$empty, elm$core$Dict$empty));
-var elm$core$Dict$foldl = F3(
-	function (func, acc, dict) {
-		foldl:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return acc;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var $temp$func = func,
-					$temp$acc = A3(
-					func,
-					key,
-					value,
-					A3(elm$core$Dict$foldl, func, acc, left)),
-					$temp$dict = right;
-				func = $temp$func;
-				acc = $temp$acc;
-				dict = $temp$dict;
-				continue foldl;
-			}
-		}
-	});
 var elm$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
@@ -8459,11 +11052,6 @@ var elm$time$Time$onSelfMsg = F3(
 				A2(elm$core$Task$andThen, tellTaggers, elm$time$Time$now));
 		}
 	});
-var elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var elm$time$Time$subMap = F2(
 	function (f, _n0) {
 		var interval = _n0.a;
@@ -8485,229 +11073,366 @@ var author$project$Main$subscriptions = function (_n0) {
 		_List_fromArray(
 			[
 				A2(elm$time$Time$every, 1000, author$project$Model$Tick),
-				author$project$Api$Stream$subscriptions(author$project$Model$ApiMsg)
+				author$project$Main$streamEventSub
 			]));
 };
-var author$project$Api$Stream$BadOrder = function (a) {
-	return {$: 'BadOrder', a: a};
+var author$project$Mbta$stopName = function (stop) {
+	switch (stop.$) {
+		case 'Stop_0_Stop':
+			var stop_stop = stop.a;
+			return stop_stop.name;
+		case 'Stop_1_Station':
+			var stop_station = stop.a;
+			return stop_station.name;
+		case 'Stop_2_Entrance':
+			var stop_entrance = stop.a;
+			return stop_entrance.name;
+		default:
+			var stop_node = stop.a;
+			return stop_node.name;
+	}
 };
-var author$project$Api$Stream$DecodeError = function (a) {
-	return {$: 'DecodeError', a: a};
+var author$project$Mbta$Api$getPrimaryData = function (_n0) {
+	var data = _n0.a;
+	return data.primaryData;
 };
-var author$project$Api$Stream$Failure = function (a) {
-	return {$: 'Failure', a: a};
+var author$project$Mbta$Api$StreamResultInternal_Loaded = function (a) {
+	return {$: 'StreamResultInternal_Loaded', a: a};
 };
-var author$project$Api$Stream$Success = function (a) {
-	return {$: 'Success', a: a};
+var author$project$Mbta$Api$Stream_UnexpectedEvent = function (a) {
+	return {$: 'Stream_UnexpectedEvent', a: a};
 };
-var author$project$Api$Stream$emptyData = {predictions: pzp1997$assoc_list$AssocList$empty, stops: pzp1997$assoc_list$AssocList$empty, trips: pzp1997$assoc_list$AssocList$empty, vehicles: pzp1997$assoc_list$AssocList$empty};
-var elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2(elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
+var author$project$Mbta$Api$Stream_UnexpectedEventOrder = function (a) {
+	return {$: 'Stream_UnexpectedEventOrder', a: a};
+};
+var author$project$JsonApi$decodeResourceValue = F2(
+	function (resourceDecoder, jsonValue) {
+		return A4(author$project$JsonApi$decodeValue, author$project$JsonApi$Untyped$resourceDecoder, author$project$JsonApi$decodeResource, resourceDecoder, jsonValue);
 	});
-var pzp1997$assoc_list$AssocList$remove = F2(
-	function (targetKey, _n0) {
-		var alist = _n0.a;
-		return pzp1997$assoc_list$AssocList$D(
-			A2(
-				elm$core$List$filter,
-				function (_n1) {
-					var key = _n1.a;
-					return !_Utils_eq(key, targetKey);
-				},
-				alist));
-	});
-var pzp1997$assoc_list$AssocList$insert = F3(
-	function (key, value, dict) {
-		var _n0 = A2(pzp1997$assoc_list$AssocList$remove, key, dict);
-		var alteredAlist = _n0.a;
-		return pzp1997$assoc_list$AssocList$D(
-			A2(
-				elm$core$List$cons,
-				_Utils_Tuple2(key, value),
-				alteredAlist));
-	});
-var author$project$Api$Stream$insertResource = F2(
-	function (resource, apiData) {
-		switch (resource.$) {
-			case 'ResourcePrediction':
-				var prediction = resource.a;
-				return _Utils_update(
-					apiData,
-					{
-						predictions: A3(pzp1997$assoc_list$AssocList$insert, prediction.id, prediction, apiData.predictions)
-					});
-			case 'ResourceStop':
-				var stop = resource.a;
-				return _Utils_update(
-					apiData,
-					{
-						stops: A3(pzp1997$assoc_list$AssocList$insert, stop.id, stop, apiData.stops)
-					});
-			case 'ResourceTrip':
-				var trip = resource.a;
-				return _Utils_update(
-					apiData,
-					{
-						trips: A3(pzp1997$assoc_list$AssocList$insert, trip.id, trip, apiData.trips)
-					});
-			default:
-				var vehicle = resource.a;
-				return _Utils_update(
-					apiData,
-					{
-						vehicles: A3(pzp1997$assoc_list$AssocList$insert, vehicle.id, vehicle, apiData.vehicles)
-					});
-		}
-	});
-var pzp1997$assoc_list$AssocList$get = F2(
-	function (targetKey, _n0) {
-		get:
-		while (true) {
-			var alist = _n0.a;
-			if (!alist.b) {
-				return elm$core$Maybe$Nothing;
-			} else {
-				var _n2 = alist.a;
-				var key = _n2.a;
-				var value = _n2.b;
-				var rest = alist.b;
-				if (_Utils_eq(key, targetKey)) {
-					return elm$core$Maybe$Just(value);
-				} else {
-					var $temp$targetKey = targetKey,
-						$temp$_n0 = pzp1997$assoc_list$AssocList$D(rest);
-					targetKey = $temp$targetKey;
-					_n0 = $temp$_n0;
-					continue get;
-				}
-			}
-		}
-	});
-var pzp1997$assoc_list$AssocList$member = F2(
-	function (targetKey, dict) {
-		var _n0 = A2(pzp1997$assoc_list$AssocList$get, targetKey, dict);
-		if (_n0.$ === 'Just') {
-			return true;
-		} else {
-			return false;
-		}
-	});
-var author$project$Api$Stream$removeResource = F2(
-	function (resourceId, apiData) {
-		switch (resourceId.$) {
-			case 'ResourcePredictionId':
-				var predictionId = resourceId.a;
-				return A2(pzp1997$assoc_list$AssocList$member, predictionId, apiData.predictions) ? elm$core$Maybe$Just(
-					_Utils_update(
-						apiData,
-						{
-							predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, apiData.predictions)
-						})) : elm$core$Maybe$Nothing;
-			case 'ResourceStopId':
-				var stopId = resourceId.a;
-				return A2(pzp1997$assoc_list$AssocList$member, stopId, apiData.stops) ? elm$core$Maybe$Just(
-					_Utils_update(
-						apiData,
-						{
-							stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, apiData.stops)
-						})) : elm$core$Maybe$Nothing;
-			case 'ResourceTripId':
-				var tripId = resourceId.a;
-				return A2(pzp1997$assoc_list$AssocList$member, tripId, apiData.trips) ? elm$core$Maybe$Just(
-					_Utils_update(
-						apiData,
-						{
-							trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, apiData.trips)
-						})) : elm$core$Maybe$Nothing;
-			default:
-				var vehicleId = resourceId.a;
-				return A2(pzp1997$assoc_list$AssocList$member, vehicleId, apiData.vehicles) ? elm$core$Maybe$Just(
-					_Utils_update(
-						apiData,
-						{
-							vehicles: A2(pzp1997$assoc_list$AssocList$remove, vehicleId, apiData.vehicles)
-						})) : elm$core$Maybe$Nothing;
-		}
-	});
+var author$project$Mbta$Api$Stream_DecodeError = function (a) {
+	return {$: 'Stream_DecodeError', a: a};
+};
 var elm$core$Debug$toString = _Debug_toString;
-var author$project$Api$Stream$update = F3(
-	function (currentTime, eventDecodeResult, apiResult) {
-		var _n0 = _Utils_Tuple2(eventDecodeResult, apiResult);
-		_n0$0:
-		while (true) {
-			_n0$2:
-			while (true) {
-				if (_n0.a.$ === 'Err') {
-					if (_n0.b.$ === 'Failure') {
-						break _n0$0;
-					} else {
-						var decodeError = _n0.a.a;
-						return author$project$Api$Stream$Failure(
-							author$project$Api$Stream$DecodeError(decodeError));
-					}
-				} else {
-					switch (_n0.b.$) {
-						case 'Failure':
-							break _n0$0;
-						case 'Loading':
-							switch (_n0.a.a.$) {
-								case 'Reset':
-									break _n0$2;
-								case 'Insert':
-									var _n1 = _n0.b;
-									return author$project$Api$Stream$Failure(
-										author$project$Api$Stream$BadOrder('Insert while Loading'));
-								default:
-									var _n2 = _n0.b;
-									return author$project$Api$Stream$Failure(
-										author$project$Api$Stream$BadOrder('Remove while Loading'));
-							}
-						default:
-							switch (_n0.a.a.$) {
-								case 'Reset':
-									break _n0$2;
-								case 'Insert':
-									var newResource = _n0.a.a.a;
-									var apiData = _n0.b.a.apiData;
-									return author$project$Api$Stream$Success(
-										{
-											apiData: A2(author$project$Api$Stream$insertResource, newResource, apiData),
-											lastUpdated: currentTime
-										});
-								default:
-									var resourceId = _n0.a.a.a;
-									var apiData = _n0.b.a.apiData;
-									var _n3 = A2(author$project$Api$Stream$removeResource, resourceId, apiData);
-									if (_n3.$ === 'Nothing') {
-										return author$project$Api$Stream$Failure(
-											author$project$Api$Stream$BadOrder(
-												'Remove nonexistent resource id ' + elm$core$Debug$toString(resourceId)));
-									} else {
-										var updatedApiData = _n3.a;
-										return author$project$Api$Stream$Success(
-											{apiData: updatedApiData, lastUpdated: currentTime});
-									}
-							}
-					}
+var author$project$Mbta$Api$streamInsert = F2(
+	function (resourceJson, mixed) {
+		return A2(
+			elm$core$Result$map,
+			function (mixedInserter) {
+				return mixedInserter(mixed);
+			},
+			A2(
+				elm$core$Result$mapError,
+				A2(elm$core$Basics$composeL, author$project$Mbta$Api$Stream_DecodeError, elm$core$Debug$toString),
+				A2(author$project$JsonApi$decodeResourceValue, author$project$Mbta$Mixed$insert, resourceJson)));
+	});
+var author$project$JsonApi$decodeIdValue = F2(
+	function (idDecoder_, jsonValue) {
+		return A4(author$project$JsonApi$decodeValue, author$project$JsonApi$Untyped$resourceIdDecoder, author$project$JsonApi$decodeId, idDecoder_, jsonValue);
+	});
+var author$project$JsonApi$idDecoderByType = function (idDecoders) {
+	return author$project$JsonApi$IdDecoder(
+		function (untypedId) {
+			var _n0 = A2(elm$core$Dict$get, untypedId.resourceType, idDecoders);
+			if (_n0.$ === 'Just') {
+				var idDecoder_ = _n0.a;
+				return A2(author$project$JsonApi$decodeId, idDecoder_, untypedId);
+			} else {
+				return elm$core$Result$Err(
+					{
+						actualIdValue: untypedId.id,
+						actualType: untypedId.resourceType,
+						expectedType: elm$core$Dict$keys(idDecoders)
+					});
+			}
+		});
+};
+var author$project$JsonApi$mapId = F2(
+	function (f, idDecoder_) {
+		return author$project$JsonApi$IdDecoder(
+			function (untypedId) {
+				return A2(
+					elm$core$Result$map,
+					f,
+					A2(author$project$JsonApi$decodeId, idDecoder_, untypedId));
+			});
+	});
+var author$project$Mbta$Mixed$remove = author$project$JsonApi$idDecoderByType(
+	elm$core$Dict$fromList(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'prediction',
+				A2(
+					author$project$JsonApi$mapId,
+					function (predictionId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									predictions: A2(pzp1997$assoc_list$AssocList$remove, predictionId, included.predictions)
+								});
+						};
+					},
+					author$project$Mbta$Decode$predictionId)),
+				_Utils_Tuple2(
+				'vehicle',
+				A2(
+					author$project$JsonApi$mapId,
+					function (vehicleId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									vehicles: A2(pzp1997$assoc_list$AssocList$remove, vehicleId, included.vehicles)
+								});
+						};
+					},
+					author$project$Mbta$Decode$vehicleId)),
+				_Utils_Tuple2(
+				'route',
+				A2(
+					author$project$JsonApi$mapId,
+					function (routeId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									routes: A2(pzp1997$assoc_list$AssocList$remove, routeId, included.routes)
+								});
+						};
+					},
+					author$project$Mbta$Decode$routeId)),
+				_Utils_Tuple2(
+				'route_pattern',
+				A2(
+					author$project$JsonApi$mapId,
+					function (routePatternId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									routePatterns: A2(pzp1997$assoc_list$AssocList$remove, routePatternId, included.routePatterns)
+								});
+						};
+					},
+					author$project$Mbta$Decode$routePatternId)),
+				_Utils_Tuple2(
+				'line',
+				A2(
+					author$project$JsonApi$mapId,
+					function (lineId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									lines: A2(pzp1997$assoc_list$AssocList$remove, lineId, included.lines)
+								});
+						};
+					},
+					author$project$Mbta$Decode$lineId)),
+				_Utils_Tuple2(
+				'schedule',
+				A2(
+					author$project$JsonApi$mapId,
+					function (scheduleId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									schedules: A2(pzp1997$assoc_list$AssocList$remove, scheduleId, included.schedules)
+								});
+						};
+					},
+					author$project$Mbta$Decode$scheduleId)),
+				_Utils_Tuple2(
+				'trip',
+				A2(
+					author$project$JsonApi$mapId,
+					function (tripId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									trips: A2(pzp1997$assoc_list$AssocList$remove, tripId, included.trips)
+								});
+						};
+					},
+					author$project$Mbta$Decode$tripId)),
+				_Utils_Tuple2(
+				'service',
+				A2(
+					author$project$JsonApi$mapId,
+					function (serviceId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									services: A2(pzp1997$assoc_list$AssocList$remove, serviceId, included.services)
+								});
+						};
+					},
+					author$project$Mbta$Decode$serviceId)),
+				_Utils_Tuple2(
+				'shape',
+				A2(
+					author$project$JsonApi$mapId,
+					function (shapeId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									shapes: A2(pzp1997$assoc_list$AssocList$remove, shapeId, included.shapes)
+								});
+						};
+					},
+					author$project$Mbta$Decode$shapeId)),
+				_Utils_Tuple2(
+				'stop',
+				A2(
+					author$project$JsonApi$mapId,
+					function (stopId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									stops: A2(pzp1997$assoc_list$AssocList$remove, stopId, included.stops)
+								});
+						};
+					},
+					author$project$Mbta$Decode$stopId)),
+				_Utils_Tuple2(
+				'facility',
+				A2(
+					author$project$JsonApi$mapId,
+					function (facilityId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									facilities: A2(pzp1997$assoc_list$AssocList$remove, facilityId, included.facilities)
+								});
+						};
+					},
+					author$project$Mbta$Decode$facilityId)),
+				_Utils_Tuple2(
+				'live-facility',
+				A2(
+					author$project$JsonApi$mapId,
+					function (facilityId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									liveFacilities: A2(pzp1997$assoc_list$AssocList$remove, facilityId, included.liveFacilities)
+								});
+						};
+					},
+					author$project$Mbta$Decode$facilityId)),
+				_Utils_Tuple2(
+				'alert',
+				A2(
+					author$project$JsonApi$mapId,
+					function (alertId) {
+						return function (included) {
+							return _Utils_update(
+								included,
+								{
+									alerts: A2(pzp1997$assoc_list$AssocList$remove, alertId, included.alerts)
+								});
+						};
+					},
+					author$project$Mbta$Decode$alertId))
+			])));
+var author$project$Mbta$Api$streamRemove = F2(
+	function (idJson, mixed) {
+		return A2(
+			elm$core$Result$map,
+			function (mixedRemover) {
+				return mixedRemover(mixed);
+			},
+			A2(
+				elm$core$Result$mapError,
+				A2(elm$core$Basics$composeL, author$project$Mbta$Api$Stream_DecodeError, elm$core$Debug$toString),
+				A2(author$project$JsonApi$decodeIdValue, author$project$Mbta$Mixed$remove, idJson)));
+	});
+var author$project$Mbta$Api$streamReset = function (dataJson) {
+	return A2(
+		elm$core$Result$andThen,
+		function (resourceJsons) {
+			return A3(
+				elm$core$List$foldl,
+				F2(
+					function (resourceJson, mixedResult) {
+						return A2(
+							elm$core$Result$andThen,
+							function (mixed) {
+								return A2(author$project$Mbta$Api$streamInsert, resourceJson, mixed);
+							},
+							mixedResult);
+					}),
+				elm$core$Result$Ok(author$project$Mbta$Mixed$empty),
+				resourceJsons);
+		},
+		A2(
+			elm$core$Result$mapError,
+			A2(elm$core$Basics$composeL, author$project$Mbta$Api$Stream_DecodeError, elm$core$Debug$toString),
+			A2(
+				elm$json$Json$Decode$decodeValue,
+				elm$json$Json$Decode$list(elm$json$Json$Decode$value),
+				dataJson)));
+};
+var author$project$Mbta$Api$updateStreamMixedResult = F3(
+	function (eventString, dataJson, mixedResult) {
+		var _n0 = _Utils_Tuple2(mixedResult, eventString);
+		if (_n0.a.$ === 'StreamResultInternal_Loading') {
+			if (_n0.b === 'reset') {
+				var _n1 = _n0.a;
+				return author$project$Mbta$Api$StreamResultInternal_Loaded(
+					author$project$Mbta$Api$streamReset(dataJson));
+			} else {
+				var _n2 = _n0.a;
+				return author$project$Mbta$Api$StreamResultInternal_Loaded(
+					elm$core$Result$Err(
+						author$project$Mbta$Api$Stream_UnexpectedEventOrder('first event received was \"' + (eventString + '\" instead of \"reset\"'))));
+			}
+		} else {
+			if (_n0.a.a.$ === 'Err') {
+				var e = _n0.a.a.a;
+				return mixedResult;
+			} else {
+				switch (_n0.b) {
+					case 'reset':
+						return author$project$Mbta$Api$StreamResultInternal_Loaded(
+							author$project$Mbta$Api$streamReset(dataJson));
+					case 'add':
+						var mixed = _n0.a.a.a;
+						return author$project$Mbta$Api$StreamResultInternal_Loaded(
+							A2(author$project$Mbta$Api$streamInsert, dataJson, mixed));
+					case 'update':
+						var mixed = _n0.a.a.a;
+						return author$project$Mbta$Api$StreamResultInternal_Loaded(
+							A2(author$project$Mbta$Api$streamInsert, dataJson, mixed));
+					case 'remove':
+						var mixed = _n0.a.a.a;
+						return author$project$Mbta$Api$StreamResultInternal_Loaded(
+							A2(author$project$Mbta$Api$streamRemove, dataJson, mixed));
+					default:
+						return author$project$Mbta$Api$StreamResultInternal_Loaded(
+							elm$core$Result$Err(
+								author$project$Mbta$Api$Stream_UnexpectedEvent(eventString)));
 				}
 			}
-			var newResources = _n0.a.a.a;
-			return author$project$Api$Stream$Success(
-				{
-					apiData: A3(elm$core$List$foldl, author$project$Api$Stream$insertResource, author$project$Api$Stream$emptyData, newResources),
-					lastUpdated: currentTime
-				});
 		}
-		var error = _n0.b.a;
-		return author$project$Api$Stream$Failure(error);
+	});
+var author$project$Mbta$Api$updateStream = F3(
+	function (eventString, dataJson, _n0) {
+		var streamState = _n0.a;
+		return author$project$Mbta$Api$StreamState(
+			_Utils_update(
+				streamState,
+				{
+					mixedResult: A3(author$project$Mbta$Api$updateStreamMixedResult, eventString, dataJson, streamState.mixedResult)
+				}));
 	});
 var author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
 	var directionId = function () {
@@ -9758,10 +12483,6 @@ var elm$browser$Debugger$Expando$viewTinyRecordHelp = F3(
 			}
 		}
 	});
-var elm$core$Tuple$second = function (_n0) {
-	var y = _n0.b;
-	return y;
-};
 var elm$browser$Debugger$Expando$view = F2(
 	function (maybeKey, expando) {
 		switch (expando.$) {
@@ -10654,25 +13375,6 @@ var elm$browser$Debugger$Metadata$Union = F2(
 	function (args, tags) {
 		return {args: args, tags: tags};
 	});
-var elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		elm$core$List$foldl,
-		F2(
-			function (_n0, dict) {
-				var key = _n0.a;
-				var value = _n0.b;
-				return A3(elm$core$Dict$insert, key, value, dict);
-			}),
-		elm$core$Dict$empty,
-		assocs);
-};
-var elm$json$Json$Decode$keyValuePairs = _Json_decodeKeyValuePairs;
-var elm$json$Json$Decode$dict = function (decoder) {
-	return A2(
-		elm$json$Json$Decode$map,
-		elm$core$Dict$fromList,
-		elm$json$Json$Decode$keyValuePairs(decoder));
-};
 var elm$browser$Debugger$Metadata$decodeUnion = A3(
 	elm$json$Json$Decode$map2,
 	elm$browser$Debugger$Metadata$Union,
@@ -10771,22 +13473,6 @@ var elm$core$Dict$values = function (dict) {
 		_List_Nil,
 		dict);
 };
-var elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3(elm$core$List$foldr, elm$core$List$cons, ys, xs);
-		}
-	});
-var elm$core$List$concat = function (lists) {
-	return A3(elm$core$List$foldr, elm$core$List$append, _List_Nil, lists);
-};
-var elm$core$List$concatMap = F2(
-	function (f, list) {
-		return elm$core$List$concat(
-			A2(elm$core$List$map, f, list));
-	});
 var elm$browser$Debugger$Metadata$collectBadUnions = F3(
 	function (name, _n0, list) {
 		var tags = _n0.tags;
@@ -11424,15 +14110,6 @@ var elm$browser$Debugger$History$elmToJs = _Debugger_unsafeCoerce;
 var elm$browser$Debugger$History$encodeHelp = F2(
 	function (snapshot, allMessages) {
 		return A3(elm$core$Array$foldl, elm$core$List$cons, allMessages, snapshot.messages);
-	});
-var elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
 	});
 var elm$browser$Debugger$History$encode = function (_n0) {
 	var snapshots = _n0.snapshots;
@@ -12297,17 +14974,17 @@ var author$project$Main$update = F2(
 			case 'OnUrlChange':
 				var url = msg.a;
 				var newSelections = author$project$UrlParsing$parseSelectionsFromUrl(url);
-				var _n1 = author$project$Api$Stream$init(newSelections);
-				var initApiResult = _n1.a;
-				var initApiCmd = _n1.b;
+				var _n1 = author$project$Main$streamPredictions(newSelections);
+				var initStreamState = _n1.a;
+				var streamUrl = _n1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{apiResult: initApiResult, selections: newSelections, url: url}),
+						{selections: newSelections, streamState: initStreamState, url: url}),
 					elm$core$Platform$Cmd$batch(
 						_List_fromArray(
 							[
-								initApiCmd,
+								author$project$Main$startStream(streamUrl),
 								author$project$Main$getStopNames(newSelections)
 							])));
 			case 'AddSelection':
@@ -12345,7 +15022,7 @@ var author$project$Main$update = F2(
 						{directionIdFormValue: directionId}),
 					elm$core$Platform$Cmd$none);
 			case 'ReceiveStopNames':
-				var result = msg.a;
+				var apiResult = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -12354,29 +15031,36 @@ var author$project$Main$update = F2(
 								A2(
 									elm$core$List$map,
 									function (stop) {
-										return _Utils_Tuple2(stop.id, stop.name);
+										return _Utils_Tuple2(
+											author$project$Mbta$stopId(stop),
+											author$project$Mbta$stopName(stop));
 									},
-									A2(elm$core$Result$withDefault, _List_Nil, result)))
+									A2(
+										elm$core$Result$withDefault,
+										_List_Nil,
+										A2(elm$core$Result$map, author$project$Mbta$Api$getPrimaryData, apiResult))))
 						}),
 					elm$core$Platform$Cmd$none);
-			case 'ApiMsg':
-				var apiMsg = msg.a;
+			case 'StreamMsg':
+				var eventString = msg.a;
+				var dataJson = msg.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							apiResult: A3(author$project$Api$Stream$update, model.currentTime, apiMsg, model.apiResult)
+							lastUpdated: elm$core$Maybe$Just(model.currentTime),
+							streamState: A3(author$project$Mbta$Api$updateStream, eventString, dataJson, model.streamState)
 						}),
 					elm$core$Platform$Cmd$none);
 			default:
-				var _n2 = author$project$Api$Stream$init(model.selections);
-				var initApiResult = _n2.a;
-				var initApiCmd = _n2.b;
+				var _n2 = author$project$Main$streamPredictions(model.selections);
+				var initStreamState = _n2.a;
+				var streamUrl = _n2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{apiResult: initApiResult}),
-					initApiCmd);
+						{streamState: initStreamState}),
+					author$project$Main$startStream(streamUrl));
 		}
 	});
 var author$project$Model$OnUrlChange = function (a) {
@@ -12384,6 +15068,32 @@ var author$project$Model$OnUrlChange = function (a) {
 };
 var author$project$Model$OnUrlRequest = function (a) {
 	return {$: 'OnUrlRequest', a: a};
+};
+var author$project$Mbta$Api$Loaded = function (a) {
+	return {$: 'Loaded', a: a};
+};
+var author$project$Mbta$Api$Loading = {$: 'Loading'};
+var author$project$Mbta$Api$streamResult = function (_n0) {
+	var streamState = _n0.a;
+	var _n1 = streamState.mixedResult;
+	if (_n1.$ === 'StreamResultInternal_Loading') {
+		return author$project$Mbta$Api$Loading;
+	} else {
+		if (_n1.a.$ === 'Err') {
+			var e = _n1.a.a;
+			return author$project$Mbta$Api$Loaded(
+				elm$core$Result$Err(e));
+		} else {
+			var mixed = _n1.a.a;
+			return author$project$Mbta$Api$Loaded(
+				elm$core$Result$Ok(
+					author$project$Mbta$Api$Data(
+						{
+							included: mixed,
+							primaryData: streamState.dataField(mixed)
+						})));
+		}
+	}
 };
 var author$project$Model$AddSelection = function (a) {
 	return {$: 'AddSelection', a: a};
@@ -12889,16 +15599,6 @@ var mdgriffith$elm_ui$Internal$Model$reduceStyles = F2(
 		return A2(elm$core$Set$member, styleName, cache) ? nevermind : _Utils_Tuple2(
 			A2(elm$core$Set$insert, styleName, cache),
 			A2(elm$core$List$cons, style, existing));
-	});
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
 	});
 var elm$core$Tuple$mapFirst = F2(
 	function (func, _n0) {
@@ -18357,6 +21057,10 @@ var elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
+var elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3(elm$core$List$foldr, elm$json$Json$Decode$field, decoder, fields);
+	});
 var elm$html$Html$Events$targetValue = A2(
 	elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -18970,11 +21674,11 @@ var author$project$View$addSelectionForm = function (model) {
 							mdgriffith$elm_ui$Element$text('None')),
 							A2(
 							mdgriffith$elm_ui$Element$Input$option,
-							elm$core$Maybe$Just(author$project$Api$Types$D0),
+							elm$core$Maybe$Just(author$project$Mbta$D0),
 							mdgriffith$elm_ui$Element$text('0')),
 							A2(
 							mdgriffith$elm_ui$Element$Input$option,
-							elm$core$Maybe$Just(author$project$Api$Types$D1),
+							elm$core$Maybe$Just(author$project$Mbta$D1),
 							mdgriffith$elm_ui$Element$text('1'))
 						]),
 					selected: elm$core$Maybe$Just(model.directionIdFormValue)
@@ -18988,8 +21692,8 @@ var author$project$View$addSelectionForm = function (model) {
 						author$project$Model$AddSelection(
 							{
 								directionId: model.directionIdFormValue,
-								routeId: author$project$Api$Types$RouteId(model.routeIdFormText),
-								stopId: author$project$Api$Types$StopId(model.stopIdFormText)
+								routeId: author$project$Mbta$RouteId(model.routeIdFormText),
+								stopId: author$project$Mbta$StopId(model.stopIdFormText)
 							})) : elm$core$Maybe$Nothing
 				})
 			]));
@@ -18999,35 +21703,37 @@ var elm$time$Time$posixToMillis = function (_n0) {
 	var millis = _n0.a;
 	return millis;
 };
-var author$project$View$refreshButton = F2(
+var author$project$View$lastUpdatedText = F2(
 	function (currentTime, lastUpdated) {
-		var timeDifferenceMinutes = ((((elm$time$Time$posixToMillis(currentTime) - elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) / 60) | 0;
-		return A2(
-			mdgriffith$elm_ui$Element$row,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$spacing(author$project$View$unit),
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					mdgriffith$elm_ui$Element$Input$button,
-					author$project$View$buttonStyles,
-					{
-						label: mdgriffith$elm_ui$Element$text('Refresh'),
-						onPress: elm$core$Maybe$Just(author$project$Model$RefreshStream)
-					}),
-					mdgriffith$elm_ui$Element$text(
-					elm$core$String$concat(
-						_List_fromArray(
-							[
-								'Last updated\n',
-								elm$core$String$fromInt(timeDifferenceMinutes),
-								' minutes ago'
-							])))
-				]));
+		if (lastUpdated.$ === 'Nothing') {
+			return 'Never';
+		} else {
+			var lastUpdatedTime = lastUpdated.a;
+			var timeDifferenceMinutes = ((((elm$time$Time$posixToMillis(currentTime) - elm$time$Time$posixToMillis(lastUpdatedTime)) / 1000) | 0) / 60) | 0;
+			return elm$core$String$fromInt(timeDifferenceMinutes) + ' minutes ago';
+		}
 	});
+var author$project$View$refreshButton = function (model) {
+	return A2(
+		mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				mdgriffith$elm_ui$Element$spacing(author$project$View$unit),
+				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				mdgriffith$elm_ui$Element$Input$button,
+				author$project$View$buttonStyles,
+				{
+					label: mdgriffith$elm_ui$Element$text('Refresh'),
+					onPress: elm$core$Maybe$Just(author$project$Model$RefreshStream)
+				}),
+				mdgriffith$elm_ui$Element$text(
+				'Last updated\n' + A2(author$project$View$lastUpdatedText, model.currentTime, model.lastUpdated))
+			]));
+};
 var author$project$View$fontSmall = 14;
 var mdgriffith$elm_ui$Element$Border$widthXY = F2(
 	function (x, y) {
@@ -19068,6 +21774,30 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 		mdgriffith$elm_ui$Internal$Flag$fontSize,
 		mdgriffith$elm_ui$Internal$Model$FontSize(i));
 };
+var pzp1997$assoc_list$AssocList$get = F2(
+	function (targetKey, _n0) {
+		get:
+		while (true) {
+			var alist = _n0.a;
+			if (!alist.b) {
+				return elm$core$Maybe$Nothing;
+			} else {
+				var _n2 = alist.a;
+				var key = _n2.a;
+				var value = _n2.b;
+				var rest = alist.b;
+				if (_Utils_eq(key, targetKey)) {
+					return elm$core$Maybe$Just(value);
+				} else {
+					var $temp$targetKey = targetKey,
+						$temp$_n0 = pzp1997$assoc_list$AssocList$D(rest);
+					targetKey = $temp$targetKey;
+					_n0 = $temp$_n0;
+					continue get;
+				}
+			}
+		}
+	});
 var author$project$View$selectionHeading = F2(
 	function (stopNames, selection) {
 		var directionText = function () {
@@ -19126,94 +21856,6 @@ var author$project$View$selectionHeading = F2(
 					mdgriffith$elm_ui$Element$text(stopName))
 				]));
 	});
-var author$project$Api$Stream$predictionMatchesDirection = F2(
-	function (selectionDirection, prediction) {
-		if (selectionDirection.$ === 'Nothing') {
-			return true;
-		} else {
-			var directionId = selectionDirection.a;
-			return _Utils_eq(prediction.directionId, directionId);
-		}
-	});
-var elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var author$project$Api$Stream$predictionMatchesStop = F3(
-	function (apiData, queriedStop, prediction) {
-		return _Utils_eq(prediction.stopId, queriedStop) || function () {
-			var predictionParentStation = A2(
-				elm$core$Maybe$andThen,
-				function ($) {
-					return $.parentStation;
-				},
-				A2(pzp1997$assoc_list$AssocList$get, prediction.stopId, apiData.stops));
-			return _Utils_eq(
-				predictionParentStation,
-				elm$core$Maybe$Just(queriedStop));
-		}();
-	});
-var pzp1997$assoc_list$AssocList$values = function (_n0) {
-	var alist = _n0.a;
-	return A2(elm$core$List$map, elm$core$Tuple$second, alist);
-};
-var author$project$Api$Stream$predictionsForSelection = F2(
-	function (apiData, selection) {
-		return A2(
-			elm$core$List$map,
-			function (prediction) {
-				return {
-					platformCode: A2(
-						elm$core$Maybe$andThen,
-						function ($) {
-							return $.platformCode;
-						},
-						A2(pzp1997$assoc_list$AssocList$get, prediction.stopId, apiData.stops)),
-					time: prediction.time,
-					tripHeadsign: A2(
-						elm$core$Maybe$map,
-						function ($) {
-							return $.headsign;
-						},
-						A2(pzp1997$assoc_list$AssocList$get, prediction.tripId, apiData.trips)),
-					vehicleLabel: A2(
-						elm$core$Maybe$map,
-						function (_n0) {
-							var vehicleId = _n0.a;
-							return A2(
-								elm$core$Maybe$withDefault,
-								vehicleId,
-								A2(
-									elm$core$Maybe$map,
-									function ($) {
-										return $.label;
-									},
-									A2(
-										pzp1997$assoc_list$AssocList$get,
-										author$project$Api$Types$VehicleId(vehicleId),
-										apiData.vehicles)));
-						},
-						prediction.vehicleId)
-				};
-			},
-			A2(
-				elm$core$List$filter,
-				author$project$Api$Stream$predictionMatchesDirection(selection.directionId),
-				A2(
-					elm$core$List$filter,
-					A2(author$project$Api$Stream$predictionMatchesStop, apiData, selection.stopId),
-					A2(
-						elm$core$List$filter,
-						function (prediction) {
-							return _Utils_eq(prediction.routeId, selection.routeId);
-						},
-						pzp1997$assoc_list$AssocList$values(apiData.predictions)))));
-	});
 var elm$core$Basics$abs = function (n) {
 	return (n < 0) ? (-n) : n;
 };
@@ -19256,6 +21898,124 @@ var author$project$View$predictionTimeString = F2(
 			_Utils_chr('0'),
 			elm$core$String$fromInt(absSecs % 60));
 		return sign + (displayMins + (':' + displaySecs));
+	});
+var author$project$Mbta$Api$getIncludedStopStop = F2(
+	function (stopId, _n0) {
+		var data = _n0.a;
+		var _n1 = A2(pzp1997$assoc_list$AssocList$get, stopId, data.included.stops);
+		if ((_n1.$ === 'Just') && (_n1.a.$ === 'Stop_0_Stop')) {
+			var stop_stop = _n1.a.a;
+			return elm$core$Maybe$Just(stop_stop);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var author$project$Mbta$Api$getIncludedTrip = F2(
+	function (tripId, _n0) {
+		var data = _n0.a;
+		return A2(pzp1997$assoc_list$AssocList$get, tripId, data.included.trips);
+	});
+var author$project$Mbta$Api$getIncludedVehicle = F2(
+	function (vehicleId, _n0) {
+		var data = _n0.a;
+		return A2(pzp1997$assoc_list$AssocList$get, vehicleId, data.included.vehicles);
+	});
+var author$project$ViewModel$predictionMatchesDirection = F2(
+	function (selectionDirection, prediction) {
+		if (selectionDirection.$ === 'Nothing') {
+			return true;
+		} else {
+			var directionId = selectionDirection.a;
+			return _Utils_eq(prediction.directionId, directionId);
+		}
+	});
+var author$project$ViewModel$predictionMatchesRouteId = F2(
+	function (routeId, prediction) {
+		return _Utils_eq(prediction.routeId, routeId);
+	});
+var author$project$ViewModel$predictionMatchesStop = F3(
+	function (dataWithStopsIncluded, queriedStop, prediction) {
+		return _Utils_eq(prediction.stopId, queriedStop) || function () {
+			var predictionParentStation = A2(
+				elm$core$Maybe$andThen,
+				function ($) {
+					return $.parentStation;
+				},
+				A2(author$project$Mbta$Api$getIncludedStopStop, prediction.stopId, dataWithStopsIncluded));
+			return _Utils_eq(
+				predictionParentStation,
+				elm$core$Maybe$Just(queriedStop));
+		}();
+	});
+var author$project$ViewModel$predictionsForSelection = F2(
+	function (data, selection) {
+		var predictions = author$project$Mbta$Api$getPrimaryData(data);
+		return A2(
+			elm$core$List$map,
+			function (prediction) {
+				return {
+					platformCode: A2(
+						elm$core$Maybe$andThen,
+						function ($) {
+							return $.platformCode;
+						},
+						A2(author$project$Mbta$Api$getIncludedStopStop, prediction.stopId, data)),
+					time: function () {
+						var _n0 = _Utils_Tuple2(prediction.arrivalTime, prediction.departureTime);
+						if (_n0.b.$ === 'Just') {
+							var departureTime = _n0.b.a;
+							return departureTime;
+						} else {
+							if (_n0.a.$ === 'Just') {
+								var arrivalTime = _n0.a.a;
+								return arrivalTime;
+							} else {
+								var _n1 = _n0.a;
+								var _n2 = _n0.b;
+								return _Debug_todo(
+									'ViewModel',
+									{
+										start: {line: 42, column: 29},
+										end: {line: 42, column: 39}
+									})('prediction missing arrival and departure times');
+							}
+						}
+					}(),
+					tripHeadsign: A2(
+						elm$core$Maybe$map,
+						function ($) {
+							return $.headsign;
+						},
+						A2(author$project$Mbta$Api$getIncludedTrip, prediction.tripId, data)),
+					vehicleLabel: A2(
+						elm$core$Maybe$map,
+						function (vehicleId) {
+							return A2(
+								elm$core$Maybe$withDefault,
+								function () {
+									var idString = vehicleId.a;
+									return idString;
+								}(),
+								A2(
+									elm$core$Maybe$map,
+									function ($) {
+										return $.label;
+									},
+									A2(author$project$Mbta$Api$getIncludedVehicle, vehicleId, data)));
+						},
+						prediction.vehicleId)
+				};
+			},
+			A2(
+				elm$core$List$filter,
+				author$project$ViewModel$predictionMatchesDirection(selection.directionId),
+				A2(
+					elm$core$List$filter,
+					A2(author$project$ViewModel$predictionMatchesStop, data, selection.stopId),
+					A2(
+						elm$core$List$filter,
+						author$project$ViewModel$predictionMatchesRouteId(selection.routeId),
+						predictions))));
 	});
 var elm$core$List$sortBy = _List_sortBy;
 var elm$core$List$takeReverse = F3(
@@ -19648,7 +22408,7 @@ var mdgriffith$elm_ui$Element$Font$variant = function (_var) {
 	}
 };
 var author$project$View$viewPredictions = F3(
-	function (currentTime, apiData, selection) {
+	function (currentTime, data, selection) {
 		var predictions = A2(
 			elm$core$List$take,
 			5,
@@ -19660,7 +22420,7 @@ var author$project$View$viewPredictions = F3(
 						return $.time;
 					},
 					elm$time$Time$posixToMillis),
-				A2(author$project$Api$Stream$predictionsForSelection, apiData, selection)));
+				A2(author$project$ViewModel$predictionsForSelection, data, selection)));
 		return elm$core$List$isEmpty(predictions) ? A2(
 			mdgriffith$elm_ui$Element$el,
 			_List_fromArray(
@@ -19745,7 +22505,7 @@ var author$project$View$viewPredictions = F3(
 			});
 	});
 var author$project$View$viewSelection = F4(
-	function (currentTime, stopNames, apiData, selection) {
+	function (currentTime, stopNames, data, selection) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -19757,11 +22517,11 @@ var author$project$View$viewSelection = F4(
 			_List_fromArray(
 				[
 					A2(author$project$View$selectionHeading, stopNames, selection),
-					A3(author$project$View$viewPredictions, currentTime, apiData, selection)
+					A3(author$project$View$viewPredictions, currentTime, data, selection)
 				]));
 	});
 var author$project$View$viewSelections = F4(
-	function (currentTime, selections, stopNames, apiData) {
+	function (currentTime, selections, stopNames, data) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -19771,7 +22531,7 @@ var author$project$View$viewSelections = F4(
 				]),
 			A2(
 				elm$core$List$map,
-				A3(author$project$View$viewSelection, currentTime, stopNames, apiData),
+				A3(author$project$View$viewSelection, currentTime, stopNames, data),
 				selections));
 	});
 var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
@@ -19796,31 +22556,33 @@ var author$project$View$ui = function (model) {
 				A2(mdgriffith$elm_ui$Element$maximum, 320, mdgriffith$elm_ui$Element$fill))
 			]),
 		function () {
-			var _n0 = model.apiResult;
-			switch (_n0.$) {
-				case 'Loading':
-					return _List_fromArray(
-						[
-							mdgriffith$elm_ui$Element$text('Loading...'),
-							author$project$View$addSelectionForm(model)
-						]);
-				case 'Failure':
-					var error = _n0.a;
+			var _n0 = author$project$Mbta$Api$streamResult(model.streamState);
+			if (_n0.$ === 'Loading') {
+				return _List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$text('Loading...'),
+						author$project$View$addSelectionForm(model),
+						author$project$View$refreshButton(model)
+					]);
+			} else {
+				if (_n0.a.$ === 'Err') {
+					var error = _n0.a.a;
 					return _List_fromArray(
 						[
 							mdgriffith$elm_ui$Element$text('Error'),
 							mdgriffith$elm_ui$Element$text(
-							elm$core$Debug$toString(error))
+							elm$core$Debug$toString(error)),
+							author$project$View$refreshButton(model)
 						]);
-				default:
-					var lastUpdated = _n0.a.lastUpdated;
-					var apiData = _n0.a.apiData;
+				} else {
+					var data = _n0.a.a;
 					return _List_fromArray(
 						[
-							A4(author$project$View$viewSelections, model.currentTime, model.selections, model.stopNames, apiData),
+							A4(author$project$View$viewSelections, model.currentTime, model.selections, model.stopNames, data),
 							author$project$View$addSelectionForm(model),
-							A2(author$project$View$refreshButton, model.currentTime, lastUpdated)
+							author$project$View$refreshButton(model)
 						]);
+				}
 			}
 		}());
 };
@@ -19977,7 +22739,6 @@ var mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
 var mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
 	return {$: 'Typeface', a: a};
 };
-var elm$core$String$toLower = _String_toLower;
 var elm$core$String$words = _String_words;
 var mdgriffith$elm_ui$Internal$Model$renderFontClassName = F2(
 	function (font, current) {
@@ -20110,4 +22871,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Api.Stream.Msg":{"args":[],"type":"Result.Result Json.Decode.Error Api.Stream.StreamEvent"},"Api.Types.Stop":{"args":[],"type":"{ id : Api.Types.StopId, name : String.String, parentStation : Maybe.Maybe Api.Types.StopId, platformCode : Maybe.Maybe String.String }"},"Data.Selection":{"args":[],"type":"{ routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Maybe.Maybe Api.Types.DirectionId }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Api.Types.Prediction":{"args":[],"type":"{ id : Api.Types.PredictionId, time : Time.Posix, routeId : Api.Types.RouteId, stopId : Api.Types.StopId, directionId : Api.Types.DirectionId, tripId : Api.Types.TripId, vehicleId : Maybe.Maybe Api.Types.VehicleId }"},"Api.Types.Trip":{"args":[],"type":"{ id : Api.Types.TripId, headsign : String.String }"},"Api.Types.Vehicle":{"args":[],"type":"{ id : Api.Types.VehicleId, label : String.String }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Api.Types.DirectionId"],"ReceiveStopNames":["Result.Result Http.Error (List.List Api.Types.Stop)"],"ApiMsg":["Api.Stream.Msg"],"RefreshStream":[]}},"Api.Stream.StreamEvent":{"args":[],"tags":{"Reset":["List.List Api.Types.Resource"],"Insert":["Api.Types.Resource"],"Remove":["Api.Types.ResourceId"]}},"Api.Types.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Api.Types.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Api.Types.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Json.Decode.Error":{"args":[],"tags":{"Field":["String.String","Json.Decode.Error"],"Index":["Basics.Int","Json.Decode.Error"],"OneOf":["List.List Json.Decode.Error"],"Failure":["String.String","Json.Decode.Value"]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Api.Types.Resource":{"args":[],"tags":{"ResourcePrediction":["Api.Types.Prediction"],"ResourceStop":["Api.Types.Stop"],"ResourceTrip":["Api.Types.Trip"],"ResourceVehicle":["Api.Types.Vehicle"]}},"Api.Types.ResourceId":{"args":[],"tags":{"ResourcePredictionId":["Api.Types.PredictionId"],"ResourceStopId":["Api.Types.StopId"],"ResourceTripId":["Api.Types.TripId"],"ResourceVehicleId":["Api.Types.VehicleId"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Api.Types.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Api.Types.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Api.Types.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Data.Selection":{"args":[],"type":"{ routeId : Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Mbta.DirectionId"],"ReceiveStopNames":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
