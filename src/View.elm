@@ -110,11 +110,27 @@ selectionHeading route stop selection =
                 Nothing ->
                     ""
 
-                Just Mbta.D0 ->
-                    " - 0"
+                Just directionId ->
+                    route
+                        |> Maybe.andThen .directions
+                        |> Maybe.map (Mbta.getRouteDirection directionId)
+                        |> Maybe.map
+                            (\routeDirection ->
+                                String.concat
+                                    [ routeDirection.name
+                                    , " to "
+                                    , routeDirection.destination
+                                    ]
+                            )
+                        |> Maybe.withDefault
+                            (case directionId of
+                                Mbta.D0 ->
+                                    "0"
 
-                Just Mbta.D1 ->
-                    " - 1"
+                                Mbta.D1 ->
+                                    "1"
+                            )
+                        |> (\directionName -> " - " ++ directionName)
 
         routeName =
             case route of
