@@ -51,14 +51,16 @@ init flags url key =
       , routeIdFormText = ""
       , stopIdFormText = ""
       , directionIdFormValue = Nothing
-      , stopNames = Dict.empty
+      , routes = Dict.empty
+      , stops = Dict.empty
       , streamState = initStreamState
       , lastUpdated = Nothing
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
         , startStream streamUrl
-        , getStopNames selections
+        , getRoutes selections
+        , getStops selections
         ]
     )
 
@@ -93,7 +95,8 @@ update msg model =
               }
             , Cmd.batch
                 [ startStream streamUrl
-                , getStopNames newSelections
+                , getRoutes newSelections
+                , getStops newSelections
                 ]
             )
 
@@ -130,13 +133,25 @@ update msg model =
             , Cmd.none
             )
 
-        ReceiveStopNames apiResult ->
+        ReceiveRoutes apiResult ->
             ( { model
-                | stopNames =
+                | routes =
                     apiResult
                         |> Result.map Mbta.Api.getPrimaryData
                         |> Result.withDefault []
-                        |> List.map (\stop -> ( Mbta.stopId stop, Mbta.stopName stop ))
+                        |> List.map (\route -> ( route.id, route ))
+                        |> Dict.fromList
+              }
+            , Cmd.none
+            )
+
+        ReceiveStops apiResult ->
+            ( { model
+                | stops =
+                    apiResult
+                        |> Result.map Mbta.Api.getPrimaryData
+                        |> Result.withDefault []
+                        |> List.map (\stop -> ( Mbta.stopId stop, stop ))
                         |> Dict.fromList
               }
             , Cmd.none
@@ -176,10 +191,19 @@ apiHost =
         { apiKey = Just "3a6d67c08111426d8617a30340a9fad3" }
 
 
-getStopNames : List Selection -> Cmd Msg
-getStopNames selections =
+getRoutes : List Selection -> Cmd Msg
+getRoutes selections =
+    Mbta.Api.getRoutes
+        ReceiveRoutes
+        apiHost
+        []
+        [ Mbta.Api.filterRoutesByIds (List.map .routeId selections) ]
+
+
+getStops : List Selection -> Cmd Msg
+getStops selections =
     Mbta.Api.getStops
-        ReceiveStopNames
+        ReceiveStops
         apiHost
         []
         [ Mbta.Api.filterStopsByIds (List.map .stopId selections) ]

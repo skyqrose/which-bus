@@ -1,6 +1,6 @@
 module View exposing (view)
 
-import AssocList as Dict
+import AssocList as Dict exposing (Dict)
 import Browser
 import Data exposing (Selection)
 import Element as El exposing (Element)
@@ -54,7 +54,8 @@ ui model =
                 [ viewSelections
                     model.currentTime
                     model.selections
-                    model.stopNames
+                    model.routes
+                    model.stops
                     data
                 , addSelectionForm model
                 , refreshButton model
@@ -62,32 +63,41 @@ ui model =
         )
 
 
-viewSelections : Time.Posix -> List Selection -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
-viewSelections currentTime selections stopNames data =
+viewSelections : Time.Posix -> List Selection -> Dict Mbta.RouteId Mbta.Route -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
+viewSelections currentTime selections routes stops data =
     El.column
         [ El.spacing unit
         , El.width El.fill
         ]
         (List.map
-            (viewSelection currentTime stopNames data)
+            (\selection ->
+                let
+                    route =
+                        Dict.get selection.routeId routes
+
+                    stop =
+                        Dict.get selection.stopId stops
+                in
+                viewSelection currentTime route stop data selection
+            )
             selections
         )
 
 
-viewSelection : Time.Posix -> StopNames -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
-viewSelection currentTime stopNames data selection =
+viewSelection : Time.Posix -> Maybe Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection currentTime route stop data selection =
     El.column
         [ El.width El.fill
         , Border.width 1
         , Border.rounded 4
         ]
-        [ selectionHeading stopNames selection
+        [ selectionHeading route stop selection
         , viewPredictions currentTime data selection
         ]
 
 
-selectionHeading : StopNames -> Selection -> Element Msg
-selectionHeading stopNames selection =
+selectionHeading : Maybe Mbta.Route -> Maybe Mbta.Stop -> Selection -> Element Msg
+selectionHeading route stop selection =
     let
         (Mbta.RouteId routeIdText) =
             selection.routeId
@@ -107,8 +117,8 @@ selectionHeading stopNames selection =
                     " - 1"
 
         stopName =
-            stopNames
-                |> Dict.get selection.stopId
+            stop
+                |> Maybe.map Mbta.stopName
                 |> Maybe.withDefault stopIdText
     in
     El.column
