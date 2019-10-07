@@ -116,6 +116,15 @@ selectionHeading route stop selection =
                 Just Mbta.D1 ->
                     " - 1"
 
+        routeName =
+            case route of
+                Nothing ->
+                    routeIdText
+
+                Just r ->
+                    r.shortName
+                        |> Maybe.withDefault r.longName
+
         stopName =
             stop
                 |> Maybe.map Mbta.stopName
@@ -132,7 +141,7 @@ selectionHeading route stop selection =
             }
         ]
         [ El.row []
-            [ El.text routeIdText
+            [ El.text routeName
             , El.el [ Font.size fontSmall ] (El.text directionText)
             ]
         , El.el [ Font.size fontSmall ] (El.text stopName)
