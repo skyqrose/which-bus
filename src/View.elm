@@ -37,7 +37,9 @@ ui model =
         [ El.padding unit
         , El.spacing unit
         , El.centerX
-        , El.width (El.maximum 320 El.fill)
+        , El.width (El.maximum 400 El.fill)
+        , Background.color (avh4ColorToElmUiColor Color.charcoal)
+        , Font.color (avh4ColorToElmUiColor Color.white)
         ]
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
