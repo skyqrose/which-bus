@@ -305,7 +305,9 @@ addSelectionForm model =
             , placeholder = Nothing
             , label = label "Stop Id"
             }
-        , Input.radioRow []
+        , Input.radioRow
+            [ El.spacing (unit * 2)
+            ]
             { onChange = TypeDirection
             , options =
                 [ Input.option Nothing (El.text "None")
