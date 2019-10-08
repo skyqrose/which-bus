@@ -289,13 +289,17 @@ addSelectionForm model =
     El.column
         [ El.spacing unit
         ]
-        [ Input.text []
+        [ Input.text
+            [ Font.color (avh4ColorToElmUiColor Color.black)
+            ]
             { onChange = TypeRouteId
             , text = model.routeIdFormText
             , placeholder = Nothing
             , label = label "Route Id"
             }
-        , Input.text []
+        , Input.text
+            [ Font.color (avh4ColorToElmUiColor Color.black)
+            ]
             { onChange = TypeStopId
             , text = model.stopIdFormText
             , placeholder = Nothing
