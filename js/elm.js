@@ -14973,6 +14973,26 @@ var author$project$Model$TypeRouteId = function (a) {
 var author$project$Model$TypeStopId = function (a) {
 	return {$: 'TypeStopId', a: a};
 };
+var avh4$elm_color$Color$toRgba = function (_n0) {
+	var r = _n0.a;
+	var g = _n0.b;
+	var b = _n0.c;
+	var a = _n0.d;
+	return {alpha: a, blue: b, green: g, red: r};
+};
+var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
+	function (a, b, c, d) {
+		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+	});
+var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
+var author$project$View$avh4ColorToElmUiColor = function (avh4Color) {
+	var _n0 = avh4$elm_color$Color$toRgba(avh4Color);
+	var red = _n0.red;
+	var green = _n0.green;
+	var blue = _n0.blue;
+	var alpha = _n0.alpha;
+	return A4(mdgriffith$elm_ui$Element$rgba, red, green, blue, alpha);
+};
 var author$project$View$unit = 16;
 var mdgriffith$elm_ui$Internal$Flag$Flag = function (a) {
 	return {$: 'Flag', a: a};
@@ -15004,10 +15024,6 @@ var mdgriffith$elm_ui$Element$padding = function (x) {
 			x,
 			x));
 };
-var mdgriffith$elm_ui$Internal$Model$Rgba = F4(
-	function (a, b, c, d) {
-		return {$: 'Rgba', a: a, b: b, c: c, d: d};
-	});
 var mdgriffith$elm_ui$Element$rgb = F3(
 	function (r, g, b) {
 		return A4(mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
@@ -15143,6 +15159,7 @@ var author$project$View$label = function (text) {
 		_List_Nil,
 		mdgriffith$elm_ui$Element$text(text));
 };
+var avh4$elm_color$Color$black = A4(avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var mdgriffith$elm_ui$Internal$Model$Height = function (a) {
 	return {$: 'Height', a: a};
 };
@@ -20212,6 +20229,21 @@ var mdgriffith$elm_ui$Element$spacing = function (x) {
 			x,
 			x));
 };
+var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
+var mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
+	});
+var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		mdgriffith$elm_ui$Internal$Model$StyleClass,
+		mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
 var elm$json$Json$Encode$bool = _Json_wrap;
 var elm$html$Html$Attributes$boolProperty = F2(
 	function (key, bool) {
@@ -20394,10 +20426,6 @@ var mdgriffith$elm_ui$Element$row = F2(
 			mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var mdgriffith$elm_ui$Internal$Flag$bgColor = mdgriffith$elm_ui$Internal$Flag$flag(8);
-var mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
 var mdgriffith$elm_ui$Element$Background$color = function (clr) {
 	return A2(
 		mdgriffith$elm_ui$Internal$Model$StyleClass,
@@ -20988,18 +21016,6 @@ var mdgriffith$elm_ui$Element$paddingEach = function (_n0) {
 			bottom,
 			left));
 };
-var mdgriffith$elm_ui$Element$rgba = mdgriffith$elm_ui$Internal$Model$Rgba;
-var mdgriffith$elm_ui$Internal$Flag$fontColor = mdgriffith$elm_ui$Internal$Flag$flag(14);
-var mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		mdgriffith$elm_ui$Internal$Model$StyleClass,
-		mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
 var mdgriffith$elm_ui$Element$Input$Padding = F4(
 	function (a, b, c, d) {
 		return {$: 'Padding', a: a, b: b, c: c, d: d};
@@ -21499,7 +21515,11 @@ var author$project$View$addSelectionForm = function (model) {
 			[
 				A2(
 				mdgriffith$elm_ui$Element$Input$text,
-				_List_Nil,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Font$color(
+						author$project$View$avh4ColorToElmUiColor(avh4$elm_color$Color$black))
+					]),
 				{
 					label: author$project$View$label('Route Id'),
 					onChange: author$project$Model$TypeRouteId,
@@ -21508,7 +21528,11 @@ var author$project$View$addSelectionForm = function (model) {
 				}),
 				A2(
 				mdgriffith$elm_ui$Element$Input$text,
-				_List_Nil,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$Font$color(
+						author$project$View$avh4ColorToElmUiColor(avh4$elm_color$Color$black))
+					]),
 				{
 					label: author$project$View$label('Stop Id'),
 					onChange: author$project$Model$TypeStopId,
@@ -21552,21 +21576,6 @@ var author$project$View$addSelectionForm = function (model) {
 							})) : elm$core$Maybe$Nothing
 				})
 			]));
-};
-var avh4$elm_color$Color$toRgba = function (_n0) {
-	var r = _n0.a;
-	var g = _n0.b;
-	var b = _n0.c;
-	var a = _n0.d;
-	return {alpha: a, blue: b, green: g, red: r};
-};
-var author$project$View$avh4ColorToElmUiColor = function (avh4Color) {
-	var _n0 = avh4$elm_color$Color$toRgba(avh4Color);
-	var red = _n0.red;
-	var green = _n0.green;
-	var blue = _n0.blue;
-	var alpha = _n0.alpha;
-	return A4(mdgriffith$elm_ui$Element$rgba, red, green, blue, alpha);
 };
 var author$project$Model$RefreshStream = {$: 'RefreshStream'};
 var elm$time$Time$posixToMillis = function (_n0) {
@@ -22438,7 +22447,6 @@ var author$project$View$viewPredictions = F3(
 				data: predictions
 			});
 	});
-var avh4$elm_color$Color$black = A4(avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var author$project$View$viewSelection = F5(
 	function (currentTime, route, stop, data, selection) {
