@@ -21541,7 +21541,10 @@ var author$project$View$addSelectionForm = function (model) {
 				}),
 				A2(
 				mdgriffith$elm_ui$Element$Input$radioRow,
-				_List_Nil,
+				_List_fromArray(
+					[
+						mdgriffith$elm_ui$Element$spacing(author$project$View$unit * 2)
+					]),
 				{
 					label: author$project$View$label('Direction Id'),
 					onChange: author$project$Model$TypeDirection,
