@@ -2,8 +2,10 @@ module View exposing (view)
 
 import AssocList as Dict exposing (Dict)
 import Browser
+import Color
 import Data exposing (Selection)
 import Element as El exposing (Element)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
@@ -90,6 +92,18 @@ viewSelection currentTime route stop data selection =
         [ El.width El.fill
         , Border.width 1
         , Border.rounded 4
+        , Background.color
+            (route
+                |> Maybe.map .color
+                |> Maybe.withDefault Color.white
+                |> avh4ColorToElmUiColor
+            )
+        , Font.color
+            (route
+                |> Maybe.map .textColor
+                |> Maybe.withDefault Color.black
+                |> avh4ColorToElmUiColor
+            )
         ]
         [ selectionHeading route stop selection
         , viewPredictions currentTime data selection
@@ -349,6 +363,15 @@ lastUpdatedText currentTime lastUpdated =
                         // 60
             in
             String.fromInt timeDifferenceMinutes ++ " minutes ago"
+
+
+avh4ColorToElmUiColor : Color.Color -> El.Color
+avh4ColorToElmUiColor avh4Color =
+    let
+        { red, green, blue, alpha } =
+            Color.toRgba avh4Color
+    in
+    El.rgba red green blue alpha
 
 
 {-| Pixels
