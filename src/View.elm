@@ -124,39 +124,38 @@ viewPredictions currentTime data selection =
         [ El.width El.fill
         , Border.width 1
         , Border.rounded 4
+        , El.clip
         ]
         (if List.isEmpty predictions then
             [ emptyPrediction ]
 
          else
-            List.map (viewPrediction currentTime) predictions
+            List.indexedMap (viewPrediction currentTime) predictions
         )
 
 
 emptyPrediction : El.Element msg
 emptyPrediction =
     El.el
-        [ El.width El.fill
-        , El.padding unit
-        , Border.widthEach
-            { bottom = 0
-            , left = 0
-            , right = 0
-            , top = 1
-            }
+        [ El.padding unit
         ]
         (El.text "---")
 
 
-viewPrediction : Time.Posix -> ViewModel.ShownPrediction -> El.Element msg
-viewPrediction currentTime prediction =
+viewPrediction : Time.Posix -> Int -> ViewModel.ShownPrediction -> El.Element msg
+viewPrediction currentTime index prediction =
     El.row
         [ El.width El.fill
         , Border.widthEach
             { bottom = 0
             , left = 0
             , right = 0
-            , top = 1
+            , top =
+                if index == 0 then
+                    0
+
+                else
+                    1
             }
         , Background.color (avh4ColorToElmUiColor prediction.backgroundColor)
         , Font.color (avh4ColorToElmUiColor prediction.textColor)
