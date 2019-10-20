@@ -107,71 +107,28 @@ viewSelection currentTime route stop data selection =
                 |> avh4ColorToElmUiColor
             )
         ]
-        [ selectionHeading route stop selection
+        [ selectionHeading stop selection
         , viewPredictions currentTime data selection
         ]
 
 
-selectionHeading : Maybe Mbta.Route -> Maybe Mbta.Stop -> Selection -> Element Msg
-selectionHeading route stop selection =
+selectionHeading : Maybe Mbta.Stop -> Selection -> Element Msg
+selectionHeading stop selection =
     let
-        (Mbta.RouteId routeIdText) =
-            selection.routeId
-
         (Mbta.StopId stopIdText) =
             selection.stopId
-
-        directionText =
-            case selection.directionId of
-                Nothing ->
-                    ""
-
-                Just directionId ->
-                    route
-                        |> Maybe.andThen .directions
-                        |> Maybe.map (Mbta.getRouteDirection directionId)
-                        |> Maybe.map
-                            (\routeDirection ->
-                                String.concat
-                                    [ routeDirection.name
-                                    , " to "
-                                    , routeDirection.destination
-                                    ]
-                            )
-                        |> Maybe.withDefault
-                            (case directionId of
-                                Mbta.D0 ->
-                                    "0"
-
-                                Mbta.D1 ->
-                                    "1"
-                            )
-                        |> (\directionName -> " - " ++ directionName)
-
-        routeName =
-            case route of
-                Nothing ->
-                    routeIdText
-
-                Just r ->
-                    r.shortName
-                        |> Maybe.withDefault r.longName
 
         stopName =
             stop
                 |> Maybe.map Mbta.stopName
                 |> Maybe.withDefault stopIdText
     in
-    El.column
+    El.el
         [ El.padding unit
         , El.width El.fill
+        , Font.size fontSmall
         ]
-        [ El.row []
-            [ El.text routeName
-            , El.el [ Font.size fontSmall ] (El.text directionText)
-            ]
-        , El.el [ Font.size fontSmall ] (El.text stopName)
-        ]
+        (El.text stopName)
 
 
 viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element msg
