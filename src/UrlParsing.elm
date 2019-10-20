@@ -28,23 +28,32 @@ selectionsQueryParser =
 parseSelection : String -> Maybe Selection
 parseSelection queryValue =
     case String.split "," queryValue of
-        [ routeId, stopId ] ->
+        [ routeIds, stopId ] ->
             Just
-                { routeId = Mbta.RouteId routeId
+                { routeIds =
+                    routeIds
+                        |> String.split "."
+                        |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Nothing
                 }
 
-        [ routeId, stopId, "0" ] ->
+        [ routeIds, stopId, "0" ] ->
             Just
-                { routeId = Mbta.RouteId routeId
+                { routeIds =
+                    routeIds
+                        |> String.split "."
+                        |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Just Mbta.D0
                 }
 
-        [ routeId, stopId, "1" ] ->
+        [ routeIds, stopId, "1" ] ->
             Just
-                { routeId = Mbta.RouteId routeId
+                { routeIds =
+                    routeIds
+                        |> String.split "."
+                        |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Just Mbta.D1
                 }
@@ -67,8 +76,11 @@ setSelectionsInUrl selections url =
 encodeSelectionAsQueryParam : Selection -> String
 encodeSelectionAsQueryParam selection =
     let
-        (Mbta.RouteId routeId) =
-            selection.routeId
+        routeIds =
+            String.join "."
+                (selection.routeIds
+                    |> List.map (\(Mbta.RouteId routeId) -> routeId)
+                )
 
         (Mbta.StopId stopId) =
             selection.stopId
@@ -86,7 +98,7 @@ encodeSelectionAsQueryParam selection =
     in
     String.concat
         [ "stop="
-        , routeId
+        , routeIds
         , ","
         , stopId
         , directionId

@@ -197,7 +197,7 @@ getRoutes selections =
         ReceiveRoutes
         apiHost
         []
-        [ Mbta.Api.filterRoutesByIds (List.map .routeId selections) ]
+        [ Mbta.Api.filterRoutesByIds (List.concatMap .routeIds selections) ]
 
 
 getStops : List Selection -> Cmd Msg
@@ -214,7 +214,7 @@ streamPredictions selections =
     let
         routeIds : List Mbta.RouteId
         routeIds =
-            List.map .routeId selections
+            List.concatMap .routeIds selections
 
         stopIds : List Mbta.StopId
         stopIds =

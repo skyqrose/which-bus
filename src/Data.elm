@@ -4,7 +4,7 @@ import Mbta
 
 
 type alias Selection =
-    { routeId : Mbta.RouteId
+    { routeIds : List Mbta.RouteId
     , stopId : Mbta.StopId
     , directionId : Maybe Mbta.DirectionId
     }

@@ -280,7 +280,10 @@ addSelectionForm model =
                 if model.routeIdFormText /= "" && model.stopIdFormText /= "" then
                     Just
                         (AddSelection
-                            { routeId = Mbta.RouteId model.routeIdFormText
+                            { routeIds =
+                                model.routeIdFormText
+                                    |> String.split "."
+                                    |> List.map Mbta.RouteId
                             , stopId = Mbta.StopId model.stopIdFormText
                             , directionId = model.directionIdFormValue
                             }

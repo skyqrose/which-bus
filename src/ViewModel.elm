@@ -31,7 +31,7 @@ predictionsForSelection data selection =
             Mbta.Api.getPrimaryData data
     in
     predictions
-        |> List.filter (predictionMatchesRouteId selection.routeId)
+        |> List.filter (predictionMatchesRouteId selection.routeIds)
         |> List.filter (predictionMatchesStop data selection.stopId)
         |> List.filter (predictionMatchesDirection selection.directionId)
         |> List.map
@@ -93,9 +93,9 @@ predictionsForSelection data selection =
             )
 
 
-predictionMatchesRouteId : Mbta.RouteId -> Mbta.Prediction -> Bool
-predictionMatchesRouteId routeId prediction =
-    prediction.routeId == routeId
+predictionMatchesRouteId : List Mbta.RouteId -> Mbta.Prediction -> Bool
+predictionMatchesRouteId routeIds prediction =
+    List.member prediction.routeId routeIds
 
 
 predictionMatchesStop : Mbta.Api.Data primary -> Mbta.StopId -> Mbta.Prediction -> Bool
