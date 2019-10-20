@@ -10234,9 +10234,9 @@ var author$project$Main$getRoutes = function (selections) {
 			[
 				author$project$Mbta$Api$filterRoutesByIds(
 				A2(
-					elm$core$List$map,
+					elm$core$List$concatMap,
 					function ($) {
-						return $.routeId;
+						return $.routeIds;
 					},
 					selections))
 			]));
@@ -10287,6 +10287,8 @@ var author$project$Mbta$Api$include = function (_n0) {
 var author$project$Mbta$Api$Relationship = function (a) {
 	return {$: 'Relationship', a: a};
 };
+var author$project$Mbta$Api$predictionRoute = author$project$Mbta$Api$Relationship('route');
+var author$project$Mbta$Api$predictionSchedule = author$project$Mbta$Api$Relationship('schedule');
 var author$project$Mbta$Api$predictionStop = author$project$Mbta$Api$Relationship('stop');
 var author$project$Mbta$Api$predictionTrip = author$project$Mbta$Api$Relationship('trip');
 var author$project$Mbta$Api$predictionVehicle = author$project$Mbta$Api$Relationship('vehicle');
@@ -10331,9 +10333,9 @@ var author$project$Main$streamPredictions = function (selections) {
 		},
 		selections);
 	var routeIds = A2(
-		elm$core$List$map,
+		elm$core$List$concatMap,
 		function ($) {
-			return $.routeId;
+			return $.routeIds;
 		},
 		selections);
 	return A3(
@@ -10343,7 +10345,9 @@ var author$project$Main$streamPredictions = function (selections) {
 			[
 				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionStop),
 				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionTrip),
-				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionVehicle)
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionVehicle),
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionRoute),
+				author$project$Mbta$Api$include(author$project$Mbta$Api$predictionSchedule)
 			]),
 		_List_fromArray(
 			[
@@ -10360,38 +10364,47 @@ var author$project$UrlParsing$parseSelection = function (queryValue) {
 	while (true) {
 		if (_n0.b && _n0.b.b) {
 			if (!_n0.b.b.b) {
-				var routeId = _n0.a;
+				var routeIds = _n0.a;
 				var _n1 = _n0.b;
 				var stopId = _n1.a;
 				return elm$core$Maybe$Just(
 					{
 						directionId: elm$core$Maybe$Nothing,
-						routeId: author$project$Mbta$RouteId(routeId),
+						routeIds: A2(
+							elm$core$List$map,
+							author$project$Mbta$RouteId,
+							A2(elm$core$String$split, '.', routeIds)),
 						stopId: author$project$Mbta$StopId(stopId)
 					});
 			} else {
 				if (!_n0.b.b.b.b) {
 					switch (_n0.b.b.a) {
 						case '0':
-							var routeId = _n0.a;
+							var routeIds = _n0.a;
 							var _n2 = _n0.b;
 							var stopId = _n2.a;
 							var _n3 = _n2.b;
 							return elm$core$Maybe$Just(
 								{
 									directionId: elm$core$Maybe$Just(author$project$Mbta$D0),
-									routeId: author$project$Mbta$RouteId(routeId),
+									routeIds: A2(
+										elm$core$List$map,
+										author$project$Mbta$RouteId,
+										A2(elm$core$String$split, '.', routeIds)),
 									stopId: author$project$Mbta$StopId(stopId)
 								});
 						case '1':
-							var routeId = _n0.a;
+							var routeIds = _n0.a;
 							var _n4 = _n0.b;
 							var stopId = _n4.a;
 							var _n5 = _n4.b;
 							return elm$core$Maybe$Just(
 								{
 									directionId: elm$core$Maybe$Just(author$project$Mbta$D1),
-									routeId: author$project$Mbta$RouteId(routeId),
+									routeIds: A2(
+										elm$core$List$map,
+										author$project$Mbta$RouteId,
+										A2(elm$core$String$split, '.', routeIds)),
 									stopId: author$project$Mbta$StopId(stopId)
 								});
 						default:
@@ -11282,27 +11295,35 @@ var author$project$Mbta$Api$updateStream = F3(
 				}));
 	});
 var author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
+	var routeIds = A2(
+		elm$core$String$join,
+		'.',
+		A2(
+			elm$core$List$map,
+			function (_n4) {
+				var routeId = _n4.a;
+				return routeId;
+			},
+			selection.routeIds));
 	var directionId = function () {
-		var _n2 = selection.directionId;
-		if (_n2.$ === 'Nothing') {
+		var _n1 = selection.directionId;
+		if (_n1.$ === 'Nothing') {
 			return '';
 		} else {
-			if (_n2.a.$ === 'D0') {
-				var _n3 = _n2.a;
+			if (_n1.a.$ === 'D0') {
+				var _n2 = _n1.a;
 				return ',0';
 			} else {
-				var _n4 = _n2.a;
+				var _n3 = _n1.a;
 				return ',1';
 			}
 		}
 	}();
 	var _n0 = selection.stopId;
 	var stopId = _n0.a;
-	var _n1 = selection.routeId;
-	var routeId = _n1.a;
 	return elm$core$String$concat(
 		_List_fromArray(
-			['stop=', routeId, ',', stopId, directionId]));
+			['stop=', routeIds, ',', stopId, directionId]));
 };
 var author$project$UrlParsing$setSelectionsInUrl = F2(
 	function (selections, url) {
@@ -21574,7 +21595,10 @@ var author$project$View$addSelectionForm = function (model) {
 						author$project$Model$AddSelection(
 							{
 								directionId: model.directionIdFormValue,
-								routeId: author$project$Mbta$RouteId(model.routeIdFormText),
+								routeIds: A2(
+									elm$core$List$map,
+									author$project$Mbta$RouteId,
+									A2(elm$core$String$split, '.', model.routeIdFormText)),
 								stopId: author$project$Mbta$StopId(model.stopIdFormText)
 							})) : elm$core$Maybe$Nothing
 				})
@@ -21616,14 +21640,6 @@ var author$project$View$refreshButton = function (model) {
 				'Last updated\n' + A2(author$project$View$lastUpdatedText, model.currentTime, model.lastUpdated))
 			]));
 };
-var author$project$Mbta$getRouteDirection = F2(
-	function (directionId, routeDirections) {
-		if (directionId.$ === 'D0') {
-			return routeDirections.d0;
-		} else {
-			return routeDirections.d1;
-		}
-	});
 var author$project$Mbta$stopName = function (stop) {
 	switch (stop.$) {
 		case 'Stop_0_Stop':
@@ -21640,16 +21656,680 @@ var author$project$Mbta$stopName = function (stop) {
 			return stop_node.name;
 	}
 };
-var author$project$View$fontSmall = 14;
-var elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
+var author$project$View$selectionHeading = F2(
+	function (stop, selection) {
+		var _n0 = selection.stopId;
+		var stopIdText = _n0.a;
+		var stopName = A2(
+			elm$core$Maybe$withDefault,
+			stopIdText,
+			A2(elm$core$Maybe$map, author$project$Mbta$stopName, stop));
+		return A2(
+			mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$padding(author$project$View$unit)
+				]),
+			mdgriffith$elm_ui$Element$text(stopName));
+	});
+var author$project$View$emptyPrediction = A2(
+	mdgriffith$elm_ui$Element$el,
+	_List_fromArray(
+		[
+			mdgriffith$elm_ui$Element$padding(author$project$View$unit)
+		]),
+	mdgriffith$elm_ui$Element$text('---'));
+var justinmimbs$timezone_data$TimeZone$maxYear = 2037;
+var justinmimbs$timezone_data$TimeZone$minYear = 1970;
+var elm$time$Time$Jan = {$: 'Jan'};
+var justinmimbs$timezone_data$TimeZone$Specification$DateTime = F5(
+	function (year, month, day, time, clock) {
+		return {clock: clock, day: day, month: month, time: time, year: year};
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$Universal = {$: 'Universal'};
+var justinmimbs$timezone_data$TimeZone$Specification$dropChangesBeforeEpoch = function (_n0) {
+	dropChangesBeforeEpoch:
+	while (true) {
+		var initial = _n0.a;
+		var changes = _n0.b;
+		if (changes.b) {
+			var change = changes.a;
+			var rest = changes.b;
+			if (change.start <= 0) {
+				var $temp$_n0 = _Utils_Tuple2(change.offset, rest);
+				_n0 = $temp$_n0;
+				continue dropChangesBeforeEpoch;
+			} else {
+				return _Utils_Tuple2(initial, changes);
+			}
 		} else {
-			return elm$core$Maybe$Nothing;
+			return _Utils_Tuple2(initial, _List_Nil);
+		}
+	}
+};
+var elm$core$List$sortBy = _List_sortBy;
+var justinmimbs$timezone_data$RataDie$weekdayNumber = function (rd) {
+	var _n0 = A2(elm$core$Basics$modBy, 7, rd);
+	if (!_n0) {
+		return 7;
+	} else {
+		var n = _n0;
+		return n;
+	}
+};
+var justinmimbs$timezone_data$RataDie$weekdayToNumber = function (wd) {
+	switch (wd.$) {
+		case 'Mon':
+			return 1;
+		case 'Tue':
+			return 2;
+		case 'Wed':
+			return 3;
+		case 'Thu':
+			return 4;
+		case 'Fri':
+			return 5;
+		case 'Sat':
+			return 6;
+		default:
+			return 7;
+	}
+};
+var justinmimbs$timezone_data$RataDie$floorWeekday = F2(
+	function (weekday, rd) {
+		var daysSincePreviousWeekday = A2(
+			elm$core$Basics$modBy,
+			7,
+			(justinmimbs$timezone_data$RataDie$weekdayNumber(rd) + 7) - justinmimbs$timezone_data$RataDie$weekdayToNumber(weekday));
+		return rd - daysSincePreviousWeekday;
+	});
+var justinmimbs$timezone_data$RataDie$ceilingWeekday = F2(
+	function (weekday, rd) {
+		var floored = A2(justinmimbs$timezone_data$RataDie$floorWeekday, weekday, rd);
+		return _Utils_eq(rd, floored) ? rd : (floored + 7);
+	});
+var justinmimbs$timezone_data$RataDie$isLeapYear = function (y) {
+	return ((!A2(elm$core$Basics$modBy, 4, y)) && A2(elm$core$Basics$modBy, 100, y)) || (!A2(elm$core$Basics$modBy, 400, y));
+};
+var justinmimbs$timezone_data$RataDie$daysBeforeMonth = F2(
+	function (y, m) {
+		var leapDays = justinmimbs$timezone_data$RataDie$isLeapYear(y) ? 1 : 0;
+		switch (m.$) {
+			case 'Jan':
+				return 0;
+			case 'Feb':
+				return 31;
+			case 'Mar':
+				return 59 + leapDays;
+			case 'Apr':
+				return 90 + leapDays;
+			case 'May':
+				return 120 + leapDays;
+			case 'Jun':
+				return 151 + leapDays;
+			case 'Jul':
+				return 181 + leapDays;
+			case 'Aug':
+				return 212 + leapDays;
+			case 'Sep':
+				return 243 + leapDays;
+			case 'Oct':
+				return 273 + leapDays;
+			case 'Nov':
+				return 304 + leapDays;
+			default:
+				return 334 + leapDays;
 		}
 	});
+var justinmimbs$timezone_data$RataDie$daysBeforeYear = function (y1) {
+	var y = y1 - 1;
+	var leapYears = (((y / 4) | 0) - ((y / 100) | 0)) + ((y / 400) | 0);
+	return (365 * y) + leapYears;
+};
+var justinmimbs$timezone_data$RataDie$dayOfMonth = F3(
+	function (y, m, d) {
+		return (justinmimbs$timezone_data$RataDie$daysBeforeYear(y) + A2(justinmimbs$timezone_data$RataDie$daysBeforeMonth, y, m)) + d;
+	});
+var justinmimbs$timezone_data$RataDie$daysInMonth = F2(
+	function (y, m) {
+		switch (m.$) {
+			case 'Jan':
+				return 31;
+			case 'Feb':
+				return justinmimbs$timezone_data$RataDie$isLeapYear(y) ? 29 : 28;
+			case 'Mar':
+				return 31;
+			case 'Apr':
+				return 30;
+			case 'May':
+				return 31;
+			case 'Jun':
+				return 30;
+			case 'Jul':
+				return 31;
+			case 'Aug':
+				return 31;
+			case 'Sep':
+				return 30;
+			case 'Oct':
+				return 31;
+			case 'Nov':
+				return 30;
+			default:
+				return 31;
+		}
+	});
+var justinmimbs$timezone_data$RataDie$lastOfMonth = F2(
+	function (y, m) {
+		return (justinmimbs$timezone_data$RataDie$daysBeforeYear(y) + A2(justinmimbs$timezone_data$RataDie$daysBeforeMonth, y, m)) + A2(justinmimbs$timezone_data$RataDie$daysInMonth, y, m);
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$minutesFromRataDie = function (rd) {
+	return (rd - 719163) * 1440;
+};
+var justinmimbs$timezone_data$TimeZone$Specification$utcAdjustment = F2(
+	function (clock, _n0) {
+		var standard = _n0.standard;
+		var save = _n0.save;
+		switch (clock.$) {
+			case 'Universal':
+				return 0;
+			case 'Standard':
+				return 0 - standard;
+			default:
+				return 0 - (standard + save);
+		}
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$minutesFromDateTime = function (_n0) {
+	var year = _n0.year;
+	var month = _n0.month;
+	var day = _n0.day;
+	var time = _n0.time;
+	return justinmimbs$timezone_data$TimeZone$Specification$minutesFromRataDie(
+		A3(justinmimbs$timezone_data$RataDie$dayOfMonth, year, month, day)) + time;
+};
+var justinmimbs$timezone_data$TimeZone$Specification$utcMinutesFromDateTime = F2(
+	function (offset, datetime) {
+		return justinmimbs$timezone_data$TimeZone$Specification$minutesFromDateTime(datetime) + A2(justinmimbs$timezone_data$TimeZone$Specification$utcAdjustment, datetime.clock, offset);
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$rulesToOffsetChanges = F5(
+	function (previousOffset, start, until, standardOffset, rules) {
+		var transitions = A2(
+			elm$core$List$concatMap,
+			function (year) {
+				return A2(
+					elm$core$List$sortBy,
+					function ($) {
+						return $.start;
+					},
+					A2(
+						elm$core$List$map,
+						function (rule) {
+							return {
+								clock: rule.clock,
+								save: rule.save,
+								start: justinmimbs$timezone_data$TimeZone$Specification$minutesFromRataDie(
+									function () {
+										var _n2 = rule.day;
+										switch (_n2.$) {
+											case 'Day':
+												var day = _n2.a;
+												return A3(justinmimbs$timezone_data$RataDie$dayOfMonth, year, rule.month, day);
+											case 'Next':
+												var weekday = _n2.a;
+												var after = _n2.b;
+												return A2(
+													justinmimbs$timezone_data$RataDie$ceilingWeekday,
+													weekday,
+													A3(justinmimbs$timezone_data$RataDie$dayOfMonth, year, rule.month, after));
+											case 'Prev':
+												var weekday = _n2.a;
+												var before = _n2.b;
+												return A2(
+													justinmimbs$timezone_data$RataDie$floorWeekday,
+													weekday,
+													A3(justinmimbs$timezone_data$RataDie$dayOfMonth, year, rule.month, before));
+											default:
+												var weekday = _n2.a;
+												return A2(
+													justinmimbs$timezone_data$RataDie$floorWeekday,
+													weekday,
+													A2(justinmimbs$timezone_data$RataDie$lastOfMonth, year, rule.month));
+										}
+									}()) + rule.time
+							};
+						},
+						A2(
+							elm$core$List$filter,
+							function (rule) {
+								return (_Utils_cmp(rule.from, year) < 1) && (_Utils_cmp(year, rule.to) < 1);
+							},
+							rules)));
+			},
+			A2(elm$core$List$range, start.year - 1, until.year));
+		var initialOffset = {save: 0, standard: standardOffset};
+		var initialChange = {
+			offset: standardOffset,
+			start: A2(justinmimbs$timezone_data$TimeZone$Specification$utcMinutesFromDateTime, previousOffset, start)
+		};
+		var _n0 = A3(
+			elm$core$List$foldl,
+			F2(
+				function (transition, _n1) {
+					var currentOffset = _n1.a;
+					var changes = _n1.b;
+					var newOffset = {save: transition.save, standard: standardOffset};
+					if (_Utils_cmp(
+						transition.start + A2(justinmimbs$timezone_data$TimeZone$Specification$utcAdjustment, transition.clock, previousOffset),
+						initialChange.start) < 1) {
+						var updatedInitialChange = {offset: standardOffset + transition.save, start: initialChange.start};
+						return _Utils_Tuple2(
+							newOffset,
+							_List_fromArray(
+								[updatedInitialChange]));
+					} else {
+						if (_Utils_cmp(
+							transition.start + A2(justinmimbs$timezone_data$TimeZone$Specification$utcAdjustment, transition.clock, currentOffset),
+							A2(justinmimbs$timezone_data$TimeZone$Specification$utcMinutesFromDateTime, currentOffset, until)) < 0) {
+							var change = {
+								offset: standardOffset + transition.save,
+								start: transition.start + A2(justinmimbs$timezone_data$TimeZone$Specification$utcAdjustment, transition.clock, currentOffset)
+							};
+							return _Utils_Tuple2(
+								newOffset,
+								A2(elm$core$List$cons, change, changes));
+						} else {
+							return _Utils_Tuple2(currentOffset, changes);
+						}
+					}
+				}),
+			_Utils_Tuple2(
+				initialOffset,
+				_List_fromArray(
+					[initialChange])),
+			transitions);
+		var nextOffset = _n0.a;
+		var descendingChanges = _n0.b;
+		return _Utils_Tuple2(
+			elm$core$List$reverse(descendingChanges),
+			nextOffset);
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$stateToOffsetChanges = F4(
+	function (previousOffset, start, until, _n0) {
+		var standardOffset = _n0.standardOffset;
+		var zoneRules = _n0.zoneRules;
+		if (zoneRules.$ === 'Save') {
+			var save = zoneRules.a;
+			return _Utils_Tuple2(
+				_List_fromArray(
+					[
+						{
+						offset: standardOffset + save,
+						start: A2(justinmimbs$timezone_data$TimeZone$Specification$utcMinutesFromDateTime, previousOffset, start)
+					}
+					]),
+				{save: save, standard: standardOffset});
+		} else {
+			var rules = zoneRules.a;
+			return A5(justinmimbs$timezone_data$TimeZone$Specification$rulesToOffsetChanges, previousOffset, start, until, standardOffset, rules);
+		}
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$stripDuplicatesByHelp = F4(
+	function (f, a, rev, list) {
+		stripDuplicatesByHelp:
+		while (true) {
+			if (!list.b) {
+				return elm$core$List$reverse(rev);
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				var b = f(x);
+				var rev_ = (!_Utils_eq(a, b)) ? A2(elm$core$List$cons, x, rev) : rev;
+				var $temp$f = f,
+					$temp$a = b,
+					$temp$rev = rev_,
+					$temp$list = xs;
+				f = $temp$f;
+				a = $temp$a;
+				rev = $temp$rev;
+				list = $temp$list;
+				continue stripDuplicatesByHelp;
+			}
+		}
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$zoneToRanges = F3(
+	function (zoneStart, zoneUntil, zone) {
+		var _n0 = A3(
+			elm$core$List$foldl,
+			F2(
+				function (_n1, _n2) {
+					var state = _n1.a;
+					var nextStart = _n1.b;
+					var start = _n2.a;
+					var ranges = _n2.b;
+					return _Utils_Tuple2(
+						nextStart,
+						A2(
+							elm$core$List$cons,
+							_Utils_Tuple3(start, state, nextStart),
+							ranges));
+				}),
+			_Utils_Tuple2(zoneStart, _List_Nil),
+			zone.history);
+		var currentStart = _n0.a;
+		var historyRanges = _n0.b;
+		return elm$core$List$reverse(
+			A2(
+				elm$core$List$cons,
+				_Utils_Tuple3(currentStart, zone.current, zoneUntil),
+				historyRanges));
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$toOffsets = F3(
+	function (minYear, maxYear, zone) {
+		var initialState = function () {
+			var _n5 = zone.history;
+			if (_n5.b) {
+				var _n6 = _n5.a;
+				var earliest = _n6.a;
+				return earliest;
+			} else {
+				return zone.current;
+			}
+		}();
+		var initialOffset = {
+			save: function () {
+				var _n4 = initialState.zoneRules;
+				if (_n4.$ === 'Save') {
+					var save = _n4.a;
+					return save;
+				} else {
+					return 0;
+				}
+			}(),
+			standard: initialState.standardOffset
+		};
+		var ascendingChanges = A4(
+			justinmimbs$timezone_data$TimeZone$Specification$stripDuplicatesByHelp,
+			function ($) {
+				return $.offset;
+			},
+			initialOffset.standard + initialOffset.save,
+			_List_Nil,
+			A3(
+				elm$core$List$foldl,
+				F2(
+					function (_n1, _n2) {
+						var start = _n1.a;
+						var state = _n1.b;
+						var until = _n1.c;
+						var prevOffset = _n2.a;
+						var prevChanges = _n2.b;
+						var _n3 = A4(justinmimbs$timezone_data$TimeZone$Specification$stateToOffsetChanges, prevOffset, start, until, state);
+						var nextChanges = _n3.a;
+						var nextOffset = _n3.b;
+						return _Utils_Tuple2(
+							nextOffset,
+							_Utils_ap(prevChanges, nextChanges));
+					}),
+				_Utils_Tuple2(initialOffset, _List_Nil),
+				A3(
+					justinmimbs$timezone_data$TimeZone$Specification$zoneToRanges,
+					A5(justinmimbs$timezone_data$TimeZone$Specification$DateTime, minYear, elm$time$Time$Jan, 1, 0, justinmimbs$timezone_data$TimeZone$Specification$Universal),
+					A5(justinmimbs$timezone_data$TimeZone$Specification$DateTime, maxYear + 1, elm$time$Time$Jan, 1, 0, justinmimbs$timezone_data$TimeZone$Specification$Universal),
+					zone)).b);
+		var _n0 = justinmimbs$timezone_data$TimeZone$Specification$dropChangesBeforeEpoch(
+			_Utils_Tuple2(initialOffset.standard + initialOffset.save, ascendingChanges));
+		var initial = _n0.a;
+		var ascending = _n0.b;
+		return _Utils_Tuple2(
+			elm$core$List$reverse(ascending),
+			initial);
+	});
+var justinmimbs$timezone_data$TimeZone$fromSpecification = function (zone) {
+	var _n0 = A3(justinmimbs$timezone_data$TimeZone$Specification$toOffsets, justinmimbs$timezone_data$TimeZone$minYear, justinmimbs$timezone_data$TimeZone$maxYear, zone);
+	var descending = _n0.a;
+	var bottom = _n0.b;
+	return A2(elm$time$Time$customZone, bottom, descending);
+};
+var elm$time$Time$Apr = {$: 'Apr'};
+var elm$time$Time$Feb = {$: 'Feb'};
+var elm$time$Time$Mar = {$: 'Mar'};
+var elm$time$Time$Nov = {$: 'Nov'};
+var elm$time$Time$Oct = {$: 'Oct'};
+var elm$time$Time$Sun = {$: 'Sun'};
+var justinmimbs$timezone_data$TimeZone$Specification$Day = function (a) {
+	return {$: 'Day', a: a};
+};
+var justinmimbs$timezone_data$TimeZone$Specification$Last = function (a) {
+	return {$: 'Last', a: a};
+};
+var justinmimbs$timezone_data$TimeZone$Specification$Next = F2(
+	function (a, b) {
+		return {$: 'Next', a: a, b: b};
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$Rule = F7(
+	function (from, to, month, day, time, clock, save) {
+		return {clock: clock, day: day, from: from, month: month, save: save, time: time, to: to};
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$WallClock = {$: 'WallClock'};
+var justinmimbs$timezone_data$TimeZone$rules_US = _List_fromArray(
+	[
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1967,
+		2006,
+		elm$time$Time$Oct,
+		justinmimbs$timezone_data$TimeZone$Specification$Last(elm$time$Time$Sun),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		0),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1967,
+		1973,
+		elm$time$Time$Apr,
+		justinmimbs$timezone_data$TimeZone$Specification$Last(elm$time$Time$Sun),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1974,
+		1974,
+		elm$time$Time$Jan,
+		justinmimbs$timezone_data$TimeZone$Specification$Day(6),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1975,
+		1975,
+		elm$time$Time$Feb,
+		justinmimbs$timezone_data$TimeZone$Specification$Last(elm$time$Time$Sun),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1976,
+		1986,
+		elm$time$Time$Apr,
+		justinmimbs$timezone_data$TimeZone$Specification$Last(elm$time$Time$Sun),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		1987,
+		2006,
+		elm$time$Time$Apr,
+		A2(justinmimbs$timezone_data$TimeZone$Specification$Next, elm$time$Time$Sun, 1),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		2007,
+		justinmimbs$timezone_data$TimeZone$maxYear,
+		elm$time$Time$Mar,
+		A2(justinmimbs$timezone_data$TimeZone$Specification$Next, elm$time$Time$Sun, 8),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		60),
+		A7(
+		justinmimbs$timezone_data$TimeZone$Specification$Rule,
+		2007,
+		justinmimbs$timezone_data$TimeZone$maxYear,
+		elm$time$Time$Nov,
+		A2(justinmimbs$timezone_data$TimeZone$Specification$Next, elm$time$Time$Sun, 1),
+		120,
+		justinmimbs$timezone_data$TimeZone$Specification$WallClock,
+		0)
+	]);
+var justinmimbs$timezone_data$TimeZone$Specification$Rules = function (a) {
+	return {$: 'Rules', a: a};
+};
+var justinmimbs$timezone_data$TimeZone$Specification$Zone = F2(
+	function (history, current) {
+		return {current: current, history: history};
+	});
+var justinmimbs$timezone_data$TimeZone$Specification$ZoneState = F2(
+	function (standardOffset, zoneRules) {
+		return {standardOffset: standardOffset, zoneRules: zoneRules};
+	});
+var justinmimbs$timezone_data$TimeZone$america__new_york = function (_n0) {
+	return justinmimbs$timezone_data$TimeZone$fromSpecification(
+		A2(
+			justinmimbs$timezone_data$TimeZone$Specification$Zone,
+			_List_Nil,
+			A2(
+				justinmimbs$timezone_data$TimeZone$Specification$ZoneState,
+				-300,
+				justinmimbs$timezone_data$TimeZone$Specification$Rules(justinmimbs$timezone_data$TimeZone$rules_US))));
+};
+var author$project$View$timeZone = justinmimbs$timezone_data$TimeZone$america__new_york(_Utils_Tuple0);
+var elm$core$String$cons = _String_cons;
+var elm$core$String$fromChar = function (_char) {
+	return A2(elm$core$String$cons, _char, '');
+};
+var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3(elm$core$String$repeatHelp, n, chunk, '');
+	});
+var elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				elm$core$String$repeat,
+				n - elm$core$String$length(string),
+				elm$core$String$fromChar(_char)),
+			string);
+	});
+var elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return elm$core$Basics$floor(numerator / denominator);
+	});
+var elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var elm$time$Time$toAdjustedMinutes = F2(
+	function (_n0, time) {
+		var defaultOffset = _n0.a;
+		var eras = _n0.b;
+		return A3(
+			elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				elm$time$Time$flooredDiv,
+				elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var elm$time$Time$toHour = F2(
+	function (zone, time) {
+		return A2(
+			elm$core$Basics$modBy,
+			24,
+			A2(
+				elm$time$Time$flooredDiv,
+				A2(elm$time$Time$toAdjustedMinutes, zone, time),
+				60));
+	});
+var elm$time$Time$toMinute = F2(
+	function (zone, time) {
+		return A2(
+			elm$core$Basics$modBy,
+			60,
+			A2(elm$time$Time$toAdjustedMinutes, zone, time));
+	});
+var author$project$View$absoluteTimeString = function (time) {
+	return elm$core$String$concat(
+		_List_fromArray(
+			[
+				A3(
+				elm$core$String$padLeft,
+				2,
+				_Utils_chr('0'),
+				elm$core$String$fromInt(
+					A2(elm$time$Time$toHour, author$project$View$timeZone, time))),
+				':',
+				A3(
+				elm$core$String$padLeft,
+				2,
+				_Utils_chr('0'),
+				elm$core$String$fromInt(
+					A2(elm$time$Time$toMinute, author$project$View$timeZone, time)))
+			]));
+};
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var author$project$View$predictionTimeString = F2(
+	function (currentTime, prediction) {
+		var differenceMillis = elm$time$Time$posixToMillis(prediction.time) - elm$time$Time$posixToMillis(currentTime);
+		var differenceSecs = (differenceMillis / 1000) | 0;
+		var sign = (differenceSecs < 0) ? '-' : '';
+		var absSecs = elm$core$Basics$abs(differenceSecs);
+		var displayMins = elm$core$String$fromInt((absSecs / 60) | 0);
+		var displaySecs = A3(
+			elm$core$String$padLeft,
+			2,
+			_Utils_chr('0'),
+			elm$core$String$fromInt(absSecs % 60));
+		return sign + (displayMins + (':' + displaySecs));
+	});
+var avh4$elm_color$Color$charcoal = A4(avh4$elm_color$Color$RgbaSpace, 85 / 255, 87 / 255, 83 / 255, 1.0);
+var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var mdgriffith$elm_ui$Element$Border$widthXY = F2(
 	function (x, y) {
 		return A2(
@@ -21679,6 +22359,8 @@ var mdgriffith$elm_ui$Element$Border$widthEach = function (_n0) {
 			bottom,
 			left));
 };
+var mdgriffith$elm_ui$Internal$Flag$fontAlignment = mdgriffith$elm_ui$Internal$Flag$flag(12);
+var mdgriffith$elm_ui$Element$Font$alignRight = A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontAlignment, mdgriffith$elm_ui$Internal$Style$classes.textRight);
 var mdgriffith$elm_ui$Internal$Flag$fontSize = mdgriffith$elm_ui$Internal$Flag$flag(4);
 var mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
 	return {$: 'FontSize', a: a};
@@ -21689,136 +22371,174 @@ var mdgriffith$elm_ui$Element$Font$size = function (i) {
 		mdgriffith$elm_ui$Internal$Flag$fontSize,
 		mdgriffith$elm_ui$Internal$Model$FontSize(i));
 };
-var author$project$View$selectionHeading = F3(
-	function (route, stop, selection) {
-		var directionText = function () {
-			var _n3 = selection.directionId;
-			if (_n3.$ === 'Nothing') {
-				return '';
-			} else {
-				var directionId = _n3.a;
-				return function (directionName) {
-					return ' - ' + directionName;
-				}(
-					A2(
-						elm$core$Maybe$withDefault,
-						function () {
-							if (directionId.$ === 'D0') {
-								return '0';
-							} else {
-								return '1';
-							}
-						}(),
-						A2(
-							elm$core$Maybe$map,
-							function (routeDirection) {
-								return elm$core$String$concat(
-									_List_fromArray(
-										[routeDirection.name, ' to ', routeDirection.destination]));
-							},
-							A2(
-								elm$core$Maybe$map,
-								author$project$Mbta$getRouteDirection(directionId),
-								A2(
-									elm$core$Maybe$andThen,
-									function ($) {
-										return $.directions;
-									},
-									route)))));
-			}
-		}();
-		var _n0 = selection.stopId;
-		var stopIdText = _n0.a;
-		var stopName = A2(
-			elm$core$Maybe$withDefault,
-			stopIdText,
-			A2(elm$core$Maybe$map, author$project$Mbta$stopName, stop));
-		var _n1 = selection.routeId;
-		var routeIdText = _n1.a;
-		var routeName = function () {
-			if (route.$ === 'Nothing') {
-				return routeIdText;
-			} else {
-				var r = route.a;
-				return A2(elm$core$Maybe$withDefault, r.longName, r.shortName);
-			}
-		}();
+var mdgriffith$elm_ui$Element$Font$strike = mdgriffith$elm_ui$Internal$Model$htmlClass(mdgriffith$elm_ui$Internal$Style$classes.strike);
+var mdgriffith$elm_ui$Internal$Model$VariantActive = function (a) {
+	return {$: 'VariantActive', a: a};
+};
+var mdgriffith$elm_ui$Element$Font$tabularNumbers = mdgriffith$elm_ui$Internal$Model$VariantActive('tnum');
+var mdgriffith$elm_ui$Internal$Flag$fontVariant = mdgriffith$elm_ui$Internal$Flag$flag(48);
+var mdgriffith$elm_ui$Element$Font$variant = function (_var) {
+	switch (_var.$) {
+		case 'VariantActive':
+			var name = _var.a;
+			return A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontVariant, 'v-' + name);
+		case 'VariantOff':
+			var name = _var.a;
+			return A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontVariant, 'v-' + (name + '-off'));
+		default:
+			var name = _var.a;
+			var index = _var.b;
+			return A2(
+				mdgriffith$elm_ui$Internal$Model$StyleClass,
+				mdgriffith$elm_ui$Internal$Flag$fontVariant,
+				A3(
+					mdgriffith$elm_ui$Internal$Model$Single,
+					'v-' + (name + ('-' + elm$core$String$fromInt(index))),
+					'font-feature-settings',
+					'\"' + (name + ('\" ' + elm$core$String$fromInt(index)))));
+	}
+};
+var author$project$View$viewPrediction = F3(
+	function (currentTime, index, prediction) {
 		return A2(
-			mdgriffith$elm_ui$Element$column,
+			mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$padding(author$project$View$unit),
 					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
 					mdgriffith$elm_ui$Element$Border$widthEach(
-					{bottom: 1, left: 0, right: 0, top: 0})
+					{
+						bottom: 0,
+						left: 0,
+						right: 0,
+						top: (!index) ? 0 : 4
+					}),
+					mdgriffith$elm_ui$Element$Border$color(
+					author$project$View$avh4ColorToElmUiColor(avh4$elm_color$Color$charcoal)),
+					mdgriffith$elm_ui$Element$Background$color(
+					author$project$View$avh4ColorToElmUiColor(prediction.backgroundColor)),
+					mdgriffith$elm_ui$Element$Font$color(
+					author$project$View$avh4ColorToElmUiColor(prediction.textColor)),
+					mdgriffith$elm_ui$Element$Font$size(14)
 				]),
 			_List_fromArray(
 				[
 					A2(
-					mdgriffith$elm_ui$Element$row,
-					_List_Nil,
+					mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$text(routeName),
-							A2(
-							mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[
-									mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
-								]),
-							mdgriffith$elm_ui$Element$text(directionText))
-						])),
+							mdgriffith$elm_ui$Element$width(
+							mdgriffith$elm_ui$Element$px(author$project$View$unit * 8)),
+							mdgriffith$elm_ui$Element$padding((author$project$View$unit / 2) | 0),
+							mdgriffith$elm_ui$Element$Font$size(36),
+							mdgriffith$elm_ui$Element$Font$alignRight,
+							mdgriffith$elm_ui$Element$Font$variant(mdgriffith$elm_ui$Element$Font$tabularNumbers)
+						]),
+					mdgriffith$elm_ui$Element$text(
+						A2(author$project$View$predictionTimeString, currentTime, prediction))),
 					A2(
 					mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
 						[
-							mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
+							mdgriffith$elm_ui$Element$width(
+							mdgriffith$elm_ui$Element$px(author$project$View$unit * 2))
 						]),
-					mdgriffith$elm_ui$Element$text(stopName))
+					function () {
+						var _n0 = prediction.platformCode;
+						if (_n0.$ === 'Nothing') {
+							return mdgriffith$elm_ui$Element$none;
+						} else {
+							var platformCode = _n0.a;
+							return A2(
+								mdgriffith$elm_ui$Element$el,
+								_List_fromArray(
+									[
+										mdgriffith$elm_ui$Element$padding((author$project$View$unit / 4) | 0),
+										mdgriffith$elm_ui$Element$centerX,
+										mdgriffith$elm_ui$Element$Border$width(1),
+										mdgriffith$elm_ui$Element$Border$rounded(4)
+									]),
+								mdgriffith$elm_ui$Element$text(platformCode));
+						}
+					}()),
+					A2(
+					mdgriffith$elm_ui$Element$column,
+					_List_fromArray(
+						[
+							mdgriffith$elm_ui$Element$height(mdgriffith$elm_ui$Element$fill),
+							mdgriffith$elm_ui$Element$padding((author$project$View$unit / 2) | 0),
+							mdgriffith$elm_ui$Element$spacing((author$project$View$unit / 4) | 0)
+						]),
+					_List_fromArray(
+						[
+							function () {
+							var _n1 = prediction.tripHeadsign;
+							if (_n1.$ === 'Nothing') {
+								return A2(
+									mdgriffith$elm_ui$Element$el,
+									_List_fromArray(
+										[
+											mdgriffith$elm_ui$Element$Font$size(16)
+										]),
+									mdgriffith$elm_ui$Element$text(prediction.routeName));
+							} else {
+								var headsign = _n1.a;
+								return A2(
+									mdgriffith$elm_ui$Element$row,
+									_List_Nil,
+									_List_fromArray(
+										[
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											_List_fromArray(
+												[
+													mdgriffith$elm_ui$Element$Font$size(16)
+												]),
+											mdgriffith$elm_ui$Element$text(prediction.routeName)),
+											mdgriffith$elm_ui$Element$text(' - '),
+											mdgriffith$elm_ui$Element$text(headsign)
+										]));
+							}
+						}(),
+							function () {
+							var _n2 = prediction.scheduledTime;
+							if (_n2.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var scheduledTime = _n2.a;
+								var scheduledTimeString = author$project$View$absoluteTimeString(scheduledTime);
+								var predictedTimeString = author$project$View$absoluteTimeString(prediction.time);
+								return A2(
+									mdgriffith$elm_ui$Element$row,
+									_List_fromArray(
+										[
+											mdgriffith$elm_ui$Element$spacing((author$project$View$unit / 2) | 0)
+										]),
+									_List_fromArray(
+										[
+											mdgriffith$elm_ui$Element$text('Sched:'),
+											A2(
+											mdgriffith$elm_ui$Element$el,
+											(!_Utils_eq(predictedTimeString, scheduledTimeString)) ? _List_fromArray(
+												[mdgriffith$elm_ui$Element$Font$strike]) : _List_Nil,
+											mdgriffith$elm_ui$Element$text(scheduledTimeString)),
+											(!_Utils_eq(predictedTimeString, scheduledTimeString)) ? mdgriffith$elm_ui$Element$text(predictedTimeString) : mdgriffith$elm_ui$Element$none
+										]));
+							}
+						}(),
+							function () {
+							var _n3 = prediction.vehicleLabel;
+							if (_n3.$ === 'Nothing') {
+								return mdgriffith$elm_ui$Element$none;
+							} else {
+								var vehicleLabel = _n3.a;
+								return A2(
+									mdgriffith$elm_ui$Element$el,
+									_List_Nil,
+									mdgriffith$elm_ui$Element$text(vehicleLabel));
+							}
+						}()
+						]))
 				]));
-	});
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var elm$core$String$cons = _String_cons;
-var elm$core$String$fromChar = function (_char) {
-	return A2(elm$core$String$cons, _char, '');
-};
-var elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
-var elm$core$String$repeatHelp = F3(
-	function (n, chunk, result) {
-		return (n <= 0) ? result : A3(
-			elm$core$String$repeatHelp,
-			n >> 1,
-			_Utils_ap(chunk, chunk),
-			(!(n & 1)) ? result : _Utils_ap(result, chunk));
-	});
-var elm$core$String$repeat = F2(
-	function (n, chunk) {
-		return A3(elm$core$String$repeatHelp, n, chunk, '');
-	});
-var elm$core$String$padLeft = F3(
-	function (n, _char, string) {
-		return _Utils_ap(
-			A2(
-				elm$core$String$repeat,
-				n - elm$core$String$length(string),
-				elm$core$String$fromChar(_char)),
-			string);
-	});
-var author$project$View$predictionTimeString = F2(
-	function (currentTime, prediction) {
-		var differenceMillis = elm$time$Time$posixToMillis(prediction.time) - elm$time$Time$posixToMillis(currentTime);
-		var differenceSecs = (differenceMillis / 1000) | 0;
-		var sign = (differenceSecs < 0) ? '-' : '';
-		var absSecs = elm$core$Basics$abs(differenceSecs);
-		var displayMins = elm$core$String$fromInt((absSecs / 60) | 0);
-		var displaySecs = A3(
-			elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			elm$core$String$fromInt(absSecs % 60));
-		return sign + (displayMins + (':' + displaySecs));
 	});
 var pzp1997$assoc_list$AssocList$get = F2(
 	function (targetKey, _n0) {
@@ -21844,6 +22564,16 @@ var pzp1997$assoc_list$AssocList$get = F2(
 			}
 		}
 	});
+var author$project$Mbta$Api$getIncludedRoute = F2(
+	function (routeId, _n0) {
+		var data = _n0.a;
+		return A2(pzp1997$assoc_list$AssocList$get, routeId, data.included.routes);
+	});
+var author$project$Mbta$Api$getIncludedSchedule = F2(
+	function (scheduleId, _n0) {
+		var data = _n0.a;
+		return A2(pzp1997$assoc_list$AssocList$get, scheduleId, data.included.schedules);
+	});
 var author$project$Mbta$Api$getIncludedStopStop = F2(
 	function (stopId, _n0) {
 		var data = _n0.a;
@@ -21865,6 +22595,61 @@ var author$project$Mbta$Api$getIncludedVehicle = F2(
 		var data = _n0.a;
 		return A2(pzp1997$assoc_list$AssocList$get, vehicleId, data.included.vehicles);
 	});
+var author$project$Mbta$Extra$routeAbbreviation = function (route) {
+	var _n0 = route.shortName;
+	if (_n0.$ === 'Just') {
+		var shortName = _n0.a;
+		return elm$core$Maybe$Just(shortName);
+	} else {
+		var _n1 = route.id;
+		switch (_n1.a) {
+			case 'Red':
+				return elm$core$Maybe$Just('RL');
+			case 'Orange':
+				return elm$core$Maybe$Just('OL');
+			case 'Blue':
+				return elm$core$Maybe$Just('BL');
+			case 'Green-B':
+				return elm$core$Maybe$Just('B');
+			case 'Green-C':
+				return elm$core$Maybe$Just('C');
+			case 'Green-D':
+				return elm$core$Maybe$Just('D');
+			case 'Green-E':
+				return elm$core$Maybe$Just('E');
+			case '746':
+				return elm$core$Maybe$Just('SLW');
+			case 'CR-Fairmount':
+				return elm$core$Maybe$Just('FMT');
+			case 'CR-Fitchburg':
+				return elm$core$Maybe$Just('FIT');
+			case 'CR-Worcester':
+				return elm$core$Maybe$Just('WOR');
+			case 'CR-Franklin':
+				return elm$core$Maybe$Just('FRK');
+			case 'CR-Greenbush':
+				return elm$core$Maybe$Just('GRN');
+			case 'CR-Haverhill':
+				return elm$core$Maybe$Just('HVL');
+			case 'CR-Kingston':
+				return elm$core$Maybe$Just('KIN');
+			case 'CR-Lowell':
+				return elm$core$Maybe$Just('LWL');
+			case 'CR-Middleborough':
+				return elm$core$Maybe$Just('MID');
+			case 'CR-Needham':
+				return elm$core$Maybe$Just('NDM');
+			case 'CR-Newburyport':
+				return elm$core$Maybe$Just('NEW');
+			case 'CR-Providence':
+				return elm$core$Maybe$Just('PRO');
+			case 'CR-Foxboro':
+				return elm$core$Maybe$Just('FXB');
+			default:
+				return elm$core$Maybe$Nothing;
+		}
+	}
+};
 var author$project$ViewModel$predictionMatchesDirection = F2(
 	function (selectionDirection, prediction) {
 		if (selectionDirection.$ === 'Nothing') {
@@ -21874,9 +22659,27 @@ var author$project$ViewModel$predictionMatchesDirection = F2(
 			return _Utils_eq(prediction.directionId, directionId);
 		}
 	});
+var elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
 var author$project$ViewModel$predictionMatchesRouteId = F2(
-	function (routeId, prediction) {
-		return _Utils_eq(prediction.routeId, routeId);
+	function (routeIds, prediction) {
+		return A2(elm$core$List$member, prediction.routeId, routeIds);
+	});
+var elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
 	});
 var author$project$ViewModel$predictionMatchesStop = F3(
 	function (dataWithStopsIncluded, queriedStop, prediction) {
@@ -21892,37 +22695,112 @@ var author$project$ViewModel$predictionMatchesStop = F3(
 				elm$core$Maybe$Just(queriedStop));
 		}();
 	});
+var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var elm$core$Debug$todo = _Debug_todo;
+var elm_community$maybe_extra$Maybe$Extra$or = F2(
+	function (ma, mb) {
+		if (ma.$ === 'Nothing') {
+			return mb;
+		} else {
+			return ma;
+		}
+	});
+var elm_community$maybe_extra$Maybe$Extra$orElse = F2(
+	function (ma, mb) {
+		if (mb.$ === 'Nothing') {
+			return ma;
+		} else {
+			return mb;
+		}
+	});
 var author$project$ViewModel$predictionsForSelection = F2(
 	function (data, selection) {
 		var predictions = author$project$Mbta$Api$getPrimaryData(data);
 		return A2(
 			elm$core$List$map,
 			function (prediction) {
+				var route = A2(author$project$Mbta$Api$getIncludedRoute, prediction.routeId, data);
+				var shouldShowSchedule = function () {
+					if (route.$ === 'Nothing') {
+						return true;
+					} else {
+						var routeType = route.a.routeType;
+						return A2(
+							elm$core$List$member,
+							routeType,
+							_List_fromArray(
+								[author$project$Mbta$RouteType_2_CommuterRail, author$project$Mbta$RouteType_3_Bus, author$project$Mbta$RouteType_4_Ferry]));
+					}
+				}();
 				return {
+					backgroundColor: A2(
+						elm$core$Maybe$withDefault,
+						avh4$elm_color$Color$white,
+						A2(
+							elm$core$Maybe$map,
+							function ($) {
+								return $.color;
+							},
+							route)),
 					platformCode: A2(
 						elm$core$Maybe$andThen,
 						function ($) {
 							return $.platformCode;
 						},
 						A2(author$project$Mbta$Api$getIncludedStopStop, prediction.stopId, data)),
+					routeName: A2(
+						elm$core$Maybe$withDefault,
+						function () {
+							var _n0 = prediction.routeId;
+							var routeId = _n0.a;
+							return routeId;
+						}(),
+						A2(
+							elm_community$maybe_extra$Maybe$Extra$orElse,
+							A2(
+								elm$core$Maybe$map,
+								function ($) {
+									return $.longName;
+								},
+								route),
+							A2(elm$core$Maybe$andThen, author$project$Mbta$Extra$routeAbbreviation, route))),
+					scheduledTime: shouldShowSchedule ? A2(
+						elm$core$Maybe$andThen,
+						function (schedule) {
+							return A2(elm_community$maybe_extra$Maybe$Extra$or, schedule.departureTime, schedule.arrivalTime);
+						},
+						A2(
+							elm$core$Maybe$andThen,
+							function (scheduleId) {
+								return A2(author$project$Mbta$Api$getIncludedSchedule, scheduleId, data);
+							},
+							prediction.scheduleId)) : elm$core$Maybe$Nothing,
+					textColor: A2(
+						elm$core$Maybe$withDefault,
+						avh4$elm_color$Color$black,
+						A2(
+							elm$core$Maybe$map,
+							function ($) {
+								return $.textColor;
+							},
+							route)),
 					time: function () {
-						var _n0 = _Utils_Tuple2(prediction.arrivalTime, prediction.departureTime);
-						if (_n0.b.$ === 'Just') {
-							var departureTime = _n0.b.a;
+						var _n1 = _Utils_Tuple2(prediction.arrivalTime, prediction.departureTime);
+						if (_n1.b.$ === 'Just') {
+							var departureTime = _n1.b.a;
 							return departureTime;
 						} else {
-							if (_n0.a.$ === 'Just') {
-								var arrivalTime = _n0.a.a;
+							if (_n1.a.$ === 'Just') {
+								var arrivalTime = _n1.a.a;
 								return arrivalTime;
 							} else {
-								var _n1 = _n0.a;
-								var _n2 = _n0.b;
+								var _n2 = _n1.a;
+								var _n3 = _n1.b;
 								return _Debug_todo(
 									'ViewModel',
 									{
-										start: {line: 42, column: 29},
-										end: {line: 42, column: 39}
+										start: {line: 65, column: 29},
+										end: {line: 65, column: 39}
 									})('prediction missing arrival and departure times');
 							}
 						}
@@ -21960,10 +22838,9 @@ var author$project$ViewModel$predictionsForSelection = F2(
 					A2(author$project$ViewModel$predictionMatchesStop, data, selection.stopId),
 					A2(
 						elm$core$List$filter,
-						author$project$ViewModel$predictionMatchesRouteId(selection.routeId),
+						author$project$ViewModel$predictionMatchesRouteId(selection.routeIds),
 						predictions))));
 	});
-var elm$core$List$sortBy = _List_sortBy;
 var elm$core$List$takeReverse = F3(
 	function (n, list, kept) {
 		takeReverse:
@@ -22090,269 +22967,6 @@ var elm$core$List$take = F2(
 	function (n, list) {
 		return A3(elm$core$List$takeFast, 0, n, list);
 	});
-var mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
-var mdgriffith$elm_ui$Element$alignRight = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$Right);
-var mdgriffith$elm_ui$Element$spacingXY = F2(
-	function (x, y) {
-		return A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$spacing,
-			A3(
-				mdgriffith$elm_ui$Internal$Model$SpacingStyle,
-				A2(mdgriffith$elm_ui$Internal$Model$spacingName, x, y),
-				x,
-				y));
-	});
-var mdgriffith$elm_ui$Element$InternalColumn = function (a) {
-	return {$: 'InternalColumn', a: a};
-};
-var elm$core$List$all = F2(
-	function (isOkay, list) {
-		return !A2(
-			elm$core$List$any,
-			A2(elm$core$Basics$composeL, elm$core$Basics$not, isOkay),
-			list);
-	});
-var elm$core$List$repeatHelp = F3(
-	function (result, n, value) {
-		repeatHelp:
-		while (true) {
-			if (n <= 0) {
-				return result;
-			} else {
-				var $temp$result = A2(elm$core$List$cons, value, result),
-					$temp$n = n - 1,
-					$temp$value = value;
-				result = $temp$result;
-				n = $temp$n;
-				value = $temp$value;
-				continue repeatHelp;
-			}
-		}
-	});
-var elm$core$List$repeat = F2(
-	function (n, value) {
-		return A3(elm$core$List$repeatHelp, _List_Nil, n, value);
-	});
-var mdgriffith$elm_ui$Internal$Flag$gridPosition = mdgriffith$elm_ui$Internal$Flag$flag(35);
-var mdgriffith$elm_ui$Internal$Flag$gridTemplate = mdgriffith$elm_ui$Internal$Flag$flag(34);
-var mdgriffith$elm_ui$Internal$Model$GridPosition = function (a) {
-	return {$: 'GridPosition', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$GridTemplateStyle = function (a) {
-	return {$: 'GridTemplateStyle', a: a};
-};
-var mdgriffith$elm_ui$Internal$Model$AsGrid = {$: 'AsGrid'};
-var mdgriffith$elm_ui$Internal$Model$asGrid = mdgriffith$elm_ui$Internal$Model$AsGrid;
-var mdgriffith$elm_ui$Internal$Model$getSpacing = F2(
-	function (attrs, _default) {
-		return A2(
-			elm$core$Maybe$withDefault,
-			_default,
-			A3(
-				elm$core$List$foldr,
-				F2(
-					function (attr, acc) {
-						if (acc.$ === 'Just') {
-							var x = acc.a;
-							return elm$core$Maybe$Just(x);
-						} else {
-							if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
-								var _n2 = attr.b;
-								var x = _n2.b;
-								var y = _n2.c;
-								return elm$core$Maybe$Just(
-									_Utils_Tuple2(x, y));
-							} else {
-								return elm$core$Maybe$Nothing;
-							}
-						}
-					}),
-				elm$core$Maybe$Nothing,
-				attrs));
-	});
-var mdgriffith$elm_ui$Element$tableHelper = F2(
-	function (attrs, config) {
-		var onGrid = F3(
-			function (rowLevel, columnLevel, elem) {
-				return A4(
-					mdgriffith$elm_ui$Internal$Model$element,
-					mdgriffith$elm_ui$Internal$Model$asEl,
-					mdgriffith$elm_ui$Internal$Model$div,
-					_List_fromArray(
-						[
-							A2(
-							mdgriffith$elm_ui$Internal$Model$StyleClass,
-							mdgriffith$elm_ui$Internal$Flag$gridPosition,
-							mdgriffith$elm_ui$Internal$Model$GridPosition(
-								{col: columnLevel, height: 1, row: rowLevel, width: 1}))
-						]),
-					mdgriffith$elm_ui$Internal$Model$Unkeyed(
-						_List_fromArray(
-							[elem])));
-			});
-		var columnWidth = function (col) {
-			if (col.$ === 'InternalIndexedColumn') {
-				var colConfig = col.a;
-				return colConfig.width;
-			} else {
-				var colConfig = col.a;
-				return colConfig.width;
-			}
-		};
-		var columnHeader = function (col) {
-			if (col.$ === 'InternalIndexedColumn') {
-				var colConfig = col.a;
-				return colConfig.header;
-			} else {
-				var colConfig = col.a;
-				return colConfig.header;
-			}
-		};
-		var maybeHeaders = function (headers) {
-			return A2(
-				elm$core$List$all,
-				elm$core$Basics$eq(mdgriffith$elm_ui$Internal$Model$Empty),
-				headers) ? elm$core$Maybe$Nothing : elm$core$Maybe$Just(
-				A2(
-					elm$core$List$indexedMap,
-					F2(
-						function (col, header) {
-							return A3(onGrid, 1, col + 1, header);
-						}),
-					headers));
-		}(
-			A2(elm$core$List$map, columnHeader, config.columns));
-		var add = F3(
-			function (cell, columnConfig, cursor) {
-				if (columnConfig.$ === 'InternalIndexedColumn') {
-					var col = columnConfig.a;
-					return _Utils_update(
-						cursor,
-						{
-							column: cursor.column + 1,
-							elements: A2(
-								elm$core$List$cons,
-								A3(
-									onGrid,
-									cursor.row,
-									cursor.column,
-									A2(
-										col.view,
-										_Utils_eq(maybeHeaders, elm$core$Maybe$Nothing) ? (cursor.row - 1) : (cursor.row - 2),
-										cell)),
-								cursor.elements)
-						});
-				} else {
-					var col = columnConfig.a;
-					return {
-						column: cursor.column + 1,
-						elements: A2(
-							elm$core$List$cons,
-							A3(
-								onGrid,
-								cursor.row,
-								cursor.column,
-								col.view(cell)),
-							cursor.elements),
-						row: cursor.row
-					};
-				}
-			});
-		var build = F3(
-			function (columns, rowData, cursor) {
-				var newCursor = A3(
-					elm$core$List$foldl,
-					add(rowData),
-					cursor,
-					columns);
-				return {column: 1, elements: newCursor.elements, row: cursor.row + 1};
-			});
-		var children = A3(
-			elm$core$List$foldl,
-			build(config.columns),
-			{
-				column: 1,
-				elements: _List_Nil,
-				row: _Utils_eq(maybeHeaders, elm$core$Maybe$Nothing) ? 1 : 2
-			},
-			config.data);
-		var _n0 = A2(
-			mdgriffith$elm_ui$Internal$Model$getSpacing,
-			attrs,
-			_Utils_Tuple2(0, 0));
-		var sX = _n0.a;
-		var sY = _n0.b;
-		var template = A2(
-			mdgriffith$elm_ui$Internal$Model$StyleClass,
-			mdgriffith$elm_ui$Internal$Flag$gridTemplate,
-			mdgriffith$elm_ui$Internal$Model$GridTemplateStyle(
-				{
-					columns: A2(elm$core$List$map, columnWidth, config.columns),
-					rows: A2(
-						elm$core$List$repeat,
-						elm$core$List$length(config.data),
-						mdgriffith$elm_ui$Internal$Model$Content),
-					spacing: _Utils_Tuple2(
-						mdgriffith$elm_ui$Element$px(sX),
-						mdgriffith$elm_ui$Element$px(sY))
-				}));
-		return A4(
-			mdgriffith$elm_ui$Internal$Model$element,
-			mdgriffith$elm_ui$Internal$Model$asGrid,
-			mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				elm$core$List$cons,
-				mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-				A2(elm$core$List$cons, template, attrs)),
-			mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				function () {
-					if (maybeHeaders.$ === 'Nothing') {
-						return children.elements;
-					} else {
-						var renderedHeaders = maybeHeaders.a;
-						return _Utils_ap(
-							renderedHeaders,
-							elm$core$List$reverse(children.elements));
-					}
-				}()));
-	});
-var mdgriffith$elm_ui$Element$table = F2(
-	function (attrs, config) {
-		return A2(
-			mdgriffith$elm_ui$Element$tableHelper,
-			attrs,
-			{
-				columns: A2(elm$core$List$map, mdgriffith$elm_ui$Element$InternalColumn, config.columns),
-				data: config.data
-			});
-	});
-var mdgriffith$elm_ui$Internal$Model$VariantActive = function (a) {
-	return {$: 'VariantActive', a: a};
-};
-var mdgriffith$elm_ui$Element$Font$tabularNumbers = mdgriffith$elm_ui$Internal$Model$VariantActive('tnum');
-var mdgriffith$elm_ui$Internal$Flag$fontVariant = mdgriffith$elm_ui$Internal$Flag$flag(48);
-var mdgriffith$elm_ui$Element$Font$variant = function (_var) {
-	switch (_var.$) {
-		case 'VariantActive':
-			var name = _var.a;
-			return A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontVariant, 'v-' + name);
-		case 'VariantOff':
-			var name = _var.a;
-			return A2(mdgriffith$elm_ui$Internal$Model$Class, mdgriffith$elm_ui$Internal$Flag$fontVariant, 'v-' + (name + '-off'));
-		default:
-			var name = _var.a;
-			var index = _var.b;
-			return A2(
-				mdgriffith$elm_ui$Internal$Model$StyleClass,
-				mdgriffith$elm_ui$Internal$Flag$fontVariant,
-				A3(
-					mdgriffith$elm_ui$Internal$Model$Single,
-					'v-' + (name + ('-' + elm$core$String$fromInt(index))),
-					'font-feature-settings',
-					'\"' + (name + ('\" ' + elm$core$String$fromInt(index)))));
-	}
-};
 var author$project$View$viewPredictions = F3(
 	function (currentTime, data, selection) {
 		var predictions = A2(
@@ -22367,130 +22981,34 @@ var author$project$View$viewPredictions = F3(
 					},
 					elm$time$Time$posixToMillis),
 				A2(author$project$ViewModel$predictionsForSelection, data, selection)));
-		return elm$core$List$isEmpty(predictions) ? A2(
-			mdgriffith$elm_ui$Element$el,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$padding(author$project$View$unit)
-				]),
-			mdgriffith$elm_ui$Element$text('---')) : A2(
-			mdgriffith$elm_ui$Element$table,
-			_List_fromArray(
-				[
-					mdgriffith$elm_ui$Element$padding(author$project$View$unit),
-					A2(mdgriffith$elm_ui$Element$spacingXY, author$project$View$unit, 0)
-				]),
-			{
-				columns: _List_fromArray(
-					[
-						{
-						header: mdgriffith$elm_ui$Element$none,
-						view: function (prediction) {
-							return A2(
-								mdgriffith$elm_ui$Element$el,
-								_List_Nil,
-								A2(
-									mdgriffith$elm_ui$Element$el,
-									_List_fromArray(
-										[
-											mdgriffith$elm_ui$Element$Font$variant(mdgriffith$elm_ui$Element$Font$tabularNumbers),
-											mdgriffith$elm_ui$Element$alignRight
-										]),
-									mdgriffith$elm_ui$Element$text(
-										A2(author$project$View$predictionTimeString, currentTime, prediction))));
-						},
-						width: mdgriffith$elm_ui$Element$shrink
-					},
-						{
-						header: mdgriffith$elm_ui$Element$none,
-						view: function (prediction) {
-							var _n0 = prediction.platformCode;
-							if (_n0.$ === 'Nothing') {
-								return mdgriffith$elm_ui$Element$none;
-							} else {
-								var platformCode = _n0.a;
-								return mdgriffith$elm_ui$Element$text(platformCode);
-							}
-						},
-						width: mdgriffith$elm_ui$Element$shrink
-					},
-						{
-						header: mdgriffith$elm_ui$Element$none,
-						view: function (prediction) {
-							var _n1 = prediction.vehicleLabel;
-							if (_n1.$ === 'Nothing') {
-								return mdgriffith$elm_ui$Element$none;
-							} else {
-								var vehicleLabel = _n1.a;
-								return A2(
-									mdgriffith$elm_ui$Element$el,
-									_List_fromArray(
-										[
-											mdgriffith$elm_ui$Element$Font$size(author$project$View$fontSmall)
-										]),
-									mdgriffith$elm_ui$Element$text(vehicleLabel));
-							}
-						},
-						width: mdgriffith$elm_ui$Element$shrink
-					},
-						{
-						header: mdgriffith$elm_ui$Element$none,
-						view: function (prediction) {
-							var _n2 = prediction.tripHeadsign;
-							if (_n2.$ === 'Nothing') {
-								return mdgriffith$elm_ui$Element$none;
-							} else {
-								var headsign = _n2.a;
-								return mdgriffith$elm_ui$Element$text(headsign);
-							}
-						},
-						width: mdgriffith$elm_ui$Element$fill
-					}
-					]),
-				data: predictions
-			});
-	});
-var avh4$elm_color$Color$white = A4(avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
-var author$project$View$viewSelection = F5(
-	function (currentTime, route, stop, data, selection) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill),
-					mdgriffith$elm_ui$Element$Border$width(1),
-					mdgriffith$elm_ui$Element$Border$rounded(4),
-					mdgriffith$elm_ui$Element$Background$color(
-					author$project$View$avh4ColorToElmUiColor(
-						A2(
-							elm$core$Maybe$withDefault,
-							avh4$elm_color$Color$white,
-							A2(
-								elm$core$Maybe$map,
-								function ($) {
-									return $.color;
-								},
-								route)))),
-					mdgriffith$elm_ui$Element$Font$color(
-					author$project$View$avh4ColorToElmUiColor(
-						A2(
-							elm$core$Maybe$withDefault,
-							avh4$elm_color$Color$black,
-							A2(
-								elm$core$Maybe$map,
-								function ($) {
-									return $.textColor;
-								},
-								route))))
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
+				]),
+			elm$core$List$isEmpty(predictions) ? _List_fromArray(
+				[author$project$View$emptyPrediction]) : A2(
+				elm$core$List$indexedMap,
+				author$project$View$viewPrediction(currentTime),
+				predictions));
+	});
+var author$project$View$viewSelection = F4(
+	function (currentTime, stop, data, selection) {
+		return A2(
+			mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					mdgriffith$elm_ui$Element$width(mdgriffith$elm_ui$Element$fill)
 				]),
 			_List_fromArray(
 				[
-					A3(author$project$View$selectionHeading, route, stop, selection),
+					A2(author$project$View$selectionHeading, stop, selection),
 					A3(author$project$View$viewPredictions, currentTime, data, selection)
 				]));
 	});
-var author$project$View$viewSelections = F5(
-	function (currentTime, selections, routes, stops, data) {
+var author$project$View$viewSelections = F4(
+	function (currentTime, selections, stops, data) {
 		return A2(
 			mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
@@ -22502,15 +23020,11 @@ var author$project$View$viewSelections = F5(
 				elm$core$List$map,
 				function (selection) {
 					var stop = A2(pzp1997$assoc_list$AssocList$get, selection.stopId, stops);
-					var route = A2(pzp1997$assoc_list$AssocList$get, selection.routeId, routes);
-					return A5(author$project$View$viewSelection, currentTime, route, stop, data, selection);
+					return A4(author$project$View$viewSelection, currentTime, stop, data, selection);
 				},
 				selections));
 	});
-var avh4$elm_color$Color$charcoal = A4(avh4$elm_color$Color$RgbaSpace, 85 / 255, 87 / 255, 83 / 255, 1.0);
 var elm$core$Debug$toString = _Debug_toString;
-var mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var mdgriffith$elm_ui$Element$centerX = mdgriffith$elm_ui$Internal$Model$AlignX(mdgriffith$elm_ui$Internal$Model$CenterX);
 var mdgriffith$elm_ui$Internal$Model$Max = F2(
 	function (a, b) {
 		return {$: 'Max', a: a, b: b};
@@ -22557,7 +23071,7 @@ var author$project$View$ui = function (model) {
 					var data = _n0.a.a;
 					return _List_fromArray(
 						[
-							A5(author$project$View$viewSelections, model.currentTime, model.selections, model.routes, model.stops, data),
+							A4(author$project$View$viewSelections, model.currentTime, model.selections, model.stops, data),
 							author$project$View$addSelectionForm(model),
 							author$project$View$refreshButton(model)
 						]);
@@ -22851,4 +23365,4 @@ var author$project$View$view = function (model) {
 var elm$browser$Browser$application = _Browser_application;
 var author$project$Main$main = elm$browser$Browser$application(
 	{init: author$project$Main$init, onUrlChange: author$project$Model$OnUrlChange, onUrlRequest: author$project$Model$OnUrlRequest, subscriptions: author$project$Main$subscriptions, update: author$project$Main$update, view: author$project$View$view});
-_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Data.Selection":{"args":[],"type":"{ routeId : Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Mbta.DirectionId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':author$project$Main$main(elm$json$Json$Decode$value)({"versions":{"elm":"0.19.0"},"types":{"message":"Model.Msg","aliases":{"Data.Selection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Data.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"TypeDirection":["Maybe.Maybe Mbta.DirectionId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"String.String":{"args":[],"tags":{"String":[]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
