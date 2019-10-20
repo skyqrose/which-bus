@@ -3,7 +3,9 @@ module ViewModel exposing
     , predictionsForSelection
     )
 
+import Color
 import Data exposing (Selection)
+import Maybe.Extra
 import Mbta
 import Mbta.Api
 import Mbta.Extra
@@ -16,6 +18,8 @@ type alias ShownPrediction =
     , tripHeadsign : Maybe String
     , platformCode : Maybe String
     , vehicleLabel : Maybe String
+    , backgroundColor : Color.Color
+    , textColor : Color.Color
     }
 
 
@@ -32,6 +36,11 @@ predictionsForSelection data selection =
         |> List.filter (predictionMatchesDirection selection.directionId)
         |> List.map
             (\prediction ->
+                let
+                    route : Maybe Mbta.Route
+                    route =
+                        Mbta.Api.getIncludedRoute prediction.routeId data
+                in
                 { time =
                     case ( prediction.arrivalTime, prediction.departureTime ) of
                         ( _, Just departureTime ) ->
@@ -43,13 +52,9 @@ predictionsForSelection data selection =
                         ( Nothing, Nothing ) ->
                             Debug.todo "prediction missing arrival and departure times"
                 , routeName =
-                    data
-                        |> Mbta.Api.getIncludedRoute prediction.routeId
-                        |> Maybe.map
-                            (\route ->
-                                Mbta.Extra.routeAbbreviation route
-                                    |> Maybe.withDefault route.longName
-                            )
+                    route
+                        |> Maybe.andThen Mbta.Extra.routeAbbreviation
+                        |> Maybe.Extra.orElse (Maybe.map .longName route)
                         |> Maybe.withDefault
                             (case prediction.routeId of
                                 Mbta.RouteId routeId ->
@@ -76,6 +81,14 @@ predictionsForSelection data selection =
                                     )
                         )
                         prediction.vehicleId
+                , backgroundColor =
+                    route
+                        |> Maybe.map .color
+                        |> Maybe.withDefault Color.white
+                , textColor =
+                    route
+                        |> Maybe.map .textColor
+                        |> Maybe.withDefault Color.black
                 }
             )
 

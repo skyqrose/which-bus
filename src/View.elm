@@ -58,7 +58,6 @@ ui model =
                 [ viewSelections
                     model.currentTime
                     model.selections
-                    model.routes
                     model.stops
                     data
                 , addSelectionForm model
@@ -67,8 +66,8 @@ ui model =
         )
 
 
-viewSelections : Time.Posix -> List Selection -> Dict Mbta.RouteId Mbta.Route -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
-viewSelections currentTime selections routes stops data =
+viewSelections : Time.Posix -> List Selection -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
+viewSelections currentTime selections stops data =
     El.column
         [ El.spacing unit
         , El.width El.fill
@@ -76,36 +75,19 @@ viewSelections currentTime selections routes stops data =
         (List.map
             (\selection ->
                 let
-                    route =
-                        Dict.get selection.routeId routes
-
                     stop =
                         Dict.get selection.stopId stops
                 in
-                viewSelection currentTime route stop data selection
+                viewSelection currentTime stop data selection
             )
             selections
         )
 
 
-viewSelection : Time.Posix -> Maybe Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
-viewSelection currentTime route stop data selection =
+viewSelection : Time.Posix -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection currentTime stop data selection =
     El.column
         [ El.width El.fill
-        , Border.width 1
-        , Border.rounded 4
-        , Background.color
-            (route
-                |> Maybe.map .color
-                |> Maybe.withDefault Color.white
-                |> avh4ColorToElmUiColor
-            )
-        , Font.color
-            (route
-                |> Maybe.map .textColor
-                |> Maybe.withDefault Color.black
-                |> avh4ColorToElmUiColor
-            )
         ]
         [ selectionHeading stop selection
         , viewPredictions currentTime data selection
@@ -141,6 +123,8 @@ viewPredictions currentTime data selection =
     in
     El.column
         [ El.width El.fill
+        , Border.width 1
+        , Border.rounded 4
         ]
         (if List.isEmpty predictions then
             [ emptyPrediction ]
@@ -175,6 +159,8 @@ viewPrediction currentTime prediction =
             , right = 0
             , top = 1
             }
+        , Background.color (avh4ColorToElmUiColor prediction.backgroundColor)
+        , Font.color (avh4ColorToElmUiColor prediction.textColor)
         ]
         [ El.el
             [ El.width (El.px (unit * 8))
