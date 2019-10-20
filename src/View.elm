@@ -182,17 +182,30 @@ viewPredictions currentTime data selection =
                 |> List.sortBy (.time >> Time.posixToMillis)
                 |> List.take 5
     in
-    if List.isEmpty predictions then
-        El.el
-            [ El.padding unit
-            ]
-            (El.text "---")
+    El.column
+        [ El.width El.fill
+        ]
+        (if List.isEmpty predictions then
+            [ emptyPrediction ]
 
-    else
-        El.column
-            [ El.width El.fill
-            ]
-            (List.map (viewPrediction currentTime) predictions)
+         else
+            List.map (viewPrediction currentTime) predictions
+        )
+
+
+emptyPrediction : El.Element msg
+emptyPrediction =
+    El.el
+        [ El.width El.fill
+        , El.padding unit
+        , Border.widthEach
+            { bottom = 0
+            , left = 0
+            , right = 0
+            , top = 1
+            }
+        ]
+        (El.text "---")
 
 
 viewPrediction : Time.Posix -> ViewModel.ShownPrediction -> El.Element msg
