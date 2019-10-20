@@ -122,9 +122,6 @@ viewPredictions currentTime data selection =
     in
     El.column
         [ El.width El.fill
-        , Border.width 1
-        , Border.rounded 4
-        , El.clip
         ]
         (if List.isEmpty predictions then
             [ emptyPrediction ]
@@ -155,8 +152,9 @@ viewPrediction currentTime index prediction =
                     0
 
                 else
-                    1
+                    4
             }
+        , Border.color (avh4ColorToElmUiColor Color.charcoal)
         , Background.color (avh4ColorToElmUiColor prediction.backgroundColor)
         , Font.color (avh4ColorToElmUiColor prediction.textColor)
         , Font.size 14
