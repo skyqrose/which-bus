@@ -170,15 +170,26 @@ viewPrediction currentTime prediction =
             , Font.variant Font.tabularNumbers
             ]
             (El.text (predictionTimeString currentTime prediction))
+        , El.el
+            [ El.width (El.px (unit * 2))
+            ]
+            (case prediction.platformCode of
+                Nothing ->
+                    El.none
+
+                Just platformCode ->
+                    El.el
+                        [ El.padding (unit // 4)
+                        , El.centerX
+                        , Border.width 1
+                        , Border.rounded 4
+                        , Font.size fontSmall
+                        ]
+                        (El.text platformCode)
+            )
         , El.column
             [ El.height El.fill
             , El.padding (unit // 2)
-            , Border.widthEach
-                { bottom = 0
-                , left = 1
-                , right = 0
-                , top = 0
-                }
             ]
             [ case prediction.tripHeadsign of
                 Nothing ->
@@ -192,12 +203,6 @@ viewPrediction currentTime prediction =
                             , headsign
                             ]
                         )
-            , case prediction.platformCode of
-                Nothing ->
-                    El.none
-
-                Just platformCode ->
-                    El.text platformCode
             , case prediction.vehicleLabel of
                 Nothing ->
                     El.none
