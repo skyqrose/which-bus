@@ -26,7 +26,7 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId"
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
                               , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
@@ -37,7 +37,7 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId"
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
                               , stopId = Mbta.StopId "stopId"
                               , directionId = Just Mbta.D1
                               }
@@ -49,6 +49,17 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             []
+            , test "parses a selection with multiple route ids" <|
+                \_ ->
+                    Just "stop=routeId1.routeId2,stopId,1"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
+                            ]
             , test "doesn't take a selection with too many ids" <|
                 \_ ->
                     Just "stop=one,two,three,four"
@@ -69,11 +80,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId1"
+                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
                               , stopId = Mbta.StopId "stopId1"
                               , directionId = Nothing
                               }
-                            , { routeId = Mbta.RouteId "routeId2"
+                            , { routeIds = [ Mbta.RouteId "routeId2" ]
                               , stopId = Mbta.StopId "stopId2"
                               , directionId = Just Mbta.D0
                               }
@@ -84,7 +95,7 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId"
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
                               , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
@@ -95,7 +106,7 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId"
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
                               , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
@@ -106,7 +117,7 @@ suite =
                         |> fullUrlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeId = Mbta.RouteId "routeId"
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
                               , stopId = Mbta.StopId "stopId"
                               , directionId = Nothing
                               }
