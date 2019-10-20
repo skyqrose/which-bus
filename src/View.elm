@@ -195,62 +195,46 @@ viewPredictions currentTime data selection =
             (El.text "---")
 
     else
-        El.table
-            [ El.padding unit
-            , El.spacingXY unit 0
+        El.column
+            []
+            (List.map (viewPrediction currentTime) predictions)
+
+
+viewPrediction : Time.Posix -> ViewModel.ShownPrediction -> El.Element msg
+viewPrediction currentTime prediction =
+    El.row
+        []
+        [ El.el
+            [ El.width (El.px (unit * 4))
+            , Font.alignRight
+            , Font.variant Font.tabularNumbers
             ]
-            { data = predictions
-            , columns =
-                [ { header = El.none
-                  , width = El.shrink
-                  , view =
-                        \prediction ->
-                            -- Needs two layers of els in order to align right
-                            -- el won't align right directly inside a table cell
-                            El.el [] <|
-                                El.el
-                                    [ Font.variant Font.tabularNumbers
-                                    , El.alignRight
-                                    ]
-                                    (El.text (predictionTimeString currentTime prediction))
-                  }
-                , { header = El.none
-                  , width = El.shrink
-                  , view =
-                        \prediction ->
-                            case prediction.platformCode of
-                                Nothing ->
-                                    El.none
+            (El.text (predictionTimeString currentTime prediction))
+        , El.column
+            [ El.width El.fill
+            ]
+            [ case prediction.tripHeadsign of
+                Nothing ->
+                    El.none
 
-                                Just platformCode ->
-                                    El.text platformCode
-                  }
-                , { header = El.none
-                  , width = El.shrink
-                  , view =
-                        \prediction ->
-                            case prediction.vehicleLabel of
-                                Nothing ->
-                                    El.none
+                Just headsign ->
+                    El.text headsign
+            , case prediction.platformCode of
+                Nothing ->
+                    El.none
 
-                                Just vehicleLabel ->
-                                    El.el
-                                        [ Font.size fontSmall ]
-                                        (El.text vehicleLabel)
-                  }
-                , { header = El.none
-                  , width = El.fill
-                  , view =
-                        \prediction ->
-                            case prediction.tripHeadsign of
-                                Nothing ->
-                                    El.none
+                Just platformCode ->
+                    El.text platformCode
+            , case prediction.vehicleLabel of
+                Nothing ->
+                    El.none
 
-                                Just headsign ->
-                                    El.text headsign
-                  }
-                ]
-            }
+                Just vehicleLabel ->
+                    El.el
+                        [ Font.size fontSmall ]
+                        (El.text vehicleLabel)
+            ]
+        ]
 
 
 predictionTimeString : Time.Posix -> ViewModel.ShownPrediction -> String
