@@ -6,11 +6,13 @@ module ViewModel exposing
 import Data exposing (Selection)
 import Mbta
 import Mbta.Api
+import Mbta.Extra
 import Time
 
 
 type alias ShownPrediction =
     { time : Time.Posix
+    , routeName : String
     , tripHeadsign : Maybe String
     , platformCode : Maybe String
     , vehicleLabel : Maybe String
@@ -40,6 +42,19 @@ predictionsForSelection data selection =
 
                         ( Nothing, Nothing ) ->
                             Debug.todo "prediction missing arrival and departure times"
+                , routeName =
+                    data
+                        |> Mbta.Api.getIncludedRoute prediction.routeId
+                        |> Maybe.map
+                            (\route ->
+                                Mbta.Extra.routeAbbreviation route
+                                    |> Maybe.withDefault route.longName
+                            )
+                        |> Maybe.withDefault
+                            (case prediction.routeId of
+                                Mbta.RouteId routeId ->
+                                    routeId
+                            )
                 , tripHeadsign =
                     data
                         |> Mbta.Api.getIncludedTrip prediction.tripId

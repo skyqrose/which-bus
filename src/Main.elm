@@ -225,6 +225,7 @@ streamPredictions selections =
         [ Mbta.Api.include Mbta.Api.predictionStop
         , Mbta.Api.include Mbta.Api.predictionTrip
         , Mbta.Api.include Mbta.Api.predictionVehicle
+        , Mbta.Api.include Mbta.Api.predictionRoute
         ]
         [ Mbta.Api.filterPredictionsByRouteIds routeIds
         , Mbta.Api.filterPredictionsByStopIds stopIds

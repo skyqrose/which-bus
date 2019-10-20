@@ -239,10 +239,16 @@ viewPrediction currentTime prediction =
             ]
             [ case prediction.tripHeadsign of
                 Nothing ->
-                    El.none
+                    El.text prediction.routeName
 
                 Just headsign ->
-                    El.text headsign
+                    El.text
+                        (String.concat
+                            [ prediction.routeName
+                            , " - "
+                            , headsign
+                            ]
+                        )
             , case prediction.platformCode of
                 Nothing ->
                     El.none
