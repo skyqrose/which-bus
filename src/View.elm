@@ -108,8 +108,6 @@ selectionHeading stop selection =
     in
     El.el
         [ El.padding unit
-        , El.width El.fill
-        , Font.size fontSmall
         ]
         (El.text stopName)
 
@@ -162,6 +160,7 @@ viewPrediction currentTime prediction =
             }
         , Background.color (avh4ColorToElmUiColor prediction.backgroundColor)
         , Font.color (avh4ColorToElmUiColor prediction.textColor)
+        , Font.size 14
         ]
         [ El.el
             [ El.width (El.px (unit * 8))
@@ -184,26 +183,29 @@ viewPrediction currentTime prediction =
                         , El.centerX
                         , Border.width 1
                         , Border.rounded 4
-                        , Font.size fontSmall
                         ]
                         (El.text platformCode)
             )
         , El.column
             [ El.height El.fill
             , El.padding (unit // 2)
+            , El.spacing (unit // 4)
             ]
             [ case prediction.tripHeadsign of
                 Nothing ->
-                    El.text prediction.routeName
+                    El.el
+                        [ Font.size 16 ]
+                        (El.text prediction.routeName)
 
                 Just headsign ->
-                    El.text
-                        (String.concat
-                            [ prediction.routeName
-                            , " - "
-                            , headsign
-                            ]
-                        )
+                    El.row
+                        []
+                        [ El.el
+                            [ Font.size 16 ]
+                            (El.text prediction.routeName)
+                        , El.text " - "
+                        , El.text headsign
+                        ]
             , case prediction.scheduledTime of
                 Nothing ->
                     El.none
@@ -240,7 +242,7 @@ viewPrediction currentTime prediction =
 
                 Just vehicleLabel ->
                     El.el
-                        [ Font.size fontSmall ]
+                        []
                         (El.text vehicleLabel)
             ]
         ]
@@ -397,11 +399,6 @@ avh4ColorToElmUiColor avh4Color =
 unit : Int
 unit =
     16
-
-
-fontSmall : Int
-fontSmall =
-    14
 
 
 buttonStyles : List (El.Attribute msg)
