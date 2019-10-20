@@ -165,12 +165,6 @@ selectionHeading route stop selection =
     El.column
         [ El.padding unit
         , El.width El.fill
-        , Border.widthEach
-            { bottom = 1
-            , left = 0
-            , right = 0
-            , top = 0
-            }
         ]
         [ El.row []
             [ El.text routeName
@@ -196,22 +190,39 @@ viewPredictions currentTime data selection =
 
     else
         El.column
-            []
+            [ El.width El.fill
+            ]
             (List.map (viewPrediction currentTime) predictions)
 
 
 viewPrediction : Time.Posix -> ViewModel.ShownPrediction -> El.Element msg
 viewPrediction currentTime prediction =
     El.row
-        []
+        [ El.width El.fill
+        , Border.widthEach
+            { bottom = 0
+            , left = 0
+            , right = 0
+            , top = 1
+            }
+        ]
         [ El.el
-            [ El.width (El.px (unit * 4))
+            [ El.width (El.px (unit * 8))
+            , El.padding (unit // 2)
+            , Font.size 36
             , Font.alignRight
             , Font.variant Font.tabularNumbers
             ]
             (El.text (predictionTimeString currentTime prediction))
         , El.column
             [ El.width El.fill
+            , El.padding (unit // 2)
+            , Border.widthEach
+                { bottom = 0
+                , left = 1
+                , right = 0
+                , top = 0
+                }
             ]
             [ case prediction.tripHeadsign of
                 Nothing ->
