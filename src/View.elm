@@ -13,6 +13,7 @@ import Mbta
 import Mbta.Api
 import Model exposing (..)
 import Time
+import TimeZone
 import ViewModel
 
 
@@ -203,6 +204,12 @@ viewPrediction currentTime prediction =
                             , headsign
                             ]
                         )
+            , case prediction.scheduledTime of
+                Nothing ->
+                    El.none
+
+                Just scheduledTime ->
+                    El.text ("Sched: " ++ absoluteTimeString scheduledTime)
             , case prediction.vehicleLabel of
                 Nothing ->
                     El.none
@@ -244,6 +251,20 @@ predictionTimeString currentTime prediction =
                 |> String.padLeft 2 '0'
     in
     sign ++ displayMins ++ ":" ++ displaySecs
+
+
+absoluteTimeString : Time.Posix -> String
+absoluteTimeString time =
+    String.concat
+        [ time |> Time.toHour timeZone |> String.fromInt |> String.padLeft 2 '0'
+        , ":"
+        , time |> Time.toMinute timeZone |> String.fromInt |> String.padLeft 2 '0'
+        ]
+
+
+timeZone : Time.Zone
+timeZone =
+    TimeZone.america__new_york ()
 
 
 addSelectionForm : Model -> Element Msg

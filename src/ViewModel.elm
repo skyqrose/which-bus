@@ -18,6 +18,7 @@ type alias ShownPrediction =
     , tripHeadsign : Maybe String
     , platformCode : Maybe String
     , vehicleLabel : Maybe String
+    , scheduledTime : Maybe Time.Posix
     , backgroundColor : Color.Color
     , textColor : Color.Color
     }
@@ -40,6 +41,17 @@ predictionsForSelection data selection =
                     route : Maybe Mbta.Route
                     route =
                         Mbta.Api.getIncludedRoute prediction.routeId data
+
+                    shouldShowSchedule : Bool
+                    shouldShowSchedule =
+                        case route of
+                            Nothing ->
+                                True
+
+                            Just { routeType } ->
+                                List.member
+                                    routeType
+                                    [ Mbta.RouteType_2_CommuterRail, Mbta.RouteType_3_Bus, Mbta.RouteType_4_Ferry ]
                 in
                 { time =
                     case ( prediction.arrivalTime, prediction.departureTime ) of
@@ -81,6 +93,20 @@ predictionsForSelection data selection =
                                     )
                         )
                         prediction.vehicleId
+                , scheduledTime =
+                    if shouldShowSchedule then
+                        prediction.scheduleId
+                            |> Maybe.andThen
+                                (\scheduleId ->
+                                    Mbta.Api.getIncludedSchedule scheduleId data
+                                )
+                            |> Maybe.andThen
+                                (\schedule ->
+                                    Maybe.Extra.or schedule.departureTime schedule.arrivalTime
+                                )
+
+                    else
+                        Nothing
                 , backgroundColor =
                     route
                         |> Maybe.map .color
