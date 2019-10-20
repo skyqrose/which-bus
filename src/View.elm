@@ -228,7 +228,7 @@ viewPrediction currentTime prediction =
             ]
             (El.text (predictionTimeString currentTime prediction))
         , El.column
-            [ El.width El.fill
+            [ El.height El.fill
             , El.padding (unit // 2)
             , Border.widthEach
                 { bottom = 0
