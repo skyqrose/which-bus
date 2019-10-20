@@ -209,7 +209,31 @@ viewPrediction currentTime prediction =
                     El.none
 
                 Just scheduledTime ->
-                    El.text ("Sched: " ++ absoluteTimeString scheduledTime)
+                    let
+                        scheduledTimeString =
+                            absoluteTimeString scheduledTime
+
+                        predictedTimeString =
+                            absoluteTimeString prediction.time
+                    in
+                    El.row
+                        [ El.spacing (unit // 2)
+                        ]
+                        [ El.text "Sched:"
+                        , El.el
+                            (if predictedTimeString /= scheduledTimeString then
+                                [ Font.strike ]
+
+                             else
+                                []
+                            )
+                            (El.text scheduledTimeString)
+                        , if predictedTimeString /= scheduledTimeString then
+                            El.text predictedTimeString
+
+                          else
+                            El.none
+                        ]
             , case prediction.vehicleLabel of
                 Nothing ->
                     El.none
