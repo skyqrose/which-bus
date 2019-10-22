@@ -1,5 +1,4 @@
 language: elm
-elm: 0.19.1-2
 script: npm test && npm run build
 before_deploy:
   - shopt -s extglob
