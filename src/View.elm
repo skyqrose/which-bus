@@ -252,7 +252,7 @@ predictionTimeString currentTime prediction =
             Time.posixToMillis prediction.time - Time.posixToMillis currentTime
 
         differenceSecs =
-            round (toFloat differenceMillis / 1000)
+            round (toFloat differenceMillis / 1000 / 5) * 5
     in
     if differenceSecs >= 5 * 60 then
         String.concat
