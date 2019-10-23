@@ -14159,19 +14159,7 @@ var $author$project$Main$init = F3(
 		var initStreamState = _v0.a;
 		var streamUrl = _v0.b;
 		return _Utils_Tuple2(
-			{
-				currentTime: $elm$time$Time$millisToPosix(0),
-				directionIdFormValue: $elm$core$Maybe$Nothing,
-				lastUpdated: $elm$core$Maybe$Nothing,
-				navigationKey: key,
-				routeIdFormText: '',
-				routes: $pzp1997$assoc_list$AssocList$empty,
-				selections: selections,
-				stopIdFormText: '',
-				stops: $pzp1997$assoc_list$AssocList$empty,
-				streamState: initStreamState,
-				url: url
-			},
+			{currentTime: $elm$core$Maybe$Nothing, directionIdFormValue: $elm$core$Maybe$Nothing, lastUpdated: $elm$core$Maybe$Nothing, navigationKey: key, routeIdFormText: '', routes: $pzp1997$assoc_list$AssocList$empty, selections: selections, stopIdFormText: '', stops: $pzp1997$assoc_list$AssocList$empty, streamState: initStreamState, url: url},
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
@@ -14394,6 +14382,20 @@ var $author$project$Mbta$Api$getPrimaryData = function (_v0) {
 	return data.primaryData;
 };
 var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $author$project$Main$restartStream = function (model) {
+	var _v0 = _Utils_Tuple2(model.currentTime, model.lastUpdated);
+	if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
+		var currentTime = _v0.a.a;
+		var lastUpdated = _v0.b.a;
+		return ((($elm$time$Time$posixToMillis(currentTime) - $elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) > 60;
+	} else {
+		return false;
+	}
+};
 var $author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
 	var routeIds = A2(
 		$elm$core$String$join,
@@ -14838,20 +14840,32 @@ var $author$project$Main$update = F2(
 		switch (msg.$) {
 			case 'Tick':
 				var time = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{currentTime: time}),
-					$elm$core$Platform$Cmd$none);
+				var newModel = _Utils_update(
+					model,
+					{
+						currentTime: $elm$core$Maybe$Just(time)
+					});
+				if ($author$project$Main$restartStream(newModel)) {
+					var _v1 = $author$project$Main$streamPredictions(model.selections);
+					var initStreamState = _v1.a;
+					var streamUrl = _v1.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							newModel,
+							{lastUpdated: $elm$core$Maybe$Nothing, streamState: initStreamState}),
+						$author$project$Main$startStream(streamUrl));
+				} else {
+					return _Utils_Tuple2(newModel, $elm$core$Platform$Cmd$none);
+				}
 			case 'OnUrlRequest':
 				var urlRequest = msg.a;
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			case 'OnUrlChange':
 				var url = msg.a;
 				var newSelections = $author$project$UrlParsing$parseSelectionsFromUrl(url);
-				var _v1 = $author$project$Main$streamPredictions(newSelections);
-				var initStreamState = _v1.a;
-				var streamUrl = _v1.b;
+				var _v2 = $author$project$Main$streamPredictions(newSelections);
+				var initStreamState = _v2.a;
+				var streamUrl = _v2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -14942,18 +14956,18 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							lastUpdated: $elm$core$Maybe$Just(model.currentTime),
+							lastUpdated: model.currentTime,
 							streamState: A3($author$project$Mbta$Api$updateStream, eventName, dataJson, model.streamState)
 						}),
 					$elm$core$Platform$Cmd$none);
 			default:
-				var _v2 = $author$project$Main$streamPredictions(model.selections);
-				var initStreamState = _v2.a;
-				var streamUrl = _v2.b;
+				var _v3 = $author$project$Main$streamPredictions(model.selections);
+				var initStreamState = _v3.a;
+				var streamUrl = _v3.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{streamState: initStreamState}),
+						{lastUpdated: $elm$core$Maybe$Nothing, streamState: initStreamState}),
 					$author$project$Main$startStream(streamUrl));
 		}
 	});
@@ -22190,7 +22204,7 @@ var $author$project$View$addSelectionForm = function (model) {
 						$author$project$View$avh4ColorToElmUiColor($avh4$elm_color$Color$black))
 					]),
 				{
-					label: $author$project$View$label('Route Id'),
+					label: $author$project$View$label('Route Ids (period separated)'),
 					onChange: $author$project$Model$TypeRouteId,
 					placeholder: $elm$core$Maybe$Nothing,
 					text: model.routeIdFormText
@@ -22264,20 +22278,17 @@ var $mdgriffith$elm_ui$Element$maximum = F2(
 		return A2($mdgriffith$elm_ui$Internal$Model$Max, i, l);
 	});
 var $author$project$Model$RefreshStream = {$: 'RefreshStream'};
-var $elm$time$Time$posixToMillis = function (_v0) {
-	var millis = _v0.a;
-	return millis;
+var $author$project$View$lastUpdatedText = function (model) {
+	var _v0 = _Utils_Tuple2(model.currentTime, model.lastUpdated);
+	if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
+		var currentTime = _v0.a.a;
+		var lastUpdated = _v0.b.a;
+		var timeDifferenceMinutes = (((($elm$time$Time$posixToMillis(currentTime) - $elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) / 60) | 0;
+		return $elm$core$String$fromInt(timeDifferenceMinutes) + ' minutes ago';
+	} else {
+		return 'Never';
+	}
 };
-var $author$project$View$lastUpdatedText = F2(
-	function (currentTime, lastUpdated) {
-		if (lastUpdated.$ === 'Nothing') {
-			return 'Never';
-		} else {
-			var lastUpdatedTime = lastUpdated.a;
-			var timeDifferenceMinutes = (((($elm$time$Time$posixToMillis(currentTime) - $elm$time$Time$posixToMillis(lastUpdatedTime)) / 1000) | 0) / 60) | 0;
-			return $elm$core$String$fromInt(timeDifferenceMinutes) + ' minutes ago';
-		}
-	});
 var $author$project$View$refreshButton = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
@@ -22296,7 +22307,7 @@ var $author$project$View$refreshButton = function (model) {
 					onPress: $elm$core$Maybe$Just($author$project$Model$RefreshStream)
 				}),
 				$mdgriffith$elm_ui$Element$text(
-				'Last updated\n' + A2($author$project$View$lastUpdatedText, model.currentTime, model.lastUpdated))
+				'Last updated\n' + $author$project$View$lastUpdatedText(model))
 			]));
 };
 var $author$project$Mbta$Api$Loaded = function (a) {
@@ -23423,24 +23434,24 @@ var $author$project$View$absoluteTimeString = function (time) {
 					A2($elm$time$Time$toMinute, $author$project$View$timeZone, time)))
 			]));
 };
-var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
-var $mdgriffith$elm_ui$Element$Font$alignRight = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textRight);
-var $elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var $author$project$View$predictionTimeString = F2(
-	function (currentTime, prediction) {
-		var differenceMillis = $elm$time$Time$posixToMillis(prediction.time) - $elm$time$Time$posixToMillis(currentTime);
-		var differenceSecs = (differenceMillis / 1000) | 0;
-		var sign = (differenceSecs < 0) ? '-' : '';
-		var absSecs = $elm$core$Basics$abs(differenceSecs);
-		var displayMins = $elm$core$String$fromInt((absSecs / 60) | 0);
-		var displaySecs = A3(
-			$elm$core$String$padLeft,
-			2,
-			_Utils_chr('0'),
-			$elm$core$String$fromInt(absSecs % 60));
-		return sign + (displayMins + (':' + displaySecs));
+var $mdgriffith$elm_ui$Internal$Model$Paragraph = {$: 'Paragraph'};
+var $mdgriffith$elm_ui$Element$paragraph = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asParagraph,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$Paragraph),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$spacing(5),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
 	});
 var $mdgriffith$elm_ui$Element$Font$size = function (i) {
 	return A2(
@@ -23475,6 +23486,62 @@ var $mdgriffith$elm_ui$Element$Font$variant = function (_var) {
 					'\"' + (name + ('\" ' + $elm$core$String$fromInt(index)))));
 	}
 };
+var $elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Right);
+var $mdgriffith$elm_ui$Internal$Flag$fontAlignment = $mdgriffith$elm_ui$Internal$Flag$flag(12);
+var $mdgriffith$elm_ui$Element$Font$alignRight = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$fontAlignment, $mdgriffith$elm_ui$Internal$Style$classes.textRight);
+var $author$project$View$viewPredictionTime = F2(
+	function (currentTime, prediction) {
+		var differenceMillis = $elm$time$Time$posixToMillis(prediction.time) - $elm$time$Time$posixToMillis(currentTime);
+		var differenceSecs = $elm$core$Basics$round((differenceMillis / 1000) / 5) * 5;
+		return (_Utils_cmp(differenceSecs, 5 * 60) > -1) ? A2(
+			$mdgriffith$elm_ui$Element$paragraph,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$Font$alignRight]),
+			_List_fromArray(
+				[
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$size(36)
+						]),
+					$mdgriffith$elm_ui$Element$text(
+						$elm$core$String$fromInt(
+							$elm$core$Basics$round(differenceSecs / 60)))),
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$size(29)
+						]),
+					$mdgriffith$elm_ui$Element$text(' min'))
+				])) : A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Font$size(36),
+					$mdgriffith$elm_ui$Element$alignRight
+				]),
+			$mdgriffith$elm_ui$Element$text(
+				$elm$core$String$concat(
+					_List_fromArray(
+						[
+							(differenceSecs < 0) ? '-' : '',
+							$elm$core$String$fromInt(
+							($elm$core$Basics$abs(differenceSecs) / 60) | 0),
+							':',
+							A3(
+							$elm$core$String$padLeft,
+							2,
+							_Utils_chr('0'),
+							$elm$core$String$fromInt(
+								$elm$core$Basics$abs(differenceSecs) % 60))
+						]))));
+	});
 var $mdgriffith$elm_ui$Element$Border$widthXY = F2(
 	function (x, y) {
 		return A2(
@@ -23535,12 +23602,9 @@ var $author$project$View$viewPrediction = F3(
 							$mdgriffith$elm_ui$Element$width(
 							$mdgriffith$elm_ui$Element$px($author$project$View$unit * 8)),
 							$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 2) | 0),
-							$mdgriffith$elm_ui$Element$Font$size(36),
-							$mdgriffith$elm_ui$Element$Font$alignRight,
 							$mdgriffith$elm_ui$Element$Font$variant($mdgriffith$elm_ui$Element$Font$tabularNumbers)
 						]),
-					$mdgriffith$elm_ui$Element$text(
-						A2($author$project$View$predictionTimeString, currentTime, prediction))),
+					A2($author$project$View$viewPredictionTime, currentTime, prediction)),
 					A2(
 					$mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
@@ -23571,6 +23635,7 @@ var $author$project$View$viewPrediction = F3(
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
 							$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 2) | 0),
 							$mdgriffith$elm_ui$Element$spacing(($author$project$View$unit / 4) | 0)
 						]),
@@ -23614,20 +23679,20 @@ var $author$project$View$viewPrediction = F3(
 								var scheduledTimeString = $author$project$View$absoluteTimeString(scheduledTime);
 								var predictedTimeString = $author$project$View$absoluteTimeString(prediction.time);
 								return A2(
-									$mdgriffith$elm_ui$Element$row,
+									$mdgriffith$elm_ui$Element$paragraph,
 									_List_fromArray(
 										[
-											$mdgriffith$elm_ui$Element$spacing(($author$project$View$unit / 2) | 0)
+											$mdgriffith$elm_ui$Element$Font$variant($mdgriffith$elm_ui$Element$Font$tabularNumbers)
 										]),
 									_List_fromArray(
 										[
-											$mdgriffith$elm_ui$Element$text('Sched:'),
+											$mdgriffith$elm_ui$Element$text('Sched: '),
 											A2(
 											$mdgriffith$elm_ui$Element$el,
 											(!_Utils_eq(predictedTimeString, scheduledTimeString)) ? _List_fromArray(
 												[$mdgriffith$elm_ui$Element$Font$strike]) : _List_Nil,
 											$mdgriffith$elm_ui$Element$text(scheduledTimeString)),
-											(!_Utils_eq(predictedTimeString, scheduledTimeString)) ? $mdgriffith$elm_ui$Element$text(predictedTimeString) : $mdgriffith$elm_ui$Element$none
+											(!_Utils_eq(predictedTimeString, scheduledTimeString)) ? $mdgriffith$elm_ui$Element$text(' ' + predictedTimeString) : $mdgriffith$elm_ui$Element$none
 										]));
 							}
 						}(),
@@ -23741,7 +23806,15 @@ var $author$project$View$ui = function (model) {
 					var data = _v0.a.a;
 					return _List_fromArray(
 						[
-							A4($author$project$View$viewSelections, model.currentTime, model.selections, model.stops, data),
+							A4(
+							$author$project$View$viewSelections,
+							A2(
+								$elm$core$Maybe$withDefault,
+								$elm$time$Time$millisToPosix(0),
+								model.currentTime),
+							model.selections,
+							model.stops,
+							data),
 							$author$project$View$addSelectionForm(model),
 							$author$project$View$refreshButton(model)
 						]);
