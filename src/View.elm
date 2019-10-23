@@ -301,7 +301,7 @@ addSelectionForm model =
             { onChange = TypeRouteId
             , text = model.routeIdFormText
             , placeholder = Nothing
-            , label = label "Route Id"
+            , label = label "Route Ids (period separated)"
             }
         , Input.text
             [ Font.color (avh4ColorToElmUiColor Color.black)
