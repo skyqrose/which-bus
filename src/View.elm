@@ -162,11 +162,9 @@ viewPrediction currentTime index prediction =
         [ El.el
             [ El.width (El.px (unit * 8))
             , El.padding (unit // 2)
-            , Font.size 36
-            , Font.alignRight
             , Font.variant Font.tabularNumbers
             ]
-            (El.text (predictionTimeString currentTime prediction))
+            (viewPredictionTime currentTime prediction)
         , El.el
             [ El.width (El.px (unit * 2))
             ]
@@ -245,8 +243,8 @@ viewPrediction currentTime index prediction =
         ]
 
 
-predictionTimeString : Time.Posix -> ViewModel.ShownPrediction -> String
-predictionTimeString currentTime prediction =
+viewPredictionTime : Time.Posix -> ViewModel.ShownPrediction -> El.Element msg
+viewPredictionTime currentTime prediction =
     let
         differenceMillis =
             Time.posixToMillis prediction.time - Time.posixToMillis currentTime
@@ -255,26 +253,43 @@ predictionTimeString currentTime prediction =
             round (toFloat differenceMillis / 1000 / 5) * 5
     in
     if differenceSecs >= 5 * 60 then
-        String.concat
-            [ String.fromInt (round (toFloat differenceSecs / 60))
-            , " min"
+        El.paragraph
+            [ Font.alignRight
+            ]
+            [ El.el
+                [ Font.size 36
+                ]
+                (El.text
+                    (String.fromInt (round (toFloat differenceSecs / 60)))
+                )
+            , El.el
+                [ Font.size 29
+                ]
+                (El.text " min")
             ]
 
     else
-        String.concat
-            [ if differenceSecs < 0 then
-                "-"
-
-              else
-                ""
-            , String.fromInt (abs differenceSecs // 60)
-            , ":"
-            , differenceSecs
-                |> abs
-                |> remainderBy 60
-                |> String.fromInt
-                |> String.padLeft 2 '0'
+        El.el
+            [ Font.size 36
+            , El.alignRight
             ]
+            (El.text
+                (String.concat
+                    [ if differenceSecs < 0 then
+                        "-"
+
+                      else
+                        ""
+                    , String.fromInt (abs differenceSecs // 60)
+                    , ":"
+                    , differenceSecs
+                        |> abs
+                        |> remainderBy 60
+                        |> String.fromInt
+                        |> String.padLeft 2 '0'
+                    ]
+                )
+            )
 
 
 absoluteTimeString : Time.Posix -> String
