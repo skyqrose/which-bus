@@ -57,7 +57,7 @@ ui model =
 
             Mbta.Api.Loaded (Ok data) ->
                 [ viewSelections
-                    model.currentTime
+                    (Maybe.withDefault (Time.millisToPosix 0) model.currentTime)
                     model.selections
                     model.stops
                     data
@@ -362,24 +362,24 @@ refreshButton model =
             , label = El.text "Refresh"
             }
         , El.text
-            ("Last updated\n" ++ lastUpdatedText model.currentTime model.lastUpdated)
+            ("Last updated\n" ++ lastUpdatedText model)
         ]
 
 
-lastUpdatedText : Time.Posix -> Maybe Time.Posix -> String
-lastUpdatedText currentTime lastUpdated =
-    case lastUpdated of
-        Nothing ->
-            "Never"
-
-        Just lastUpdatedTime ->
+lastUpdatedText : Model -> String
+lastUpdatedText model =
+    case ( model.currentTime, model.lastUpdated ) of
+        ( Just currentTime, Just lastUpdated ) ->
             let
                 timeDifferenceMinutes =
-                    (Time.posixToMillis currentTime - Time.posixToMillis lastUpdatedTime)
+                    (Time.posixToMillis currentTime - Time.posixToMillis lastUpdated)
                         // 1000
                         // 60
             in
             String.fromInt timeDifferenceMinutes ++ " minutes ago"
+
+        _ ->
+            "Never"
 
 
 avh4ColorToElmUiColor : Color.Color -> El.Color

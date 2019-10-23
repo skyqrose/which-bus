@@ -44,7 +44,7 @@ init flags url key =
         ( initStreamState, streamUrl ) =
             streamPredictions selections
     in
-    ( { currentTime = Time.millisToPosix 0
+    ( { currentTime = Nothing
       , url = url
       , navigationKey = key
       , selections = selections
@@ -69,11 +69,28 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick time ->
-            ( { model
-                | currentTime = time
-              }
-            , Cmd.none
-            )
+            let
+                newModel =
+                    { model
+                        | currentTime = Just time
+                    }
+            in
+            if restartStream newModel then
+                let
+                    ( initStreamState, streamUrl ) =
+                        streamPredictions model.selections
+                in
+                ( { newModel
+                    | streamState = initStreamState
+                    , lastUpdated = Nothing
+                  }
+                , startStream streamUrl
+                )
+
+            else
+                ( newModel
+                , Cmd.none
+                )
 
         OnUrlRequest urlRequest ->
             ( model
@@ -160,7 +177,7 @@ update msg model =
         StreamMsg eventName dataJson ->
             ( { model
                 | streamState = Mbta.Api.updateStream eventName dataJson model.streamState
-                , lastUpdated = Just model.currentTime
+                , lastUpdated = model.currentTime
               }
             , Cmd.none
             )
@@ -172,9 +189,20 @@ update msg model =
             in
             ( { model
                 | streamState = initStreamState
+                , lastUpdated = Nothing
               }
             , startStream streamUrl
             )
+
+
+restartStream : Model -> Bool
+restartStream model =
+    case ( model.currentTime, model.lastUpdated ) of
+        ( Just currentTime, Just lastUpdated ) ->
+            (Time.posixToMillis currentTime - Time.posixToMillis lastUpdated) // 1000 > 60
+
+        _ ->
+            False
 
 
 subscriptions : Model -> Sub Msg

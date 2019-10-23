@@ -15,7 +15,7 @@ import Url exposing (Url)
 
 
 type alias Model =
-    { currentTime : Time.Posix
+    { currentTime : Maybe Time.Posix
     , url : Url
     , navigationKey : Navigation.Key
     , selections : List Selection
