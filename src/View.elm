@@ -183,6 +183,7 @@ viewPrediction currentTime index prediction =
             )
         , El.column
             [ El.height El.fill
+            , El.width El.fill
             , El.padding (unit // 2)
             , El.spacing (unit // 4)
             ]
@@ -213,10 +214,10 @@ viewPrediction currentTime index prediction =
                         predictedTimeString =
                             absoluteTimeString prediction.time
                     in
-                    El.row
-                        [ El.spacing (unit // 2)
+                    El.paragraph
+                        [ Font.variant Font.tabularNumbers
                         ]
-                        [ El.text "Sched:"
+                        [ El.text "Sched: "
                         , El.el
                             (if predictedTimeString /= scheduledTimeString then
                                 [ Font.strike ]
@@ -226,7 +227,7 @@ viewPrediction currentTime index prediction =
                             )
                             (El.text scheduledTimeString)
                         , if predictedTimeString /= scheduledTimeString then
-                            El.text predictedTimeString
+                            El.text (" " ++ predictedTimeString)
 
                           else
                             El.none
