@@ -252,28 +252,29 @@ predictionTimeString currentTime prediction =
             Time.posixToMillis prediction.time - Time.posixToMillis currentTime
 
         differenceSecs =
-            differenceMillis // 1000
+            round (toFloat differenceMillis / 1000)
+    in
+    if differenceSecs >= 5 * 60 then
+        String.concat
+            [ String.fromInt (round (toFloat differenceSecs / 60))
+            , " min"
+            ]
 
-        absSecs =
-            abs differenceSecs
-
-        sign =
-            if differenceSecs < 0 then
+    else
+        String.concat
+            [ if differenceSecs < 0 then
                 "-"
 
-            else
+              else
                 ""
-
-        displayMins =
-            String.fromInt (absSecs // 60)
-
-        displaySecs =
-            absSecs
+            , String.fromInt (abs differenceSecs // 60)
+            , ":"
+            , differenceSecs
+                |> abs
                 |> remainderBy 60
                 |> String.fromInt
                 |> String.padLeft 2 '0'
-    in
-    sign ++ displayMins ++ ":" ++ displaySecs
+            ]
 
 
 absoluteTimeString : Time.Posix -> String
