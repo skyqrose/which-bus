@@ -16,6 +16,7 @@ type alias ShownPrediction =
     { time : Time.Posix
     , routeName : String
     , tripHeadsign : Maybe String
+    , tripName : Maybe String
     , platformCode : Maybe String
     , vehicleLabel : Maybe String
     , scheduledTime : Maybe Time.Posix
@@ -41,6 +42,10 @@ predictionsForSelection data selection =
                     route : Maybe Mbta.Route
                     route =
                         Mbta.Api.getIncludedRoute prediction.routeId data
+
+                    trip : Maybe Mbta.Trip
+                    trip =
+                        Mbta.Api.getIncludedTrip prediction.tripId data
 
                     shouldShowSchedule : Bool
                     shouldShowSchedule =
@@ -78,9 +83,11 @@ predictionsForSelection data selection =
                                             routeId
                                     )
                         , tripHeadsign =
-                            data
-                                |> Mbta.Api.getIncludedTrip prediction.tripId
+                            trip
                                 |> Maybe.map .headsign
+                        , tripName =
+                            trip
+                                |> Maybe.andThen .name
                         , platformCode =
                             data
                                 |> Mbta.Api.getIncludedStopStop prediction.stopId

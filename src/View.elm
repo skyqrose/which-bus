@@ -202,6 +202,12 @@ viewPrediction currentTime index prediction =
                         , El.text " - "
                         , El.text headsign
                         ]
+            , case prediction.tripName of
+                Nothing ->
+                    El.none
+
+                Just tripName ->
+                    El.text tripName
             , case prediction.scheduledTime of
                 Nothing ->
                     El.none
@@ -237,9 +243,7 @@ viewPrediction currentTime index prediction =
                     El.none
 
                 Just vehicleLabel ->
-                    El.el
-                        []
-                        (El.text vehicleLabel)
+                    El.text vehicleLabel
             ]
         ]
 
