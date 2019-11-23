@@ -23359,14 +23359,23 @@ var $author$project$Mbta$Extra$routeAbbreviation = function (route) {
 		}
 	}
 };
-var $elm$core$Debug$todo = _Debug_todo;
 var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $author$project$ViewModel$predictionsForSelection = F2(
 	function (data, selection) {
-		var predictions = $author$project$Mbta$Api$getPrimaryData(data);
+		var predictions = A2(
+			$elm$core$List$filter,
+			$author$project$ViewModel$predictionMatchesDirection(selection.directionId),
+			A2(
+				$elm$core$List$filter,
+				A2($author$project$ViewModel$predictionMatchesStop, data, selection.stopId),
+				A2(
+					$elm$core$List$filter,
+					$author$project$ViewModel$predictionMatchesRouteId(selection.routeIds),
+					$author$project$Mbta$Api$getPrimaryData(data))));
 		return A2(
-			$elm$core$List$map,
+			$elm$core$List$filterMap,
 			function (prediction) {
+				var trip = A2($author$project$Mbta$Api$getIncludedTrip, prediction.tripId, data);
 				var route = A2($author$project$Mbta$Api$getIncludedRoute, prediction.routeId, data);
 				var shouldShowSchedule = function () {
 					if (route.$ === 'Nothing') {
@@ -23380,114 +23389,112 @@ var $author$project$ViewModel$predictionsForSelection = F2(
 								[$author$project$Mbta$RouteType_2_CommuterRail, $author$project$Mbta$RouteType_3_Bus, $author$project$Mbta$RouteType_4_Ferry]));
 					}
 				}();
-				return {
-					backgroundColor: A2(
-						$elm$core$Maybe$withDefault,
-						$avh4$elm_color$Color$white,
-						A2(
-							$elm$core$Maybe$map,
-							function ($) {
-								return $.color;
-							},
-							route)),
-					platformCode: A2(
-						$elm$core$Maybe$andThen,
-						function ($) {
-							return $.platformCode;
-						},
-						A2($author$project$Mbta$Api$getIncludedStopStop, prediction.stopId, data)),
-					routeName: A2(
-						$elm$core$Maybe$withDefault,
-						function () {
-							var _v0 = prediction.routeId;
-							var routeId = _v0.a;
-							return routeId;
-						}(),
-						A2(
-							$elm_community$maybe_extra$Maybe$Extra$orElse,
-							A2(
-								$elm$core$Maybe$map,
-								function ($) {
-									return $.longName;
-								},
-								route),
-							A2($elm$core$Maybe$andThen, $author$project$Mbta$Extra$routeAbbreviation, route))),
-					scheduledTime: shouldShowSchedule ? A2(
-						$elm$core$Maybe$andThen,
-						function (schedule) {
-							return A2($elm_community$maybe_extra$Maybe$Extra$or, schedule.departureTime, schedule.arrivalTime);
-						},
-						A2(
-							$elm$core$Maybe$andThen,
-							function (scheduleId) {
-								return A2($author$project$Mbta$Api$getIncludedSchedule, scheduleId, data);
-							},
-							prediction.scheduleId)) : $elm$core$Maybe$Nothing,
-					textColor: A2(
-						$elm$core$Maybe$withDefault,
-						$avh4$elm_color$Color$black,
-						A2(
-							$elm$core$Maybe$map,
-							function ($) {
-								return $.textColor;
-							},
-							route)),
-					time: function () {
-						var _v1 = _Utils_Tuple2(prediction.arrivalTime, prediction.departureTime);
-						if (_v1.b.$ === 'Just') {
-							var departureTime = _v1.b.a;
-							return departureTime;
+				var maybeTime = function () {
+					var _v2 = _Utils_Tuple2(prediction.arrivalTime, prediction.departureTime);
+					if (_v2.b.$ === 'Just') {
+						var departureTime = _v2.b.a;
+						return $elm$core$Maybe$Just(departureTime);
+					} else {
+						if (_v2.a.$ === 'Just') {
+							var arrivalTime = _v2.a.a;
+							return $elm$core$Maybe$Just(arrivalTime);
 						} else {
-							if (_v1.a.$ === 'Just') {
-								var arrivalTime = _v1.a.a;
-								return arrivalTime;
-							} else {
-								var _v2 = _v1.a;
-								var _v3 = _v1.b;
-								return _Debug_todo(
-									'ViewModel',
-									{
-										start: {line: 65, column: 29},
-										end: {line: 65, column: 39}
-									})('prediction missing arrival and departure times');
-							}
+							var _v3 = _v2.a;
+							var _v4 = _v2.b;
+							return $elm$core$Maybe$Nothing;
 						}
-					}(),
-					tripHeadsign: A2(
-						$elm$core$Maybe$map,
-						function ($) {
-							return $.headsign;
-						},
-						A2($author$project$Mbta$Api$getIncludedTrip, prediction.tripId, data)),
-					vehicleLabel: A2(
-						$elm$core$Maybe$map,
-						function (vehicleId) {
-							return A2(
+					}
+				}();
+				return A2(
+					$elm$core$Maybe$map,
+					function (time) {
+						return {
+							backgroundColor: A2(
 								$elm$core$Maybe$withDefault,
-								function () {
-									var idString = vehicleId.a;
-									return idString;
-								}(),
+								$avh4$elm_color$Color$white,
 								A2(
 									$elm$core$Maybe$map,
 									function ($) {
-										return $.label;
+										return $.color;
 									},
-									A2($author$project$Mbta$Api$getIncludedVehicle, vehicleId, data)));
-						},
-						prediction.vehicleId)
-				};
+									route)),
+							platformCode: A2(
+								$elm$core$Maybe$andThen,
+								function ($) {
+									return $.platformCode;
+								},
+								A2($author$project$Mbta$Api$getIncludedStopStop, prediction.stopId, data)),
+							routeName: A2(
+								$elm$core$Maybe$withDefault,
+								function () {
+									var _v0 = prediction.routeId;
+									var routeId = _v0.a;
+									return routeId;
+								}(),
+								A2(
+									$elm_community$maybe_extra$Maybe$Extra$orElse,
+									A2(
+										$elm$core$Maybe$map,
+										function ($) {
+											return $.longName;
+										},
+										route),
+									A2($elm$core$Maybe$andThen, $author$project$Mbta$Extra$routeAbbreviation, route))),
+							scheduledTime: shouldShowSchedule ? A2(
+								$elm$core$Maybe$andThen,
+								function (schedule) {
+									return A2($elm_community$maybe_extra$Maybe$Extra$or, schedule.departureTime, schedule.arrivalTime);
+								},
+								A2(
+									$elm$core$Maybe$andThen,
+									function (scheduleId) {
+										return A2($author$project$Mbta$Api$getIncludedSchedule, scheduleId, data);
+									},
+									prediction.scheduleId)) : $elm$core$Maybe$Nothing,
+							textColor: A2(
+								$elm$core$Maybe$withDefault,
+								$avh4$elm_color$Color$black,
+								A2(
+									$elm$core$Maybe$map,
+									function ($) {
+										return $.textColor;
+									},
+									route)),
+							time: time,
+							tripHeadsign: A2(
+								$elm$core$Maybe$map,
+								function ($) {
+									return $.headsign;
+								},
+								trip),
+							tripName: A2(
+								$elm$core$Maybe$andThen,
+								function ($) {
+									return $.name;
+								},
+								trip),
+							vehicleLabel: A2(
+								$elm$core$Maybe$map,
+								function (vehicleId) {
+									return A2(
+										$elm$core$Maybe$withDefault,
+										function () {
+											var idString = vehicleId.a;
+											return idString;
+										}(),
+										A2(
+											$elm$core$Maybe$map,
+											function ($) {
+												return $.label;
+											},
+											A2($author$project$Mbta$Api$getIncludedVehicle, vehicleId, data)));
+								},
+								prediction.vehicleId)
+						};
+					},
+					maybeTime);
 			},
-			A2(
-				$elm$core$List$filter,
-				$author$project$ViewModel$predictionMatchesDirection(selection.directionId),
-				A2(
-					$elm$core$List$filter,
-					A2($author$project$ViewModel$predictionMatchesStop, data, selection.stopId),
-					A2(
-						$elm$core$List$filter,
-						$author$project$ViewModel$predictionMatchesRouteId(selection.routeIds),
-						predictions))));
+			predictions);
 	});
 var $elm$core$List$sortBy = _List_sortBy;
 var $elm$core$List$takeReverse = F3(
@@ -24483,11 +24490,20 @@ var $author$project$View$viewPrediction = F3(
 							}
 						}(),
 							function () {
-							var _v2 = prediction.scheduledTime;
+							var _v2 = prediction.tripName;
 							if (_v2.$ === 'Nothing') {
 								return $mdgriffith$elm_ui$Element$none;
 							} else {
-								var scheduledTime = _v2.a;
+								var tripName = _v2.a;
+								return $mdgriffith$elm_ui$Element$text(tripName);
+							}
+						}(),
+							function () {
+							var _v3 = prediction.scheduledTime;
+							if (_v3.$ === 'Nothing') {
+								return $mdgriffith$elm_ui$Element$none;
+							} else {
+								var scheduledTime = _v3.a;
 								var scheduledTimeString = $author$project$View$absoluteTimeString(scheduledTime);
 								var predictedTimeString = $author$project$View$absoluteTimeString(prediction.time);
 								return A2(
@@ -24509,15 +24525,12 @@ var $author$project$View$viewPrediction = F3(
 							}
 						}(),
 							function () {
-							var _v3 = prediction.vehicleLabel;
-							if (_v3.$ === 'Nothing') {
+							var _v4 = prediction.vehicleLabel;
+							if (_v4.$ === 'Nothing') {
 								return $mdgriffith$elm_ui$Element$none;
 							} else {
-								var vehicleLabel = _v3.a;
-								return A2(
-									$mdgriffith$elm_ui$Element$el,
-									_List_Nil,
-									$mdgriffith$elm_ui$Element$text(vehicleLabel));
+								var vehicleLabel = _v4.a;
+								return $mdgriffith$elm_ui$Element$text(vehicleLabel);
 							}
 						}()
 						]))
