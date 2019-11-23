@@ -30,12 +30,12 @@ predictionsForSelection data selection =
         predictions : List Mbta.Prediction
         predictions =
             Mbta.Api.getPrimaryData data
+                |> List.filter (predictionMatchesRouteId selection.routeIds)
+                |> List.filter (predictionMatchesStop data selection.stopId)
+                |> List.filter (predictionMatchesDirection selection.directionId)
     in
     predictions
-        |> List.filter (predictionMatchesRouteId selection.routeIds)
-        |> List.filter (predictionMatchesStop data selection.stopId)
-        |> List.filter (predictionMatchesDirection selection.directionId)
-        |> List.map
+        |> List.filterMap
             (\prediction ->
                 let
                     route : Maybe Mbta.Route
@@ -52,70 +52,77 @@ predictionsForSelection data selection =
                                 List.member
                                     routeType
                                     [ Mbta.RouteType_2_CommuterRail, Mbta.RouteType_3_Bus, Mbta.RouteType_4_Ferry ]
+
+                    maybeTime : Maybe Time.Posix
+                    maybeTime =
+                        case ( prediction.arrivalTime, prediction.departureTime ) of
+                            ( _, Just departureTime ) ->
+                                Just departureTime
+
+                            ( Just arrivalTime, _ ) ->
+                                Just arrivalTime
+
+                            ( Nothing, Nothing ) ->
+                                Nothing
                 in
-                { time =
-                    case ( prediction.arrivalTime, prediction.departureTime ) of
-                        ( _, Just departureTime ) ->
-                            departureTime
-
-                        ( Just arrivalTime, _ ) ->
-                            arrivalTime
-
-                        ( Nothing, Nothing ) ->
-                            Debug.todo "prediction missing arrival and departure times"
-                , routeName =
-                    route
-                        |> Maybe.andThen Mbta.Extra.routeAbbreviation
-                        |> Maybe.Extra.orElse (Maybe.map .longName route)
-                        |> Maybe.withDefault
-                            (case prediction.routeId of
-                                Mbta.RouteId routeId ->
-                                    routeId
-                            )
-                , tripHeadsign =
-                    data
-                        |> Mbta.Api.getIncludedTrip prediction.tripId
-                        |> Maybe.map .headsign
-                , platformCode =
-                    data
-                        |> Mbta.Api.getIncludedStopStop prediction.stopId
-                        |> Maybe.andThen .platformCode
-                , vehicleLabel =
-                    Maybe.map
-                        (\vehicleId ->
-                            data
-                                |> Mbta.Api.getIncludedVehicle vehicleId
-                                |> Maybe.map .label
+                Maybe.map
+                    (\time ->
+                        { time = time
+                        , routeName =
+                            route
+                                |> Maybe.andThen Mbta.Extra.routeAbbreviation
+                                |> Maybe.Extra.orElse (Maybe.map .longName route)
                                 |> Maybe.withDefault
-                                    (case vehicleId of
-                                        Mbta.VehicleId idString ->
-                                            idString
+                                    (case prediction.routeId of
+                                        Mbta.RouteId routeId ->
+                                            routeId
                                     )
-                        )
-                        prediction.vehicleId
-                , scheduledTime =
-                    if shouldShowSchedule then
-                        prediction.scheduleId
-                            |> Maybe.andThen
-                                (\scheduleId ->
-                                    Mbta.Api.getIncludedSchedule scheduleId data
+                        , tripHeadsign =
+                            data
+                                |> Mbta.Api.getIncludedTrip prediction.tripId
+                                |> Maybe.map .headsign
+                        , platformCode =
+                            data
+                                |> Mbta.Api.getIncludedStopStop prediction.stopId
+                                |> Maybe.andThen .platformCode
+                        , vehicleLabel =
+                            Maybe.map
+                                (\vehicleId ->
+                                    data
+                                        |> Mbta.Api.getIncludedVehicle vehicleId
+                                        |> Maybe.map .label
+                                        |> Maybe.withDefault
+                                            (case vehicleId of
+                                                Mbta.VehicleId idString ->
+                                                    idString
+                                            )
                                 )
-                            |> Maybe.andThen
-                                (\schedule ->
-                                    Maybe.Extra.or schedule.departureTime schedule.arrivalTime
-                                )
+                                prediction.vehicleId
+                        , scheduledTime =
+                            if shouldShowSchedule then
+                                prediction.scheduleId
+                                    |> Maybe.andThen
+                                        (\scheduleId ->
+                                            Mbta.Api.getIncludedSchedule scheduleId data
+                                        )
+                                    |> Maybe.andThen
+                                        (\schedule ->
+                                            Maybe.Extra.or schedule.departureTime schedule.arrivalTime
+                                        )
 
-                    else
-                        Nothing
-                , backgroundColor =
-                    route
-                        |> Maybe.map .color
-                        |> Maybe.withDefault Color.white
-                , textColor =
-                    route
-                        |> Maybe.map .textColor
-                        |> Maybe.withDefault Color.black
-                }
+                            else
+                                Nothing
+                        , backgroundColor =
+                            route
+                                |> Maybe.map .color
+                                |> Maybe.withDefault Color.white
+                        , textColor =
+                            route
+                                |> Maybe.map .textColor
+                                |> Maybe.withDefault Color.black
+                        }
+                    )
+                    maybeTime
             )
 
 
