@@ -12,6 +12,7 @@ import Element.Input as Input
 import Mbta
 import Mbta.Api
 import Model exposing (..)
+import Pill
 import Time
 import TimeZone
 import ViewHelpers
@@ -59,17 +60,18 @@ ui model =
             Mbta.Api.Loaded (Ok data) ->
                 [ viewSelections
                     (Maybe.withDefault (Time.millisToPosix 0) model.currentTime)
-                    model.selections
+                    model.routes
                     model.stops
                     data
+                    model.selections
                 , addSelectionForm model
                 , refreshButton model
                 ]
         )
 
 
-viewSelections : Time.Posix -> List Selection -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Element Msg
-viewSelections currentTime selections stops data =
+viewSelections : Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> List Selection -> Element Msg
+viewSelections currentTime routes stops data selections =
     El.column
         [ El.spacing unit
         , El.width El.fill
@@ -80,24 +82,26 @@ viewSelections currentTime selections stops data =
                     stop =
                         Dict.get selection.stopId stops
                 in
-                viewSelection currentTime stop data selection
+                viewSelection currentTime routes stop data selection
             )
             selections
         )
 
 
-viewSelection : Time.Posix -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
-viewSelection currentTime stop data selection =
+viewSelection : Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection currentTime routes stop data selection =
     El.column
         [ El.width El.fill
+        , El.spacing unit
         ]
-        [ selectionHeading stop selection
+        [ selectionStopName stop selection
+        , selectionRoutePills routes selection
         , viewPredictions currentTime data selection
         ]
 
 
-selectionHeading : Maybe Mbta.Stop -> Selection -> Element Msg
-selectionHeading stop selection =
+selectionStopName : Maybe Mbta.Stop -> Selection -> Element Msg
+selectionStopName stop selection =
     let
         (Mbta.StopId stopIdText) =
             selection.stopId
@@ -107,10 +111,20 @@ selectionHeading stop selection =
                 |> Maybe.map Mbta.stopName
                 |> Maybe.withDefault stopIdText
     in
-    El.el
-        [ El.padding unit
+    El.text stopName
+
+
+selectionRoutePills : Dict Mbta.RouteId Mbta.Route -> Selection -> Element Msg
+selectionRoutePills routes selection =
+    El.wrappedRow
+        [ El.spacing unit
         ]
-        (El.text stopName)
+        (List.map
+            (\routeId ->
+                Pill.pill routeId (Dict.get routeId routes)
+            )
+            selection.routeIds
+        )
 
 
 viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element msg
