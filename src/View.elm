@@ -14,6 +14,7 @@ import Mbta.Api
 import Model exposing (..)
 import Time
 import TimeZone
+import ViewHelpers
 import ViewModel
 
 
@@ -39,8 +40,8 @@ ui model =
         , El.spacing unit
         , El.centerX
         , El.width (El.maximum 400 El.fill)
-        , Background.color (avh4ColorToElmUiColor Color.charcoal)
-        , Font.color (avh4ColorToElmUiColor Color.white)
+        , Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
+        , Font.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
         ]
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
@@ -154,9 +155,9 @@ viewPrediction currentTime index prediction =
                 else
                     4
             }
-        , Border.color (avh4ColorToElmUiColor Color.charcoal)
-        , Background.color (avh4ColorToElmUiColor prediction.backgroundColor)
-        , Font.color (avh4ColorToElmUiColor prediction.textColor)
+        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
+        , Background.color (ViewHelpers.avh4ColorToElmUiColor prediction.backgroundColor)
+        , Font.color (ViewHelpers.avh4ColorToElmUiColor prediction.textColor)
         , Font.size 14
         ]
         [ El.el
@@ -317,7 +318,7 @@ addSelectionForm model =
         [ El.spacing unit
         ]
         [ Input.text
-            [ Font.color (avh4ColorToElmUiColor Color.black)
+            [ Font.color (ViewHelpers.avh4ColorToElmUiColor Color.black)
             ]
             { onChange = TypeRouteId
             , text = model.routeIdFormText
@@ -325,7 +326,7 @@ addSelectionForm model =
             , label = label "Route Ids (period separated)"
             }
         , Input.text
-            [ Font.color (avh4ColorToElmUiColor Color.black)
+            [ Font.color (ViewHelpers.avh4ColorToElmUiColor Color.black)
             ]
             { onChange = TypeStopId
             , text = model.stopIdFormText
@@ -401,15 +402,6 @@ lastUpdatedText model =
 
         _ ->
             "Never"
-
-
-avh4ColorToElmUiColor : Color.Color -> El.Color
-avh4ColorToElmUiColor avh4Color =
-    let
-        { red, green, blue, alpha } =
-            Color.toRgba avh4Color
-    in
-    El.rgba red green blue alpha
 
 
 {-| Pixels
