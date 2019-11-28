@@ -4,7 +4,8 @@ import AssocList as Dict
 import Browser
 import Browser.Navigation as Navigation
 import Data exposing (Selection)
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode
+import List.Extra
 import Mbta
 import Mbta.Api
 import Model exposing (..)
@@ -147,6 +148,18 @@ update msg model =
                 | directionIdFormValue = directionId
               }
             , Cmd.none
+            )
+
+        DeleteSelection index ->
+            let
+                newSelections =
+                    List.Extra.removeAt index model.selections
+            in
+            ( model
+            , model.url
+                |> UrlParsing.setSelectionsInUrl newSelections
+                |> Url.toString
+                |> Navigation.pushUrl model.navigationKey
             )
 
         ReceiveRoutes apiResult ->

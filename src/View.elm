@@ -76,25 +76,30 @@ viewSelections currentTime routes stops data selections =
         [ El.spacing unit
         , El.width El.fill
         ]
-        (List.map
-            (\selection ->
+        (List.indexedMap
+            (\index selection ->
                 let
                     stop =
                         Dict.get selection.stopId stops
                 in
-                viewSelection currentTime routes stop data selection
+                viewSelection index currentTime routes stop data selection
             )
             selections
         )
 
 
-viewSelection : Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
-viewSelection currentTime routes stop data selection =
+viewSelection : Int -> Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection index currentTime routes stop data selection =
     El.column
         [ El.width El.fill
         , El.spacing unit
         ]
-        [ selectionStopName stop selection
+        [ El.row
+            [ El.width El.fill
+            ]
+            [ selectionStopName stop selection
+            , El.el [ El.alignRight ] (removeSelection index)
+            ]
         , selectionRoutePills routes selection
         , viewPredictions currentTime data selection
         ]
@@ -112,6 +117,15 @@ selectionStopName stop selection =
                 |> Maybe.withDefault stopIdText
     in
     El.text stopName
+
+
+removeSelection : Int -> Element Msg
+removeSelection index =
+    Input.button
+        []
+        { onPress = Just (DeleteSelection index)
+        , label = El.text "x"
+        }
 
 
 selectionRoutePills : Dict Mbta.RouteId Mbta.Route -> Selection -> Element Msg
