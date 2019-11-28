@@ -162,6 +162,34 @@ update msg model =
                 |> Navigation.pushUrl model.navigationKey
             )
 
+        ToggleDirection index ->
+            let
+                newSelections =
+                    List.Extra.updateAt
+                        index
+                        (\selection ->
+                            { selection
+                                | directionId =
+                                    case selection.directionId of
+                                        Nothing ->
+                                            Just Mbta.D1
+
+                                        Just Mbta.D1 ->
+                                            Just Mbta.D0
+
+                                        Just Mbta.D0 ->
+                                            Nothing
+                            }
+                        )
+                        model.selections
+            in
+            ( model
+            , model.url
+                |> UrlParsing.setSelectionsInUrl newSelections
+                |> Url.toString
+                |> Navigation.pushUrl model.navigationKey
+            )
+
         ReceiveRoutes apiResult ->
             ( { model
                 | routes =

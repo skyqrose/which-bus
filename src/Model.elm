@@ -38,6 +38,7 @@ type Msg
     | TypeStopId String
     | TypeDirection (Maybe Mbta.DirectionId)
     | DeleteSelection Int
+    | ToggleDirection Int
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
     | StreamMsg String Decode.Value

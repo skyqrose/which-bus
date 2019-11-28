@@ -99,7 +99,7 @@ viewSelection index currentTime routes stop data selection =
             , El.spacing 4
             ]
             [ selectionStopName stop selection
-            , El.el [ El.alignRight ] (directionIcon selection.directionId)
+            , El.el [ El.alignRight ] (directionIcon index selection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
         , selectionRoutePills routes selection
@@ -121,8 +121,8 @@ selectionStopName stop selection =
     El.text stopName
 
 
-directionIcon : Maybe Mbta.DirectionId -> Element Msg
-directionIcon directionId =
+directionIcon : Int -> Maybe Mbta.DirectionId -> Element Msg
+directionIcon index directionId =
     let
         icon =
             case directionId of
@@ -141,9 +141,14 @@ directionIcon directionId =
                     , description = "direction 1"
                     }
     in
-    El.image
-        [ El.height (El.px 20) ]
-        icon
+    Input.button
+        []
+        { onPress = Just (ToggleDirection index)
+        , label =
+            El.image
+                [ El.height (El.px 20) ]
+                icon
+        }
 
 
 removeSelection : Int -> Element Msg
