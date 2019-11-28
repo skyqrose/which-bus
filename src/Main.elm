@@ -58,9 +58,9 @@ init flags url key =
       }
     , Cmd.batch
         [ Task.perform Tick Time.now
-        , startStream streamUrl
-        , getRoutes selections
+        , getRoutes
         , getStops selections
+        , startStream streamUrl
         ]
     )
 
@@ -111,9 +111,8 @@ update msg model =
                 , streamState = initStreamState
               }
             , Cmd.batch
-                [ startStream streamUrl
-                , getRoutes newSelections
-                , getStops newSelections
+                [ getStops newSelections
+                , startStream streamUrl
                 ]
             )
 
@@ -219,13 +218,13 @@ apiHost =
         { apiKey = Just "3a6d67c08111426d8617a30340a9fad3" }
 
 
-getRoutes : List Selection -> Cmd Msg
-getRoutes selections =
+getRoutes : Cmd Msg
+getRoutes =
     Mbta.Api.getRoutes
         ReceiveRoutes
         apiHost
         []
-        [ Mbta.Api.filterRoutesByIds (List.concatMap .routeIds selections) ]
+        []
 
 
 getStops : List Selection -> Cmd Msg
