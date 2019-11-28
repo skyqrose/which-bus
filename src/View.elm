@@ -124,7 +124,13 @@ removeSelection index =
     Input.button
         []
         { onPress = Just (DeleteSelection index)
-        , label = El.text "x"
+        , label =
+            El.image
+                [ El.height (El.px (unit * 2))
+                ]
+                { src = "/assets/close.svg"
+                , description = "remove"
+                }
         }
 
 

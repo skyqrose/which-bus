@@ -2,7 +2,7 @@ language: elm
 script: npm test && npm run build
 before_deploy:
   - shopt -s extglob
-  - rm -r !(.|..|.git|CNAME|js|index.html)
+  - rm -r !(.|..|.git|CNAME|js|assets|index.html)
   - shopt -u extglob
 deploy:
   provider: pages
