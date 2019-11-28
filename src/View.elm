@@ -96,8 +96,10 @@ viewSelection index currentTime routes stop data selection =
         ]
         [ El.row
             [ El.width El.fill
+            , El.spacing 4
             ]
             [ selectionStopName stop selection
+            , El.el [ El.alignRight ] (directionIcon selection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
         , selectionRoutePills routes selection
@@ -119,6 +121,31 @@ selectionStopName stop selection =
     El.text stopName
 
 
+directionIcon : Maybe Mbta.DirectionId -> Element Msg
+directionIcon directionId =
+    let
+        icon =
+            case directionId of
+                Nothing ->
+                    { src = "/assets/direction-both.svg"
+                    , description = "both directions"
+                    }
+
+                Just Mbta.D0 ->
+                    { src = "/assets/direction-0.svg"
+                    , description = "direction 0"
+                    }
+
+                Just Mbta.D1 ->
+                    { src = "/assets/direction-1.svg"
+                    , description = "direction 1"
+                    }
+    in
+    El.image
+        [ El.height (El.px 20) ]
+        icon
+
+
 removeSelection : Int -> Element Msg
 removeSelection index =
     Input.button
@@ -126,7 +153,7 @@ removeSelection index =
         { onPress = Just (DeleteSelection index)
         , label =
             El.image
-                [ El.height (El.px (unit * 2))
+                [ El.height (El.px 20)
                 ]
                 { src = "/assets/close.svg"
                 , description = "remove"
