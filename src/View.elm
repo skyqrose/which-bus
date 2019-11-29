@@ -472,20 +472,9 @@ timeZone =
 newSelection : Element Msg
 newSelection =
     Input.button
-        [ El.padding 4
-        , Border.rounded 24
-        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
-        , Border.width 2
-        ]
+        buttonStyles
         { onPress = Just NewSelectionStart
-        , label =
-            El.image
-                [ El.width (El.px 16)
-                , El.height (El.px 16)
-                ]
-                { src = "/assets/add.svg"
-                , description = "Add route"
-                }
+        , label = El.text "New"
         }
 
 
