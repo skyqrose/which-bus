@@ -125,12 +125,7 @@ update msg model =
                 newSelections =
                     model.selections ++ [ newSelection ]
             in
-            ( model
-            , model.url
-                |> UrlParsing.setSelectionsInUrl newSelections
-                |> Url.toString
-                |> Navigation.pushUrl model.navigationKey
-            )
+            registerNewSelections model newSelections
 
         TypeRouteId text ->
             ( { model
@@ -158,12 +153,7 @@ update msg model =
                 newSelections =
                     List.Extra.removeAt index model.selections
             in
-            ( model
-            , model.url
-                |> UrlParsing.setSelectionsInUrl newSelections
-                |> Url.toString
-                |> Navigation.pushUrl model.navigationKey
-            )
+            registerNewSelections model newSelections
 
         ToggleDirection index ->
             let
@@ -186,12 +176,7 @@ update msg model =
                         )
                         model.selections
             in
-            ( model
-            , model.url
-                |> UrlParsing.setSelectionsInUrl newSelections
-                |> Url.toString
-                |> Navigation.pushUrl model.navigationKey
-            )
+            registerNewSelections model newSelections
 
         ReceiveRoutes apiResult ->
             ( { model
@@ -250,6 +235,16 @@ update msg model =
               }
             , startStream streamUrl
             )
+
+
+registerNewSelections : Model -> List Selection -> ( Model, Cmd Msg )
+registerNewSelections model newSelections =
+    ( model
+    , model.url
+        |> UrlParsing.setSelectionsInUrl newSelections
+        |> Url.toString
+        |> Navigation.pushUrl model.navigationKey
+    )
 
 
 restartStream : Model -> Bool
