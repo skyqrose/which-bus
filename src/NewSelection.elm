@@ -21,15 +21,15 @@ viewModal routes newSelectionState =
 
         ChoosingRoute ->
             modalWrapper
-                (routePicker routes)
+                (chooseRoute routes)
 
         ChoosingStop routeIds directionId loadedStops ->
             modalWrapper
-                (stopPicker loadedStops)
+                (chooseStop loadedStops)
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
-                (routePicker routes)
+                (chooseRoute routes)
 
 
 modalWrapper : Element Msg -> Element Msg
@@ -44,7 +44,8 @@ modalWrapper child =
         , El.scrollbars
         ]
         (El.el
-            [ El.centerX
+            [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
+            , El.centerX
             , El.centerY
             , El.width El.fill
             , El.height El.fill
@@ -66,16 +67,15 @@ modalBackground =
         El.none
 
 
-picker : (a -> Msg) -> (a -> Element Msg) -> List a -> Element Msg
-picker msg viewElem elems =
+buttonList : (a -> Msg) -> (a -> Element Msg) -> List a -> Element Msg
+buttonList msg viewElem elems =
     El.column
         [ El.width El.fill
         ]
         (List.map
             (\elem ->
                 Input.button
-                    [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
-                    , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.lightCharcoal)
+                    [ Border.color (ViewHelpers.avh4ColorToElmUiColor Color.lightCharcoal)
                     , Border.widthEach
                         { bottom = 1
                         , left = 0
@@ -92,16 +92,26 @@ picker msg viewElem elems =
         )
 
 
-routePicker : List Mbta.Route -> Element Msg
-routePicker routes =
-    picker
+chooseRoute : List Mbta.Route -> Element Msg
+chooseRoute routes =
+    El.column
+        [ El.width El.fill
+        ]
+        [ El.text "Choose Route"
+        , routeList routes
+        ]
+
+
+routeList : List Mbta.Route -> Element Msg
+routeList routes =
+    buttonList
         (NewSelectionChoseRoute << .id)
-        routePickerRoute
+        routeListRoute
         routes
 
 
-routePickerRoute : Mbta.Route -> Element msg
-routePickerRoute route =
+routeListRoute : Mbta.Route -> Element msg
+routeListRoute route =
     El.row
         [ El.padding (unit // 4)
         ]
@@ -113,14 +123,44 @@ routePickerRoute route =
         ]
 
 
-stopPicker : List Mbta.Stop -> Element Msg
-stopPicker stops =
-    picker
+chooseStop : List Mbta.Stop -> Element Msg
+chooseStop stops =
+    El.column
+        [ El.width El.fill
+        ]
+        [ El.text "Choose Stop"
+        , stopList stops
+        ]
+
+
+stopList : List Mbta.Stop -> Element Msg
+stopList stops =
+    buttonList
         (NewSelectionChoseStop << Mbta.stopId)
-        stopPickerStop
+        stopListStop
         stops
 
 
-stopPickerStop : Mbta.Stop -> Element msg
-stopPickerStop stop =
+stopListStop : Mbta.Stop -> Element msg
+stopListStop stop =
     El.text (Mbta.stopName stop)
+
+
+addPill : Element Msg
+addPill =
+    Input.button
+        [ El.padding 4
+        , Border.rounded 24
+        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
+        , Border.width 2
+        ]
+        { onPress = Just NewSelectionStart
+        , label =
+            El.image
+                [ El.width (El.px 16)
+                , El.height (El.px 16)
+                ]
+                { src = "/assets/add.svg"
+                , description = "Add route"
+                }
+        }
