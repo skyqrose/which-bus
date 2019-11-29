@@ -2,6 +2,7 @@ module Model exposing
     ( Modal(..)
     , Model
     , Msg(..)
+    , NewSelectionState(..)
     )
 
 import AssocList exposing (Dict)
@@ -26,6 +27,7 @@ type alias Model =
     , routeIdFormText : String
     , stopIdFormText : String
     , modal : Modal
+    , newSelectionState : NewSelectionState
 
     -- data
     , routes : List Mbta.Route
@@ -52,6 +54,11 @@ type
     | CloseModal
     | OpenRoutePicker (Maybe Int)
     | PickRoute Mbta.RouteId
+    | NewSelectionStart
+    | NewSelectionChoseRoute Mbta.RouteId
+    | NewSelectionChoseDirection (Maybe Mbta.DirectionId)
+    | NewSelectionChoseStop Mbta.StopId
+    | NewSelectionCancel
       -- data
     | RemoveRouteFromSelection Int Mbta.RouteId
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
@@ -59,6 +66,13 @@ type
     | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))
     | StreamMsg String Decode.Value
     | RefreshStream
+
+
+type NewSelectionState
+    = NotMakingNewSelection
+    | ChoosingRoute
+    | ChoosingStop (List Mbta.RouteId) (Maybe Mbta.DirectionId) (List Mbta.Stop)
+    | ChoosingExtraRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId)
 
 
 type Modal

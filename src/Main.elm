@@ -52,6 +52,7 @@ init flags url key =
       , routeIdFormText = ""
       , stopIdFormText = ""
       , modal = NoModal
+      , newSelectionState = NotMakingNewSelection
       , routes = []
       , stops = Dict.empty
       , routesByStopId = Dict.empty
@@ -246,6 +247,76 @@ update msg model =
                     }
             in
             registerNewSelections modelWithClosedModal newSelections
+
+        NewSelectionStart ->
+            ( { model
+                | newSelectionState = ChoosingRoute
+              }
+            , Cmd.none
+            )
+
+        NewSelectionChoseRoute routeId ->
+            ( { model
+                | newSelectionState = ChoosingStop [ routeId ] Nothing []
+              }
+            , Cmd.none
+            )
+
+        NewSelectionChoseDirection directionId ->
+            case model.newSelectionState of
+                ChoosingStop routeIds _ _ ->
+                    ( { model
+                        | newSelectionState = ChoosingStop routeIds directionId []
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( { model
+                        | newSelectionState = NotMakingNewSelection
+                      }
+                    , Cmd.none
+                    )
+
+        NewSelectionChoseStop stopId ->
+            case model.newSelectionState of
+                ChoosingStop routeIds directionId _ ->
+                    let
+                        newSelection : Selection
+                        newSelection =
+                            Selection.WithStop
+                                { routeIds = routeIds
+                                , stopId = stopId
+                                , directionId = directionId
+                                }
+
+                        newSelections : List Selection
+                        newSelections =
+                            List.append
+                                model.selections
+                                [ newSelection ]
+
+                        modelWithClosedNewSelection : Model
+                        modelWithClosedNewSelection =
+                            { model
+                                | newSelectionState = NotMakingNewSelection
+                            }
+                    in
+                    registerNewSelections model newSelections
+
+                _ ->
+                    ( { model
+                        | newSelectionState = NotMakingNewSelection
+                      }
+                    , Cmd.none
+                    )
+
+        NewSelectionCancel ->
+            ( { model
+                | newSelectionState = NotMakingNewSelection
+              }
+            , Cmd.none
+            )
 
         ReceiveRoutes apiResult ->
             ( { model
