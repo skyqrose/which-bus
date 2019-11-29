@@ -15,12 +15,17 @@ import Url exposing (Url)
 
 
 type alias Model =
+    -- bookkeeping
     { currentTime : Maybe Time.Posix
     , url : Url
     , navigationKey : Navigation.Key
+
+    --ui
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
+
+    -- data
     , routes : Dict Mbta.RouteId Mbta.Route
     , stops : Dict Mbta.StopId Mbta.Stop
     , routesByStopId : Dict Mbta.StopId (List Mbta.Route)
@@ -29,16 +34,20 @@ type alias Model =
     }
 
 
-type Msg
+type
+    Msg
+    -- bookkeeping
     = Tick Time.Posix
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url
+      -- ui
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
+      -- data
     | RemoveRouteFromSelection Int Mbta.RouteId
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
