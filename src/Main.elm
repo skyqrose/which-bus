@@ -235,6 +235,86 @@ update msg model =
                     , Cmd.none
                     )
 
+        NewSelectionAddExtraRoute ->
+            case model.newSelectionState of
+                ChoosingStop routeIds directionId _ ->
+                    ( { model
+                        | newSelectionState = ChoosingExtraRoutes routeIds directionId
+                      }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( model
+                    , Cmd.none
+                    )
+
+        NewSelectionRemoveRoute routeId ->
+            case model.newSelectionState of
+                ChoosingStop routeIds directionId _ ->
+                    let
+                        newRouteIds =
+                            List.Extra.remove routeId routeIds
+                    in
+                    if List.isEmpty newRouteIds then
+                        ( { model
+                            | newSelectionState = ChoosingRoute
+                          }
+                        , Cmd.none
+                        )
+
+                    else
+                        ( { model
+                            | newSelectionState = ChoosingStop newRouteIds directionId []
+                          }
+                        , getStopsForRoutes newRouteIds directionId
+                        )
+
+                ChoosingExtraRoutes routeIds directionId ->
+                    let
+                        newRouteIds =
+                            List.Extra.remove routeId routeIds
+                    in
+                    if List.isEmpty newRouteIds then
+                        ( { model
+                            | newSelectionState = ChoosingRoute
+                          }
+                        , Cmd.none
+                        )
+
+                    else
+                        ( { model
+                            | newSelectionState = ChoosingExtraRoutes newRouteIds directionId
+                          }
+                        , Cmd.none
+                        )
+
+                _ ->
+                    ( model
+                    , Cmd.none
+                    )
+
+        NewSelectionBack ->
+            case model.newSelectionState of
+                ChoosingStop routeIds directionId _ ->
+                    ( { model
+                        | newSelectionState = ChoosingRoute
+                      }
+                    , Cmd.none
+                    )
+
+                ChoosingExtraRoutes routeIds directionId ->
+                    ( { model
+                        | newSelectionState = ChoosingStop routeIds directionId []
+                      }
+                    , getStopsForRoutes routeIds directionId
+                    )
+
+                _ ->
+                    ( model
+                    , Cmd.none
+                    )
+
         NewSelectionCancel ->
             ( { model
                 | newSelectionState = NotMakingNewSelection

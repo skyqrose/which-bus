@@ -48,6 +48,9 @@ type
     | NewSelectionChoseRoute Mbta.RouteId
     | NewSelectionChoseDirection (Maybe Mbta.DirectionId)
     | NewSelectionChoseStop Mbta.StopId
+    | NewSelectionAddExtraRoute
+    | NewSelectionRemoveRoute Mbta.RouteId
+    | NewSelectionBack
     | NewSelectionCancel
       -- data
     | RemoveRouteFromSelection Int Mbta.RouteId
