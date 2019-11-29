@@ -49,7 +49,7 @@ ui model =
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
                 [ El.text "Loading..."
-                , addPill Nothing
+                , newSelection
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -67,7 +67,7 @@ ui model =
                     model.stops
                     data
                     model.selections
-                , addPill Nothing
+                , newSelection
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -315,7 +315,6 @@ incompleteRoutePills index selectedRouteIds =
                     }
             )
             selectedRouteIds
-            ++ [ addPill (Just index) ]
         )
 
 
@@ -518,15 +517,15 @@ timeZone =
     TimeZone.america__new_york ()
 
 
-addPill : Maybe Int -> Element Msg
-addPill index =
+newSelection : Element Msg
+newSelection =
     Input.button
         [ El.padding 4
         , Border.rounded 24
         , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
         , Border.width 2
         ]
-        { onPress = Just (OpenRoutePicker index)
+        { onPress = Just NewSelectionStart
         , label =
             El.image
                 [ El.width (El.px 16)

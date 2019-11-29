@@ -15,11 +15,19 @@ import ViewHelpers exposing (unit)
 
 view : Model -> Element Msg
 view model =
-    case model.modal of
-        NoModal ->
+    case model.newSelectionState of
+        NotMakingNewSelection ->
             El.none
 
-        RoutePicker _ ->
+        ChoosingRoute ->
+            modalWrapper
+                (routePicker model.routes)
+
+        ChoosingStop routeIds directionId loadedStops ->
+            modalWrapper
+                stopPicker
+
+        ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
                 (routePicker model.routes)
 
@@ -53,7 +61,7 @@ background =
         , El.height El.fill
         , Background.color (ViewHelpers.avh4ColorToElmUiColor Color.darkCharcoal)
         , El.alpha 0.5
-        , Events.onClick CloseModal
+        , Events.onClick NewSelectionCancel
         ]
         El.none
 
@@ -76,7 +84,7 @@ routePicker routes =
                         }
                     , El.width El.fill
                     ]
-                    { onPress = Just (PickRoute route.id)
+                    { onPress = Just (NewSelectionChoseRoute route.id)
                     , label = routePickerRoute route
                     }
             )
@@ -95,3 +103,8 @@ routePickerRoute route =
             (Pill.pill route)
         , El.paragraph [] [ El.text route.longName ]
         ]
+
+
+stopPicker : Element Msg
+stopPicker =
+    El.text "choose a stop"
