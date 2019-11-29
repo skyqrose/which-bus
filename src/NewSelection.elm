@@ -29,7 +29,7 @@ viewModal routes newSelectionState =
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
-                (chooseRoute routes)
+                (chooseExtraRoute routes routeIds)
 
 
 selectedRoutes : List Mbta.Route -> List Mbta.RouteId -> List Mbta.Route
@@ -102,7 +102,7 @@ buttonList msg viewElem elems =
 
 
 chooseRoute : List Mbta.Route -> Element Msg
-chooseRoute routes =
+chooseRoute allRoutes =
     El.column
         [ El.width El.fill
         ]
@@ -111,7 +111,28 @@ chooseRoute routes =
             , Font.size 24
             ]
             (El.text "Choose Route")
-        , routeList routes
+        , routeList allRoutes
+        ]
+
+
+chooseExtraRoute : List Mbta.Route -> List Mbta.RouteId -> Element Msg
+chooseExtraRoute allRoutes selectedRouteIds =
+    El.column
+        [ El.width El.fill
+        ]
+        [ El.el
+            [ El.padding (unit // 2)
+            , Font.size 24
+            ]
+            (El.text "Choose Another Routes")
+        , El.wrappedRow
+            [ Pill.listSpacing
+            ]
+            (List.map
+                Pill.pill
+                (selectedRoutes allRoutes selectedRouteIds)
+            )
+        , routeList allRoutes
         ]
 
 
