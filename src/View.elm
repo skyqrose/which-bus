@@ -47,6 +47,7 @@ ui model =
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
                 [ El.text "Loading..."
+                , addPill
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -64,6 +65,7 @@ ui model =
                     model.stops
                     data
                     model.selections
+                , addPill
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -117,7 +119,7 @@ viewPartialSelection index partialSelection =
             [ El.width El.fill
             , El.spacing 4
             ]
-            [ selectedRoutePills index [] partialSelection.routeIds
+            [ incompleteRoutePills index partialSelection.routeIds
             , El.el [ El.alignRight ] (directionIcon index partialSelection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
@@ -281,6 +283,7 @@ unselectedRoutePills : Int -> List Mbta.Route -> Element Msg
 unselectedRoutePills index unselectedRoutes =
     El.wrappedRow
         [ El.spacing (unit // 2)
+        , El.width El.fill
         ]
         (List.map
             (\route ->
@@ -292,6 +295,25 @@ unselectedRoutePills index unselectedRoutes =
                     }
             )
             unselectedRoutes
+        )
+
+
+incompleteRoutePills : Int -> List Mbta.RouteId -> Element Msg
+incompleteRoutePills index selectedRouteIds =
+    El.wrappedRow
+        [ El.spacing (unit // 2)
+        , El.width El.fill
+        ]
+        (List.map
+            (\routeId ->
+                Input.button
+                    []
+                    { onPress = Just (RemoveRouteFromSelection index routeId)
+                    , label = Pill.unknownPill routeId
+                    }
+            )
+            selectedRouteIds
+            ++ [ addPill ]
         )
 
 
@@ -492,6 +514,26 @@ absoluteTimeString time =
 timeZone : Time.Zone
 timeZone =
     TimeZone.america__new_york ()
+
+
+addPill : Element Msg
+addPill =
+    Input.button
+        [ El.padding 4
+        , Border.rounded 24
+        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
+        , Border.width 2
+        ]
+        { onPress = Nothing
+        , label =
+            El.image
+                [ El.width (El.px 16)
+                , El.height (El.px 16)
+                ]
+                { src = "/assets/add.svg"
+                , description = "Add route"
+                }
+        }
 
 
 addSelectionForm : Model -> Element Msg
