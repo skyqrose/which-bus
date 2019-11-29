@@ -497,18 +497,6 @@ addSelectionForm model =
             , placeholder = Nothing
             , label = label "Stop Id"
             }
-        , Input.radioRow
-            [ El.spacing (unit * 2)
-            ]
-            { onChange = TypeDirection
-            , options =
-                [ Input.option Nothing (El.text "None")
-                , Input.option (Just Mbta.D0) (El.text "0")
-                , Input.option (Just Mbta.D1) (El.text "1")
-                ]
-            , selected = Just model.directionIdFormValue
-            , label = label "Direction Id"
-            }
         , Input.button
             buttonStyles
             { onPress =
@@ -533,7 +521,7 @@ addSelectionForm model =
                     selection =
                         { routeIds = routeIds
                         , stopId = stopId
-                        , directionId = model.directionIdFormValue
+                        , directionId = Nothing
                         }
                 in
                 if Selection.isValid selection then

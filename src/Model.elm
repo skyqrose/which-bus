@@ -21,7 +21,6 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
-    , directionIdFormValue : Maybe Mbta.DirectionId
     , routes : Dict Mbta.RouteId Mbta.Route
     , stops : Dict Mbta.StopId Mbta.Stop
     , routesByStopId : Dict Mbta.StopId (List Mbta.Route)
@@ -37,7 +36,6 @@ type Msg
     | AddSelection Selection
     | TypeRouteId String
     | TypeStopId String
-    | TypeDirection (Maybe Mbta.DirectionId)
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
