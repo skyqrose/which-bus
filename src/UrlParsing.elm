@@ -1,6 +1,7 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
 import Data exposing (Selection)
+import Maybe.Extra
 import Mbta
 import Url
 import Url.Parser
@@ -27,42 +28,53 @@ selectionsQueryParser =
 
 parseSelection : String -> Maybe Selection
 parseSelection queryValue =
-    case String.split "," queryValue of
+    (case String.split "," queryValue of
         [ routeIds, stopId ] ->
             Just
-                { routeIds =
-                    routeIds
-                        |> String.split "."
-                        |> List.filter ((/=) "")
-                        |> List.map Mbta.RouteId
-                , stopId = Mbta.StopId stopId
+                { routeIds = parseRouteIds routeIds
+                , stopId = parseStopId stopId
                 , directionId = Nothing
                 }
 
         [ routeIds, stopId, "0" ] ->
             Just
-                { routeIds =
-                    routeIds
-                        |> String.split "."
-                        |> List.filter ((/=) "")
-                        |> List.map Mbta.RouteId
-                , stopId = Mbta.StopId stopId
+                { routeIds = parseRouteIds routeIds
+                , stopId = parseStopId stopId
                 , directionId = Just Mbta.D0
                 }
 
         [ routeIds, stopId, "1" ] ->
             Just
-                { routeIds =
-                    routeIds
-                        |> String.split "."
-                        |> List.filter ((/=) "")
-                        |> List.map Mbta.RouteId
-                , stopId = Mbta.StopId stopId
+                { routeIds = parseRouteIds routeIds
+                , stopId = parseStopId stopId
                 , directionId = Just Mbta.D1
                 }
 
         _ ->
             Nothing
+    )
+        |> Maybe.Extra.filter
+            (\selection ->
+                Maybe.Extra.isJust selection.stopId || not (List.isEmpty selection.routeIds)
+            )
+
+
+parseRouteIds : String -> List Mbta.RouteId
+parseRouteIds routeIdsString =
+    routeIdsString
+        |> String.split "."
+        |> List.filter ((/=) "")
+        |> List.map Mbta.RouteId
+
+
+parseStopId : String -> Maybe Mbta.StopId
+parseStopId stopIdString =
+    case stopIdString of
+        "" ->
+            Nothing
+
+        _ ->
+            Just (Mbta.StopId stopIdString)
 
 
 setSelectionsInUrl : List Selection -> Url.Url -> Url.Url
@@ -85,8 +97,14 @@ encodeSelectionAsQueryParam selection =
                     |> List.map (\(Mbta.RouteId routeId) -> routeId)
                 )
 
-        (Mbta.StopId stopId) =
-            selection.stopId
+        stopId : String
+        stopId =
+            case selection.stopId of
+                Nothing ->
+                    ""
+
+                Just (Mbta.StopId stopIdText) ->
+                    stopIdText
 
         directionId =
             case selection.directionId of

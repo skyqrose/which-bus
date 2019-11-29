@@ -9,6 +9,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Maybe.Extra
 import Mbta
 import Mbta.Api
 import Model exposing (..)
@@ -81,12 +82,19 @@ viewSelections currentTime routesByStopId stops data selections =
                 let
                     stop : Maybe Mbta.Stop
                     stop =
-                        Dict.get selection.stopId stops
+                        selection.stopId
+                            |> Maybe.andThen
+                                (\stopId ->
+                                    Dict.get stopId stops
+                                )
 
                     routes : List Mbta.Route
                     routes =
-                        routesByStopId
-                            |> Dict.get selection.stopId
+                        selection.stopId
+                            |> Maybe.andThen
+                                (\stopId ->
+                                    Dict.get stopId routesByStopId
+                                )
                             |> Maybe.withDefault []
                 in
                 viewSelection
@@ -160,13 +168,16 @@ viewSelection index currentTime routes stop data selection =
 selectionStopName : Maybe Mbta.Stop -> Selection -> Element Msg
 selectionStopName stop selection =
     let
-        (Mbta.StopId stopIdText) =
-            selection.stopId
-
+        stopName : String
         stopName =
-            stop
-                |> Maybe.map Mbta.stopName
-                |> Maybe.withDefault stopIdText
+            Maybe.Extra.or
+                (stop
+                    |> Maybe.map Mbta.stopName
+                )
+                (selection.stopId
+                    |> Maybe.map (\(Mbta.StopId stopIdText) -> stopIdText)
+                )
+                |> Maybe.withDefault "Stop"
     in
     El.el
         [ Font.size 24
@@ -500,21 +511,34 @@ addSelectionForm model =
         , Input.button
             buttonStyles
             { onPress =
-                if model.stopIdFormText /= "" then
+                let
+                    routeIds : List Mbta.RouteId
+                    routeIds =
+                        model.routeIdFormText
+                            |> String.split "."
+                            |> List.filter ((/=) "")
+                            |> List.map Mbta.RouteId
+
+                    stopId : Maybe Mbta.StopId
+                    stopId =
+                        case model.stopIdFormText of
+                            "" ->
+                                Nothing
+
+                            _ ->
+                                Just (Mbta.StopId model.stopIdFormText)
+                in
+                if List.isEmpty routeIds && Maybe.Extra.isNothing stopId then
+                    Nothing
+
+                else
                     Just
                         (AddSelection
-                            { routeIds =
-                                model.routeIdFormText
-                                    |> String.split "."
-                                    |> List.filter ((/=) "")
-                                    |> List.map Mbta.RouteId
-                            , stopId = Mbta.StopId model.stopIdFormText
+                            { routeIds = routeIds
+                            , stopId = stopId
                             , directionId = model.directionIdFormValue
                             }
                         )
-
-                else
-                    Nothing
             , label = El.text "Add Stop"
             }
         ]

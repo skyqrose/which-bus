@@ -138,17 +138,22 @@ predictionMatchesRouteId routeIds prediction =
     List.member prediction.routeId routeIds
 
 
-predictionMatchesStop : Mbta.Api.Data primary -> Mbta.StopId -> Mbta.Prediction -> Bool
-predictionMatchesStop dataWithStopsIncluded queriedStop prediction =
-    (prediction.stopId == queriedStop)
-        || (let
-                predictionParentStation =
-                    dataWithStopsIncluded
-                        |> Mbta.Api.getIncludedStopStop prediction.stopId
-                        |> Maybe.andThen .parentStation
-            in
-            predictionParentStation == Just queriedStop
-           )
+predictionMatchesStop : Mbta.Api.Data primary -> Maybe Mbta.StopId -> Mbta.Prediction -> Bool
+predictionMatchesStop dataWithStopsIncluded queriedStopMaybe prediction =
+    case queriedStopMaybe of
+        Nothing ->
+            False
+
+        Just queriedStop ->
+            (prediction.stopId == queriedStop)
+                || (let
+                        predictionParentStation =
+                            dataWithStopsIncluded
+                                |> Mbta.Api.getIncludedStopStop prediction.stopId
+                                |> Maybe.andThen .parentStation
+                    in
+                    predictionParentStation == Just queriedStop
+                   )
 
 
 predictionMatchesDirection : Maybe Mbta.DirectionId -> Mbta.Prediction -> Bool

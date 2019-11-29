@@ -27,7 +27,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Nothing
                               }
                             ]
@@ -38,7 +38,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Just Mbta.D1
                               }
                             ]
@@ -56,7 +56,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Just Mbta.D1
                               }
                             ]
@@ -67,7 +67,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId1" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Just Mbta.D1
                               }
                             ]
@@ -78,7 +78,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = []
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Just Mbta.D1
                               }
                             ]
@@ -89,10 +89,38 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = []
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Nothing
                               }
                             ]
+            , test "allows a selection with no stop id" <|
+                \_ ->
+                    Just "stop=routeId,,0"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Nothing
+                              , directionId = Just Mbta.D0
+                              }
+                            ]
+            , test "allows a selection with no stop id and no direction" <|
+                \_ ->
+                    Just "stop=routeId,"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Nothing
+                              , directionId = Nothing
+                              }
+                            ]
+            , test "doesn't take a selection without a route or stop" <|
+                \_ ->
+                    Just "stop=,"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal []
             , test "doesn't take a selection with too many ids" <|
                 \_ ->
                     Just "stop=one,two,three,four"
@@ -114,11 +142,11 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId1" ]
-                              , stopId = Mbta.StopId "stopId1"
+                              , stopId = Just (Mbta.StopId "stopId1")
                               , directionId = Nothing
                               }
                             , { routeIds = [ Mbta.RouteId "routeId2" ]
-                              , stopId = Mbta.StopId "stopId2"
+                              , stopId = Just (Mbta.StopId "stopId2")
                               , directionId = Just Mbta.D0
                               }
                             ]
@@ -129,7 +157,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Nothing
                               }
                             ]
@@ -140,7 +168,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Nothing
                               }
                             ]
@@ -151,7 +179,7 @@ suite =
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
                             [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Mbta.StopId "stopId"
+                              , stopId = Just (Mbta.StopId "stopId")
                               , directionId = Nothing
                               }
                             ]

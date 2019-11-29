@@ -318,42 +318,33 @@ getStops selections =
         ReceiveStops
         apiHost
         []
-        [ Mbta.Api.filterStopsByIds (List.map .stopId selections) ]
+        [ Mbta.Api.filterStopsByIds (Data.selectedStopIds selections) ]
 
 
 getRoutesByStopId : Dict Mbta.StopId (List Mbta.Route) -> List Selection -> Cmd Msg
 getRoutesByStopId existingRoutesByStopId selections =
     Cmd.batch
         (List.map
-            (\selection ->
-                case Dict.get selection.stopId existingRoutesByStopId of
+            (\stopId ->
+                case Dict.get stopId existingRoutesByStopId of
                     Just (_ :: _) ->
                         -- Already have a result, don't need to refetch
                         Cmd.none
 
                     _ ->
                         Mbta.Api.getRoutes
-                            (ReceiveRoutesForStopId selection.stopId)
+                            (ReceiveRoutesForStopId stopId)
                             apiHost
                             []
-                            [ Mbta.Api.filterRoutesByStopIds [ selection.stopId ]
+                            [ Mbta.Api.filterRoutesByStopIds [ stopId ]
                             ]
             )
-            selections
+            (Data.selectedStopIds selections)
         )
 
 
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
 streamPredictions selections =
-    let
-        routeIds : List Mbta.RouteId
-        routeIds =
-            List.concatMap .routeIds selections
-
-        stopIds : List Mbta.StopId
-        stopIds =
-            List.map .stopId selections
-    in
     Mbta.Api.streamPredictions
         apiHost
         [ Mbta.Api.include Mbta.Api.predictionStop
@@ -362,8 +353,8 @@ streamPredictions selections =
         , Mbta.Api.include Mbta.Api.predictionRoute
         , Mbta.Api.include Mbta.Api.predictionSchedule
         ]
-        [ Mbta.Api.filterPredictionsByRouteIds routeIds
-        , Mbta.Api.filterPredictionsByStopIds stopIds
+        [ Mbta.Api.filterPredictionsByRouteIds (Data.selectedRouteIds selections)
+        , Mbta.Api.filterPredictionsByStopIds (Data.selectedStopIds selections)
         ]
 
 
