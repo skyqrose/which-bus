@@ -105,13 +105,15 @@ update msg model =
                 newSelections =
                     UrlParsing.parseSelectionsFromUrl url
 
-                ( initStreamState, streamUrl ) =
+                -- ingore the new stream state
+                -- so we keep looking at the old data
+                -- until the new one sends its first reset
+                ( _, streamUrl ) =
                     streamPredictions newSelections
             in
             ( { model
                 | url = url
                 , selections = newSelections
-                , streamState = initStreamState
               }
             , Cmd.batch
                 [ getStops newSelections
