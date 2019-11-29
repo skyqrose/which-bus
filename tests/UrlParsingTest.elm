@@ -1,8 +1,8 @@
 module UrlParsingTest exposing (suite)
 
-import Data exposing (Selection)
 import Expect
 import Mbta
+import Selection exposing (Selection)
 import Test exposing (Test, describe, test)
 import Url
 import Url.Parser

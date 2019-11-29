@@ -1,9 +1,11 @@
-module Data exposing
+module Selection exposing
     ( Selection
+    , isValid
     , selectedRouteIds
     , selectedStopIds
     )
 
+import Maybe.Extra
 import Mbta
 
 
@@ -12,6 +14,11 @@ type alias Selection =
     , stopId : Maybe Mbta.StopId
     , directionId : Maybe Mbta.DirectionId
     }
+
+
+isValid : Selection -> Bool
+isValid selection =
+    not (List.isEmpty selection.routeIds) || Maybe.Extra.isJust selection.stopId
 
 
 selectedRouteIds : List Selection -> List Mbta.RouteId

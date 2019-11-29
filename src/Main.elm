@@ -3,12 +3,12 @@ port module Main exposing (main)
 import AssocList as Dict exposing (Dict)
 import Browser
 import Browser.Navigation as Navigation
-import Data exposing (Selection)
 import Json.Decode as Decode
 import List.Extra
 import Mbta
 import Mbta.Api
 import Model exposing (..)
+import Selection exposing (Selection)
 import Task
 import Time
 import Url exposing (Url)
@@ -318,7 +318,7 @@ getStops selections =
         ReceiveStops
         apiHost
         []
-        [ Mbta.Api.filterStopsByIds (Data.selectedStopIds selections) ]
+        [ Mbta.Api.filterStopsByIds (Selection.selectedStopIds selections) ]
 
 
 getRoutesByStopId : Dict Mbta.StopId (List Mbta.Route) -> List Selection -> Cmd Msg
@@ -339,7 +339,7 @@ getRoutesByStopId existingRoutesByStopId selections =
                             [ Mbta.Api.filterRoutesByStopIds [ stopId ]
                             ]
             )
-            (Data.selectedStopIds selections)
+            (Selection.selectedStopIds selections)
         )
 
 
@@ -353,8 +353,8 @@ streamPredictions selections =
         , Mbta.Api.include Mbta.Api.predictionRoute
         , Mbta.Api.include Mbta.Api.predictionSchedule
         ]
-        [ Mbta.Api.filterPredictionsByRouteIds (Data.selectedRouteIds selections)
-        , Mbta.Api.filterPredictionsByStopIds (Data.selectedStopIds selections)
+        [ Mbta.Api.filterPredictionsByRouteIds (Selection.selectedRouteIds selections)
+        , Mbta.Api.filterPredictionsByStopIds (Selection.selectedStopIds selections)
         ]
 
 

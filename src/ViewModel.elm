@@ -4,11 +4,11 @@ module ViewModel exposing
     )
 
 import Color
-import Data exposing (Selection)
 import Maybe.Extra
 import Mbta
 import Mbta.Api
 import Mbta.Extra
+import Selection exposing (Selection)
 import Time
 
 

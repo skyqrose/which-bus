@@ -6,10 +6,10 @@ module Model exposing
 import AssocList exposing (Dict)
 import Browser
 import Browser.Navigation as Navigation
-import Data exposing (Selection)
 import Json.Decode as Decode
 import Mbta
 import Mbta.Api
+import Selection exposing (Selection)
 import Time
 import Url exposing (Url)
 

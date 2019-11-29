@@ -1,8 +1,8 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
-import Data exposing (Selection)
 import Maybe.Extra
 import Mbta
+import Selection exposing (Selection)
 import Url
 import Url.Parser
 import Url.Parser.Query
@@ -53,10 +53,7 @@ parseSelection queryValue =
         _ ->
             Nothing
     )
-        |> Maybe.Extra.filter
-            (\selection ->
-                Maybe.Extra.isJust selection.stopId || not (List.isEmpty selection.routeIds)
-            )
+        |> Maybe.Extra.filter Selection.isValid
 
 
 parseRouteIds : String -> List Mbta.RouteId

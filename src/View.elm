@@ -3,7 +3,6 @@ module View exposing (view)
 import AssocList as Dict exposing (Dict)
 import Browser
 import Color
-import Data exposing (Selection)
 import Element as El exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
@@ -14,6 +13,7 @@ import Mbta
 import Mbta.Api
 import Model exposing (..)
 import Pill
+import Selection exposing (Selection)
 import Time
 import TimeZone
 import ViewHelpers
@@ -528,18 +528,19 @@ addSelectionForm model =
 
                             _ ->
                                 Just (Mbta.StopId model.stopIdFormText)
+
+                    selection : Selection
+                    selection =
+                        { routeIds = routeIds
+                        , stopId = stopId
+                        , directionId = model.directionIdFormValue
+                        }
                 in
-                if List.isEmpty routeIds && Maybe.Extra.isNothing stopId then
-                    Nothing
+                if Selection.isValid selection then
+                    Just (AddSelection selection)
 
                 else
-                    Just
-                        (AddSelection
-                            { routeIds = routeIds
-                            , stopId = stopId
-                            , directionId = model.directionIdFormValue
-                            }
-                        )
+                    Nothing
             , label = El.text "Add Stop"
             }
         ]
