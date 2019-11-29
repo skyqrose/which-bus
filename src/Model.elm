@@ -49,7 +49,8 @@ type
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
-    | OpenRoutePicker
+    | OpenRoutePicker (Maybe Int)
+    | PickRoute Mbta.RouteId
       -- data
     | RemoveRouteFromSelection Int Mbta.RouteId
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
@@ -61,4 +62,5 @@ type
 
 type Modal
     = NoModal
-    | RoutePicker
+      -- Index for which selection to add to. Nothing means make a new selection.
+    | RoutePicker (Maybe Int)

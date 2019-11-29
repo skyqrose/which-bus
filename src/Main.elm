@@ -196,12 +196,49 @@ update msg model =
             in
             registerNewSelections model newSelections
 
-        OpenRoutePicker ->
+        OpenRoutePicker index ->
             ( { model
-                | modal = RoutePicker
+                | modal = RoutePicker index
               }
             , Cmd.none
             )
+
+        PickRoute routeId ->
+            let
+                routePickerIndex : Maybe Int
+                routePickerIndex =
+                    case model.modal of
+                        RoutePicker index ->
+                            index
+
+                        _ ->
+                            Nothing
+
+                newSelections : List Selection
+                newSelections =
+                    case routePickerIndex of
+                        Nothing ->
+                            model.selections
+                                ++ [ Selection.WithoutStop
+                                        { routeIds = [ routeId ]
+                                        , directionId = Nothing
+                                        }
+                                   ]
+
+                        Just index ->
+                            -- add to a current selection
+                            List.Extra.updateAt
+                                index
+                                (Selection.addRouteId routeId)
+                                model.selections
+
+                modelWithClosedModal : Model
+                modelWithClosedModal =
+                    { model
+                        | modal = NoModal
+                    }
+            in
+            registerNewSelections modelWithClosedModal newSelections
 
         ReceiveRoutes apiResult ->
             ( { model

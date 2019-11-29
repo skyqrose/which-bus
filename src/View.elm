@@ -48,14 +48,14 @@ ui model =
                 NoModal ->
                     El.none
 
-                RoutePicker ->
+                RoutePicker _ ->
                     routePicker model.routes
             )
         ]
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
                 [ El.text "Loading..."
-                , addPill
+                , addPill Nothing
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -73,7 +73,7 @@ ui model =
                     model.stops
                     data
                     model.selections
-                , addPill
+                , addPill Nothing
                 , addSelectionForm model
                 , refreshButton model
                 ]
@@ -321,7 +321,7 @@ incompleteRoutePills index selectedRouteIds =
                     }
             )
             selectedRouteIds
-            ++ [ addPill ]
+            ++ [ addPill (Just index) ]
         )
 
 
@@ -524,15 +524,15 @@ timeZone =
     TimeZone.america__new_york ()
 
 
-addPill : Element Msg
-addPill =
+addPill : Maybe Int -> Element Msg
+addPill index =
     Input.button
         [ El.padding 4
         , Border.rounded 24
         , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
         , Border.width 2
         ]
-        { onPress = Just OpenRoutePicker
+        { onPress = Just (OpenRoutePicker index)
         , label =
             El.image
                 [ El.width (El.px 16)
@@ -550,11 +550,13 @@ routePicker routes =
         []
         (List.map
             (\route ->
-                El.el
+                Input.button
                     [ Background.color (ViewHelpers.avh4ColorToElmUiColor route.color)
                     , Font.color (ViewHelpers.avh4ColorToElmUiColor route.textColor)
                     ]
-                    (El.text route.longName)
+                    { onPress = Just (PickRoute route.id)
+                    , label = El.text route.longName
+                    }
             )
             routes
         )
