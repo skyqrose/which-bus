@@ -50,7 +50,6 @@ ui model =
             Mbta.Api.Loading ->
                 [ El.text "Loading..."
                 , newSelection
-                , addSelectionForm model
                 , refreshButton model
                 ]
 
@@ -68,7 +67,6 @@ ui model =
                     data
                     model.selections
                 , newSelection
-                , addSelectionForm model
                 , refreshButton model
                 ]
         )
@@ -489,64 +487,6 @@ newSelection =
                 , description = "Add route"
                 }
         }
-
-
-addSelectionForm : Model -> Element Msg
-addSelectionForm model =
-    El.column
-        [ El.spacing unit
-        ]
-        [ Input.text
-            [ Font.color (ViewHelpers.avh4ColorToElmUiColor Color.black)
-            ]
-            { onChange = TypeRouteId
-            , text = model.routeIdFormText
-            , placeholder = Nothing
-            , label = label "Route Ids (period separated)"
-            }
-        , Input.text
-            [ Font.color (ViewHelpers.avh4ColorToElmUiColor Color.black)
-            ]
-            { onChange = TypeStopId
-            , text = model.stopIdFormText
-            , placeholder = Nothing
-            , label = label "Stop Id"
-            }
-        , Input.button
-            buttonStyles
-            { onPress =
-                if model.stopIdFormText == "" then
-                    Nothing
-
-                else
-                    let
-                        routeIds : List Mbta.RouteId
-                        routeIds =
-                            model.routeIdFormText
-                                |> String.split "."
-                                |> List.filter ((/=) "")
-                                |> List.map Mbta.RouteId
-
-                        stopId : Mbta.StopId
-                        stopId =
-                            Mbta.StopId model.stopIdFormText
-
-                        selection : Selection
-                        selection =
-                            { routeIds = routeIds
-                            , stopId = stopId
-                            , directionId = Nothing
-                            }
-                    in
-                    Just (AddSelection selection)
-            , label = El.text "Add Stop"
-            }
-        ]
-
-
-label : String -> Input.Label msg
-label text =
-    Input.labelAbove [] (El.text text)
 
 
 refreshButton : Model -> Element Msg

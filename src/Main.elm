@@ -50,8 +50,6 @@ init flags url key =
       , url = url
       , navigationKey = key
       , selections = selections
-      , routeIdFormText = ""
-      , stopIdFormText = ""
       , newSelectionState = NotMakingNewSelection
       , routes = []
       , stops = Dict.empty
@@ -121,27 +119,6 @@ update msg model =
                 , getRoutesByStopId model.routesByStopId newSelections
                 , startStream streamUrl
                 ]
-            )
-
-        AddSelection newSelection ->
-            let
-                newSelections =
-                    model.selections ++ [ newSelection ]
-            in
-            registerNewSelections model newSelections
-
-        TypeRouteId text ->
-            ( { model
-                | routeIdFormText = text
-              }
-            , Cmd.none
-            )
-
-        TypeStopId text ->
-            ( { model
-                | stopIdFormText = text
-              }
-            , Cmd.none
             )
 
         DeleteSelection index ->

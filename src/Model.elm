@@ -23,8 +23,6 @@ type alias Model =
 
     --ui
     , selections : List Selection
-    , routeIdFormText : String
-    , stopIdFormText : String
     , newSelectionState : NewSelectionState
 
     -- data
@@ -43,9 +41,6 @@ type
     | OnUrlRequest Browser.UrlRequest
     | OnUrlChange Url
       -- ui
-    | AddSelection Selection
-    | TypeRouteId String
-    | TypeStopId String
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
