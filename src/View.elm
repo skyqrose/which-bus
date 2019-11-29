@@ -551,15 +551,35 @@ routePicker routes =
         (List.map
             (\route ->
                 Input.button
-                    [ Background.color (ViewHelpers.avh4ColorToElmUiColor route.color)
-                    , Font.color (ViewHelpers.avh4ColorToElmUiColor route.textColor)
+                    [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
+                    , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.lightCharcoal)
+                    , Border.widthEach
+                        { bottom = 1
+                        , left = 0
+                        , right = 0
+                        , top = 0
+                        }
+                    , El.width El.fill
                     ]
                     { onPress = Just (PickRoute route.id)
-                    , label = El.text route.longName
+                    , label = routePickerRoute route
                     }
             )
             routes
         )
+
+
+routePickerRoute : Mbta.Route -> Element msg
+routePickerRoute route =
+    El.row
+        [ El.padding (unit // 4)
+        ]
+        [ El.el
+            [ El.width (El.px (unit * 4))
+            ]
+            (Pill.pill route)
+        , El.paragraph [] [ El.text route.longName ]
+        ]
 
 
 addSelectionForm : Model -> Element Msg
