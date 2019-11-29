@@ -13,15 +13,15 @@ import Pill
 import ViewHelpers exposing (unit)
 
 
-viewModal : Model -> Element Msg
-viewModal model =
-    case model.newSelectionState of
+viewModal : List Mbta.Route -> NewSelectionState -> Element Msg
+viewModal routes newSelectionState =
+    case newSelectionState of
         NotMakingNewSelection ->
             El.none
 
         ChoosingRoute ->
             modalWrapper
-                (routePicker model.routes)
+                (routePicker routes)
 
         ChoosingStop routeIds directionId loadedStops ->
             modalWrapper
@@ -29,7 +29,7 @@ viewModal model =
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
-                (routePicker model.routes)
+                (routePicker routes)
 
 
 modalWrapper : Element Msg -> Element Msg

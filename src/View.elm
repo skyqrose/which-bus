@@ -31,7 +31,7 @@ view model =
                 [ Font.typeface "Inter"
                 , Font.sansSerif
                 ]
-            , El.inFront (NewSelection.viewModal model)
+            , El.inFront (NewSelection.viewModal model.routes model.newSelectionState)
             ]
             (ui model)
         ]
