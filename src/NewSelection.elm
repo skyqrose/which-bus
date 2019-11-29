@@ -97,7 +97,11 @@ chooseRoute routes =
     El.column
         [ El.width El.fill
         ]
-        [ El.text "Choose Route"
+        [ El.el
+            [ El.padding (unit // 2)
+            , Font.size 24
+            ]
+            (El.text "Choose Route")
         , routeList routes
         ]
 
@@ -128,7 +132,11 @@ chooseStop stops =
     El.column
         [ El.width El.fill
         ]
-        [ El.text "Choose Stop"
+        [ El.el
+            [ El.padding (unit // 2)
+            , Font.size 24
+            ]
+            (El.text "Choose Stop")
         , stopList stops
         ]
 
