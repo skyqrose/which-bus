@@ -25,7 +25,7 @@ viewModal routes newSelectionState =
 
         ChoosingStop routeIds directionId loadedStops ->
             modalWrapper
-                stopPicker
+                (stopPicker loadedStops)
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
@@ -66,13 +66,13 @@ modalBackground =
         El.none
 
 
-routePicker : List Mbta.Route -> Element Msg
-routePicker routes =
+picker : (a -> Msg) -> (a -> Element Msg) -> List a -> Element Msg
+picker msg viewElem elems =
     El.column
         [ El.width El.fill
         ]
         (List.map
-            (\route ->
+            (\elem ->
                 Input.button
                     [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
                     , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.lightCharcoal)
@@ -84,12 +84,20 @@ routePicker routes =
                         }
                     , El.width El.fill
                     ]
-                    { onPress = Just (NewSelectionChoseRoute route.id)
-                    , label = routePickerRoute route
+                    { onPress = Just (msg elem)
+                    , label = viewElem elem
                     }
             )
-            routes
+            elems
         )
+
+
+routePicker : List Mbta.Route -> Element Msg
+routePicker routes =
+    picker
+        (NewSelectionChoseRoute << .id)
+        routePickerRoute
+        routes
 
 
 routePickerRoute : Mbta.Route -> Element msg
@@ -105,6 +113,14 @@ routePickerRoute route =
         ]
 
 
-stopPicker : Element Msg
-stopPicker =
-    El.text "choose a stop"
+stopPicker : List Mbta.Stop -> Element Msg
+stopPicker stops =
+    picker
+        (NewSelectionChoseStop << Mbta.stopId)
+        stopPickerStop
+        stops
+
+
+stopPickerStop : Mbta.Stop -> Element msg
+stopPickerStop stop =
+    El.text (Mbta.stopName stop)
