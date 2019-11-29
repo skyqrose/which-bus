@@ -101,6 +101,17 @@ buttonList msg viewElem elems =
         )
 
 
+pillList : List Mbta.Route -> Element msg
+pillList routes =
+    El.wrappedRow
+        [ Pill.listSpacing
+        ]
+        (List.map
+            Pill.pill
+            routes
+        )
+
+
 chooseRoute : List Mbta.Route -> Element Msg
 chooseRoute allRoutes =
     El.column
@@ -125,13 +136,7 @@ chooseExtraRoute allRoutes selectedRouteIds =
             , Font.size 24
             ]
             (El.text "Choose Another Routes")
-        , El.wrappedRow
-            [ Pill.listSpacing
-            ]
-            (List.map
-                Pill.pill
-                (selectedRoutes allRoutes selectedRouteIds)
-            )
+        , pillList (selectedRoutes allRoutes selectedRouteIds)
         , routeList allRoutes
         ]
 
@@ -167,13 +172,7 @@ chooseStop routes stops =
             , Font.size 24
             ]
             (El.text "Choose Stop")
-        , El.wrappedRow
-            [ Pill.listSpacing
-            ]
-            (List.map
-                Pill.pill
-                routes
-            )
+        , pillList routes
         , stopList stops
         ]
 
