@@ -1,4 +1,7 @@
-module ViewHelpers exposing (avh4ColorToElmUiColor)
+module ViewHelpers exposing
+    ( avh4ColorToElmUiColor
+    , unit
+    )
 
 import Color
 import Element as El
@@ -11,3 +14,10 @@ avh4ColorToElmUiColor avh4Color =
             Color.toRgba avh4Color
     in
     El.rgba red green blue alpha
+
+
+{-| Pixels
+-}
+unit : Int
+unit =
+    16

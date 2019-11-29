@@ -10,12 +10,13 @@ import Element.Font as Font
 import Element.Input as Input
 import Mbta
 import Mbta.Api
+import Modal
 import Model exposing (..)
 import Pill
 import Selection exposing (Selection)
 import Time
 import TimeZone
-import ViewHelpers
+import ViewHelpers exposing (unit)
 import ViewModel
 
 
@@ -24,10 +25,13 @@ view model =
     { title = "Which Bus - skyqrose"
     , body =
         [ El.layout
-            [ Font.family
+            [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
+            , Font.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
+            , Font.family
                 [ Font.typeface "Inter"
                 , Font.sansSerif
                 ]
+            , El.inFront (Modal.view model)
             ]
             (ui model)
         ]
@@ -41,16 +45,6 @@ ui model =
         , El.spacing unit
         , El.centerX
         , El.width (El.maximum 400 El.fill)
-        , Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
-        , Font.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
-        , El.inFront
-            (case model.modal of
-                NoModal ->
-                    El.none
-
-                RoutePicker _ ->
-                    routePicker model.routes
-            )
         ]
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
@@ -544,44 +538,6 @@ addPill index =
         }
 
 
-routePicker : List Mbta.Route -> Element Msg
-routePicker routes =
-    El.column
-        []
-        (List.map
-            (\route ->
-                Input.button
-                    [ Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
-                    , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.lightCharcoal)
-                    , Border.widthEach
-                        { bottom = 1
-                        , left = 0
-                        , right = 0
-                        , top = 0
-                        }
-                    , El.width El.fill
-                    ]
-                    { onPress = Just (PickRoute route.id)
-                    , label = routePickerRoute route
-                    }
-            )
-            routes
-        )
-
-
-routePickerRoute : Mbta.Route -> Element msg
-routePickerRoute route =
-    El.row
-        [ El.padding (unit // 4)
-        ]
-        [ El.el
-            [ El.width (El.px (unit * 4))
-            ]
-            (Pill.pill route)
-        , El.paragraph [] [ El.text route.longName ]
-        ]
-
-
 addSelectionForm : Model -> Element Msg
 addSelectionForm model =
     El.column
@@ -684,13 +640,6 @@ lastUpdatedText model =
 
         _ ->
             "Never"
-
-
-{-| Pixels
--}
-unit : Int
-unit =
-    16
 
 
 buttonStyles : List (El.Attribute msg)
