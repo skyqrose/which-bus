@@ -198,15 +198,16 @@ update msg model =
         RemoveRouteFromSelection index routeId ->
             let
                 newSelections =
-                    List.Extra.updateAt
-                        index
-                        (\selection ->
-                            { selection
-                                | routeIds =
-                                    List.Extra.remove routeId selection.routeIds
-                            }
-                        )
-                        model.selections
+                    model.selections
+                        |> List.Extra.updateAt
+                            index
+                            (\selection ->
+                                { selection
+                                    | routeIds =
+                                        List.Extra.remove routeId selection.routeIds
+                                }
+                            )
+                        |> List.filter Selection.isValid
             in
             registerNewSelections model newSelections
 
