@@ -1,4 +1,4 @@
-module Modal exposing (view)
+module NewSelection exposing (viewModal)
 
 import Color
 import Element as El exposing (Element)
@@ -13,8 +13,8 @@ import Pill
 import ViewHelpers exposing (unit)
 
 
-view : Model -> Element Msg
-view model =
+viewModal : Model -> Element Msg
+viewModal model =
     case model.newSelectionState of
         NotMakingNewSelection ->
             El.none
@@ -38,7 +38,7 @@ modalWrapper child =
         [ El.width El.fill
         , El.height El.fill
         , El.padding (unit * 2)
-        , El.behindContent background
+        , El.behindContent modalBackground
 
         -- Scrollbars to work around https://github.com/mdgriffith/elm-ui/issues/70
         , El.scrollbars
@@ -54,8 +54,8 @@ modalWrapper child =
         )
 
 
-background : Element Msg
-background =
+modalBackground : Element Msg
+modalBackground =
     El.el
         [ El.width El.fill
         , El.height El.fill

@@ -10,8 +10,8 @@ import Element.Font as Font
 import Element.Input as Input
 import Mbta
 import Mbta.Api
-import Modal
 import Model exposing (..)
+import NewSelection
 import Pill
 import Selection exposing (Selection)
 import Time
@@ -31,7 +31,7 @@ view model =
                 [ Font.typeface "Inter"
                 , Font.sansSerif
                 ]
-            , El.inFront (Modal.view model)
+            , El.inFront (NewSelection.viewModal model)
             ]
             (ui model)
         ]
