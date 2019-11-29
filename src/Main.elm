@@ -1,6 +1,6 @@
 port module Main exposing (main)
 
-import AssocList as Dict
+import AssocList as Dict exposing (Dict)
 import Browser
 import Browser.Navigation as Navigation
 import Data exposing (Selection)
@@ -54,6 +54,7 @@ init flags url key =
       , directionIdFormValue = Nothing
       , routes = Dict.empty
       , stops = Dict.empty
+      , routesByStopId = Dict.empty
       , streamState = initStreamState
       , lastUpdated = Nothing
       }
@@ -61,6 +62,7 @@ init flags url key =
         [ Task.perform Tick Time.now
         , getRoutes
         , getStops selections
+        , getRoutesByStopId Dict.empty selections
         , startStream streamUrl
         ]
     )
@@ -113,6 +115,7 @@ update msg model =
               }
             , Cmd.batch
                 [ getStops newSelections
+                , getRoutesByStopId model.routesByStopId newSelections
                 , startStream streamUrl
                 ]
             )
@@ -214,6 +217,20 @@ update msg model =
             , Cmd.none
             )
 
+        ReceiveRoutesForStopId stopId apiResult ->
+            ( { model
+                | routesByStopId =
+                    Dict.insert
+                        stopId
+                        (apiResult
+                            |> Result.map Mbta.Api.getPrimaryData
+                            |> Result.withDefault []
+                        )
+                        model.routesByStopId
+              }
+            , Cmd.none
+            )
+
         StreamMsg eventName dataJson ->
             ( { model
                 | streamState = Mbta.Api.updateStream eventName dataJson model.streamState
@@ -275,6 +292,28 @@ getStops selections =
         apiHost
         []
         [ Mbta.Api.filterStopsByIds (List.map .stopId selections) ]
+
+
+getRoutesByStopId : Dict Mbta.StopId (List Mbta.Route) -> List Selection -> Cmd Msg
+getRoutesByStopId existingRoutesByStopId selections =
+    Cmd.batch
+        (List.map
+            (\selection ->
+                case Dict.get selection.stopId existingRoutesByStopId of
+                    Just (_ :: _) ->
+                        -- Already have a result, don't need to refetch
+                        Cmd.none
+
+                    _ ->
+                        Mbta.Api.getRoutes
+                            (ReceiveRoutesForStopId selection.stopId)
+                            apiHost
+                            []
+                            [ Mbta.Api.filterRoutesByStopIds [ selection.stopId ]
+                            ]
+            )
+            selections
+        )
 
 
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )

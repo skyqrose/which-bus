@@ -24,6 +24,7 @@ type alias Model =
     , directionIdFormValue : Maybe Mbta.DirectionId
     , routes : Dict Mbta.RouteId Mbta.Route
     , stops : Dict Mbta.StopId Mbta.Stop
+    , routesByStopId : Dict Mbta.StopId (List Mbta.Route)
     , streamState : Mbta.Api.StreamState Mbta.Prediction
     , lastUpdated : Maybe Time.Posix
     }
@@ -41,5 +42,6 @@ type Msg
     | ToggleDirection Int
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
+    | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))
     | StreamMsg String Decode.Value
     | RefreshStream

@@ -1,4 +1,7 @@
-module Pill exposing (pill)
+module Pill exposing
+    ( pill
+    , unknownPill
+    )
 
 import Color
 import Element as El exposing (Element)
@@ -10,27 +13,42 @@ import Mbta.Extra
 import ViewHelpers
 
 
-pill : Mbta.RouteId -> Maybe Mbta.Route -> Element msg
-pill (Mbta.RouteId routeIdText) maybeRoute =
+pill : Mbta.Route -> Element msg
+pill route =
     El.el
         [ El.padding 4
         , Border.rounded 16
         , Background.color
-            (maybeRoute
-                |> Maybe.map .color
-                |> Maybe.withDefault Color.black
+            (route.color
                 |> ViewHelpers.avh4ColorToElmUiColor
             )
         , Font.color
-            (maybeRoute
-                |> Maybe.map .textColor
-                |> Maybe.withDefault Color.white
+            (route.textColor
                 |> ViewHelpers.avh4ColorToElmUiColor
             )
         ]
         (El.text
-            (maybeRoute
-                |> Maybe.andThen Mbta.Extra.routeAbbreviation
-                |> Maybe.withDefault routeIdText
+            (route
+                |> Mbta.Extra.routeAbbreviation
+                |> Maybe.withDefault route.longName
             )
+        )
+
+
+unknownPill : Mbta.RouteId -> Element msg
+unknownPill (Mbta.RouteId routeIdText) =
+    El.el
+        [ El.padding 4
+        , Border.rounded 16
+        , Background.color
+            (Color.black
+                |> ViewHelpers.avh4ColorToElmUiColor
+            )
+        , Font.color
+            (Color.white
+                |> ViewHelpers.avh4ColorToElmUiColor
+            )
+        ]
+        (El.text
+            routeIdText
         )

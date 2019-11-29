@@ -60,7 +60,7 @@ ui model =
             Mbta.Api.Loaded (Ok data) ->
                 [ viewSelections
                     (Maybe.withDefault (Time.millisToPosix 0) model.currentTime)
-                    model.routes
+                    model.routesByStopId
                     model.stops
                     data
                     model.selections
@@ -70,8 +70,8 @@ ui model =
         )
 
 
-viewSelections : Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> List Selection -> Element Msg
-viewSelections currentTime routes stops data selections =
+viewSelections : Time.Posix -> Dict Mbta.StopId (List Mbta.Route) -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> List Selection -> Element Msg
+viewSelections currentTime routesByStopId stops data selections =
     El.column
         [ El.spacing unit
         , El.width El.fill
@@ -79,17 +79,47 @@ viewSelections currentTime routes stops data selections =
         (List.indexedMap
             (\index selection ->
                 let
+                    stop : Maybe Mbta.Stop
                     stop =
                         Dict.get selection.stopId stops
+
+                    routes : List Mbta.Route
+                    routes =
+                        routesByStopId
+                            |> Dict.get selection.stopId
+                            |> Maybe.withDefault []
                 in
-                viewSelection index currentTime routes stop data selection
+                viewSelection
+                    index
+                    currentTime
+                    routes
+                    stop
+                    data
+                    selection
             )
             selections
         )
 
 
-viewSelection : Int -> Time.Posix -> Dict Mbta.RouteId Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection : Int -> Time.Posix -> List Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
 viewSelection index currentTime routes stop data selection =
+    let
+        ( selectedRoutes, unselectedRoutes ) =
+            List.partition
+                (\route -> List.member route.id selection.routeIds)
+                routes
+
+        unknownSelectedRouteIds : List Mbta.RouteId
+        unknownSelectedRouteIds =
+            List.filter
+                (\routeId ->
+                    not
+                        (List.member routeId
+                            (List.map .id selectedRoutes)
+                        )
+                )
+                selection.routeIds
+    in
     El.column
         [ El.width El.fill
         , El.spacing unit
@@ -102,7 +132,8 @@ viewSelection index currentTime routes stop data selection =
             , El.el [ El.alignRight ] (directionIcon index selection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
-        , selectionRoutePills routes selection
+        , selectedRoutePills selectedRoutes unknownSelectedRouteIds
+        , unselectedRoutePills unselectedRoutes
         , viewPredictions currentTime data selection
         ]
 
@@ -166,16 +197,28 @@ removeSelection index =
         }
 
 
-selectionRoutePills : Dict Mbta.RouteId Mbta.Route -> Selection -> Element Msg
-selectionRoutePills routes selection =
+selectedRoutePills : List Mbta.Route -> List Mbta.RouteId -> Element Msg
+selectedRoutePills selectedRoutes unknownSelectedRouteIds =
+    El.wrappedRow
+        [ El.spacing unit
+        ]
+        (List.concat
+            [ List.map
+                Pill.pill
+                selectedRoutes
+            , List.map Pill.unknownPill unknownSelectedRouteIds
+            ]
+        )
+
+
+unselectedRoutePills : List Mbta.Route -> Element Msg
+unselectedRoutePills unselectedRoutes =
     El.wrappedRow
         [ El.spacing unit
         ]
         (List.map
-            (\routeId ->
-                Pill.pill routeId (Dict.get routeId routes)
-            )
-            selection.routeIds
+            Pill.pill
+            unselectedRoutes
         )
 
 
