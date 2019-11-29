@@ -196,6 +196,13 @@ update msg model =
             in
             registerNewSelections model newSelections
 
+        CloseModal ->
+            ( { model
+                | modal = NoModal
+              }
+            , Cmd.none
+            )
+
         OpenRoutePicker index ->
             ( { model
                 | modal = RoutePicker index

@@ -49,6 +49,7 @@ type
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
+    | CloseModal
     | OpenRoutePicker (Maybe Int)
     | PickRoute Mbta.RouteId
       -- data

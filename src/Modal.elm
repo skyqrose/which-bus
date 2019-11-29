@@ -4,6 +4,7 @@ import Color
 import Element as El exposing (Element)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Mbta
@@ -19,13 +20,48 @@ view model =
             El.none
 
         RoutePicker _ ->
-            routePicker model.routes
+            modalWrapper
+                (routePicker model.routes)
+
+
+modalWrapper : Element Msg -> Element Msg
+modalWrapper child =
+    El.el
+        [ El.width El.fill
+        , El.height El.fill
+        , El.padding (unit * 2)
+        , El.behindContent background
+
+        -- Scrollbars to work around https://github.com/mdgriffith/elm-ui/issues/70
+        , El.scrollbars
+        ]
+        (El.el
+            [ El.centerX
+            , El.centerY
+            , El.width El.fill
+            , El.height El.fill
+            , El.scrollbars
+            ]
+            child
+        )
+
+
+background : Element Msg
+background =
+    El.el
+        [ El.width El.fill
+        , El.height El.fill
+        , Background.color (ViewHelpers.avh4ColorToElmUiColor Color.darkCharcoal)
+        , El.alpha 0.5
+        , Events.onClick CloseModal
+        ]
+        El.none
 
 
 routePicker : List Mbta.Route -> Element Msg
 routePicker routes =
     El.column
-        [ El.scrollbarY
+        [ El.width El.fill
         ]
         (List.map
             (\route ->
