@@ -233,7 +233,8 @@ unselectedRoutePills index unselectedRoutes =
         (List.map
             (\route ->
                 Input.button
-                    []
+                    [ El.alpha 0.6
+                    ]
                     { onPress = Just (AddRouteToSelection index route.id)
                     , label = Pill.pill route
                     }
