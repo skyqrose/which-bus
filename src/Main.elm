@@ -249,7 +249,7 @@ update msg model =
                                 | newSelectionState = NotMakingNewSelection
                             }
                     in
-                    registerNewSelections model newSelections
+                    registerNewSelections modelWithClosedNewSelection newSelections
 
                 _ ->
                     ( { model
