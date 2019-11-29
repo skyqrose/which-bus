@@ -340,7 +340,7 @@ getRoutesByStopId existingRoutesByStopId selections =
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
 streamPredictions selections =
     let
-        -- only need predictions for complete predictions
+        -- only need predictions for complete selections
         completeSelections : List Selection.CompleteSelection
         completeSelections =
             Selection.filter selections
