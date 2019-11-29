@@ -2,7 +2,7 @@ module UrlParsingTest exposing (suite)
 
 import Expect
 import Mbta
-import Selection exposing (Selection)
+import Selection
 import Test exposing (Test, describe, test)
 import Url
 import Url.Parser
@@ -26,10 +26,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Nothing
+                                }
                             ]
             , test "parses a selection with a directionId" <|
                 \_ ->
@@ -37,10 +38,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Just Mbta.D1
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Just Mbta.D1
+                                }
                             ]
             , test "doesn't take a selection with a bad directionId" <|
                 \_ ->
@@ -55,10 +57,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Just Mbta.D1
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Just Mbta.D1
+                                }
                             ]
             , test "filters out empty route ids" <|
                 \_ ->
@@ -66,10 +69,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Just Mbta.D1
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId1" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Just Mbta.D1
+                                }
                             ]
             , test "allows a selection to have no route ids" <|
                 \_ ->
@@ -77,10 +81,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = []
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Just Mbta.D1
-                              }
+                            [ Selection.WithStop
+                                { routeIds = []
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Just Mbta.D1
+                                }
                             ]
             , test "allows a selection to have no route ids and no direction" <|
                 \_ ->
@@ -88,10 +93,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = []
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithStop
+                                { routeIds = []
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Nothing
+                                }
                             ]
             , test "allows a selection with no stop id" <|
                 \_ ->
@@ -99,10 +105,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Nothing
-                              , directionId = Just Mbta.D0
-                              }
+                            [ Selection.WithoutStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , directionId = Just Mbta.D0
+                                }
                             ]
             , test "allows a selection with no stop id and no direction" <|
                 \_ ->
@@ -110,10 +116,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Nothing
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithoutStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , directionId = Nothing
+                                }
                             ]
             , test "doesn't take a selection without a route or stop" <|
                 \_ ->
@@ -141,14 +147,16 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
-                              , stopId = Just (Mbta.StopId "stopId1")
-                              , directionId = Nothing
-                              }
-                            , { routeIds = [ Mbta.RouteId "routeId2" ]
-                              , stopId = Just (Mbta.StopId "stopId2")
-                              , directionId = Just Mbta.D0
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId1" ]
+                                , stopId = Mbta.StopId "stopId1"
+                                , directionId = Nothing
+                                }
+                            , Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId2" ]
+                                , stopId = Mbta.StopId "stopId2"
+                                , directionId = Just Mbta.D0
+                                }
                             ]
             , test "includes a selection even if another is badly formatted" <|
                 \_ ->
@@ -156,10 +164,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Nothing
+                                }
                             ]
             , test "includes a selection when there are other query params" <|
                 \_ ->
@@ -167,10 +176,11 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Nothing
+                                }
                             ]
             , test "works when the url has other stuff in it" <|
                 \_ ->
@@ -178,10 +188,11 @@ suite =
                         |> fullUrlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ { routeIds = [ Mbta.RouteId "routeId" ]
-                              , stopId = Just (Mbta.StopId "stopId")
-                              , directionId = Nothing
-                              }
+                            [ Selection.WithStop
+                                { routeIds = [ Mbta.RouteId "routeId" ]
+                                , stopId = Mbta.StopId "stopId"
+                                , directionId = Nothing
+                                }
                             ]
             ]
         ]

@@ -155,9 +155,10 @@ update msg model =
                     List.Extra.updateAt
                         index
                         (\selection ->
-                            { selection
-                                | directionId =
-                                    case selection.directionId of
+                            let
+                                newDirectionId : Maybe Mbta.DirectionId
+                                newDirectionId =
+                                    case Selection.directionId selection of
                                         Nothing ->
                                             Just Mbta.D1
 
@@ -166,7 +167,8 @@ update msg model =
 
                                         Just Mbta.D0 ->
                                             Nothing
-                            }
+                            in
+                            Selection.setDirectionId newDirectionId selection
                         )
                         model.selections
             in
@@ -177,12 +179,7 @@ update msg model =
                 newSelections =
                     List.Extra.updateAt
                         index
-                        (\selection ->
-                            { selection
-                                | routeIds =
-                                    routeId :: selection.routeIds
-                            }
-                        )
+                        (Selection.addRouteId routeId)
                         model.selections
             in
             registerNewSelections model newSelections
@@ -193,12 +190,7 @@ update msg model =
                     model.selections
                         |> List.Extra.updateAt
                             index
-                            (\selection ->
-                                { selection
-                                    | routeIds =
-                                        List.Extra.remove routeId selection.routeIds
-                                }
-                            )
+                            (Selection.removeRouteId routeId)
                         |> List.filter Selection.isValid
             in
             registerNewSelections model newSelections
@@ -307,17 +299,26 @@ getRoutes =
 
 getStops : List Selection -> Cmd Msg
 getStops selections =
+    let
+        stopIds : List Mbta.StopId
+        stopIds =
+            selections
+                |> Selection.filter
+                |> List.map .stopId
+    in
     Mbta.Api.getStops
         ReceiveStops
         apiHost
         []
-        [ Mbta.Api.filterStopsByIds (Selection.selectedStopIds selections) ]
+        [ Mbta.Api.filterStopsByIds stopIds ]
 
 
 getRoutesByStopId : Dict Mbta.StopId (List Mbta.Route) -> List Selection -> Cmd Msg
 getRoutesByStopId existingRoutesByStopId selections =
-    Cmd.batch
-        (List.map
+    selections
+        |> Selection.filter
+        |> List.map .stopId
+        |> List.map
             (\stopId ->
                 case Dict.get stopId existingRoutesByStopId of
                     Just (_ :: _) ->
@@ -332,12 +333,25 @@ getRoutesByStopId existingRoutesByStopId selections =
                             [ Mbta.Api.filterRoutesByStopIds [ stopId ]
                             ]
             )
-            (Selection.selectedStopIds selections)
-        )
+        |> Cmd.batch
 
 
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
 streamPredictions selections =
+    let
+        -- only need predictions for complete predictions
+        completeSelections : List Selection.CompleteSelection
+        completeSelections =
+            Selection.filter selections
+
+        routeIds : List Mbta.RouteId
+        routeIds =
+            List.concatMap .routeIds completeSelections
+
+        stopIds : List Mbta.StopId
+        stopIds =
+            List.map .stopId completeSelections
+    in
     Mbta.Api.streamPredictions
         apiHost
         [ Mbta.Api.include Mbta.Api.predictionStop
@@ -346,8 +360,8 @@ streamPredictions selections =
         , Mbta.Api.include Mbta.Api.predictionRoute
         , Mbta.Api.include Mbta.Api.predictionSchedule
         ]
-        [ Mbta.Api.filterPredictionsByRouteIds (Selection.selectedRouteIds selections)
-        , Mbta.Api.filterPredictionsByStopIds (Selection.selectedStopIds selections)
+        [ Mbta.Api.filterPredictionsByRouteIds routeIds
+        , Mbta.Api.filterPredictionsByStopIds stopIds
         ]
 
 

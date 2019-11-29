@@ -28,32 +28,59 @@ selectionsQueryParser =
 
 parseSelection : String -> Maybe Selection
 parseSelection queryValue =
-    (case String.split "," queryValue of
-        [ routeIds, stopId ] ->
-            Just
-                { routeIds = parseRouteIds routeIds
-                , stopId = parseStopId stopId
-                , directionId = Nothing
-                }
+    case String.split "," queryValue of
+        [ routeIdsString, stopIdsString ] ->
+            parseSelectionFields
+                routeIdsString
+                stopIdsString
+                ""
 
-        [ routeIds, stopId, "0" ] ->
-            Just
-                { routeIds = parseRouteIds routeIds
-                , stopId = parseStopId stopId
-                , directionId = Just Mbta.D0
-                }
-
-        [ routeIds, stopId, "1" ] ->
-            Just
-                { routeIds = parseRouteIds routeIds
-                , stopId = parseStopId stopId
-                , directionId = Just Mbta.D1
-                }
+        [ routeIdsString, stopIdsString, directionIdString ] ->
+            parseSelectionFields
+                routeIdsString
+                stopIdsString
+                directionIdString
 
         _ ->
             Nothing
-    )
-        |> Maybe.Extra.filter Selection.isValid
+
+
+parseSelectionFields : String -> String -> String -> Maybe Selection
+parseSelectionFields routeIdsString stopIdString directionIdString =
+    let
+        routeIds : List Mbta.RouteId
+        routeIds =
+            parseRouteIds routeIdsString
+
+        directionIdResult : Maybe (Maybe Mbta.DirectionId)
+        directionIdResult =
+            parseDirectionId directionIdString
+    in
+    Maybe.andThen
+        (\directionId ->
+            case parseStopId stopIdString of
+                Nothing ->
+                    if List.isEmpty routeIds then
+                        Nothing
+
+                    else
+                        Just
+                            (Selection.WithoutStop
+                                { routeIds = routeIds
+                                , directionId = directionId
+                                }
+                            )
+
+                Just stopId ->
+                    Just
+                        (Selection.WithStop
+                            { routeIds = routeIds
+                            , stopId = stopId
+                            , directionId = directionId
+                            }
+                        )
+        )
+        directionIdResult
 
 
 parseRouteIds : String -> List Mbta.RouteId
@@ -74,6 +101,22 @@ parseStopId stopIdString =
             Just (Mbta.StopId stopIdString)
 
 
+parseDirectionId : String -> Maybe (Maybe Mbta.DirectionId)
+parseDirectionId directionIdString =
+    case directionIdString of
+        "" ->
+            Just Nothing
+
+        "0" ->
+            Just (Just Mbta.D0)
+
+        "1" ->
+            Just (Just Mbta.D1)
+
+        _ ->
+            Nothing
+
+
 setSelectionsInUrl : List Selection -> Url.Url -> Url.Url
 setSelectionsInUrl selections url =
     let
@@ -88,23 +131,25 @@ setSelectionsInUrl selections url =
 encodeSelectionAsQueryParam : Selection -> String
 encodeSelectionAsQueryParam selection =
     let
-        routeIds =
-            String.join "."
-                (selection.routeIds
-                    |> List.map (\(Mbta.RouteId routeId) -> routeId)
-                )
+        routeIdsString : String
+        routeIdsString =
+            selection
+                |> Selection.routeIds
+                |> List.map (\(Mbta.RouteId routeId) -> routeId)
+                |> String.join "."
 
-        stopId : String
-        stopId =
-            case selection.stopId of
+        stopIdString : String
+        stopIdString =
+            case Selection.stopId selection of
+                Just (Mbta.StopId stopId) ->
+                    stopId
+
                 Nothing ->
                     ""
 
-                Just (Mbta.StopId stopIdText) ->
-                    stopIdText
-
-        directionId =
-            case selection.directionId of
+        directionIdString : String
+        directionIdString =
+            case Selection.directionId selection of
                 Nothing ->
                     ""
 
@@ -116,8 +161,8 @@ encodeSelectionAsQueryParam selection =
     in
     String.concat
         [ "stop="
-        , routeIds
+        , routeIdsString
         , ","
-        , stopId
-        , directionId
+        , stopIdString
+        , directionIdString
         ]
