@@ -60,6 +60,39 @@ suite =
                               , directionId = Just Mbta.D1
                               }
                             ]
+            , test "filters out empty route ids" <|
+                \_ ->
+                    Just "stop=routeId1.,stopId,1"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
+                            ]
+            , test "allows a selection to have no route ids" <|
+                \_ ->
+                    Just "stop=,stopId,1"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = []
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
+                            ]
+            , test "allows a selection to have no route ids and no direction" <|
+                \_ ->
+                    Just "stop=,stopId"
+                        |> urlWithQuery
+                        |> UrlParsing.parseSelectionsFromUrl
+                        |> Expect.equal
+                            [ { routeIds = []
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
+                            ]
             , test "doesn't take a selection with too many ids" <|
                 \_ ->
                     Just "stop=one,two,three,four"

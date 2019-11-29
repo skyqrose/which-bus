@@ -119,6 +119,10 @@ viewSelection index currentTime routes stop data selection =
                         )
                 )
                 selection.routeIds
+
+        hasSelectedRoutes : Bool
+        hasSelectedRoutes =
+            not (List.isEmpty selectedRoutes) || not (List.isEmpty unknownSelectedRouteIds)
     in
     El.column
         [ El.width El.fill
@@ -132,9 +136,24 @@ viewSelection index currentTime routes stop data selection =
             , El.el [ El.alignRight ] (directionIcon index selection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
-        , selectedRoutePills index selectedRoutes unknownSelectedRouteIds
-        , unselectedRoutePills index unselectedRoutes
-        , viewPredictions currentTime data selection
+        , if hasSelectedRoutes then
+            selectedRoutePills index selectedRoutes unknownSelectedRouteIds
+
+          else
+            El.none
+        , if List.isEmpty unselectedRoutes then
+            El.none
+
+          else
+            unselectedRoutePills index unselectedRoutes
+        , if hasSelectedRoutes then
+            viewPredictions currentTime data selection
+
+          else
+            El.el
+                [ El.padding unit
+                ]
+                (El.text "Choose routes")
         ]
 
 
@@ -267,7 +286,7 @@ emptyPrediction =
     El.el
         [ El.padding unit
         ]
-        (El.text "---")
+        (El.text "No predicted trips")
 
 
 viewPrediction : Time.Posix -> Int -> ViewModel.ShownPrediction -> El.Element msg
@@ -478,12 +497,13 @@ addSelectionForm model =
         , Input.button
             buttonStyles
             { onPress =
-                if model.routeIdFormText /= "" && model.stopIdFormText /= "" then
+                if model.stopIdFormText /= "" then
                     Just
                         (AddSelection
                             { routeIds =
                                 model.routeIdFormText
                                     |> String.split "."
+                                    |> List.filter ((/=) "")
                                     |> List.map Mbta.RouteId
                             , stopId = Mbta.StopId model.stopIdFormText
                             , directionId = model.directionIdFormValue

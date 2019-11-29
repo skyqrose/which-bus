@@ -33,6 +33,7 @@ parseSelection queryValue =
                 { routeIds =
                     routeIds
                         |> String.split "."
+                        |> List.filter ((/=) "")
                         |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Nothing
@@ -43,6 +44,7 @@ parseSelection queryValue =
                 { routeIds =
                     routeIds
                         |> String.split "."
+                        |> List.filter ((/=) "")
                         |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Just Mbta.D0
@@ -53,6 +55,7 @@ parseSelection queryValue =
                 { routeIds =
                     routeIds
                         |> String.split "."
+                        |> List.filter ((/=) "")
                         |> List.map Mbta.RouteId
                 , stopId = Mbta.StopId stopId
                 , directionId = Just Mbta.D1
