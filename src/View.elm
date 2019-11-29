@@ -179,10 +179,11 @@ selectionStopName stop selection =
                 )
                 |> Maybe.withDefault "Stop"
     in
-    El.el
+    El.paragraph
         [ Font.size 24
         ]
-        (El.text stopName)
+        [ El.text stopName
+        ]
 
 
 directionIcon : Int -> Maybe Mbta.DirectionId -> Element Msg
