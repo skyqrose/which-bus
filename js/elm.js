@@ -10865,6 +10865,7 @@ var $elm$core$Basics$never = function (_v0) {
 	}
 };
 var $elm$browser$Browser$application = _Browser_application;
+var $author$project$Model$NoModal = {$: 'NoModal'};
 var $author$project$Model$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -15120,7 +15121,7 @@ var $author$project$Main$init = F3(
 		var initStreamState = _v0.a;
 		var streamUrl = _v0.b;
 		return _Utils_Tuple2(
-			{currentTime: $elm$core$Maybe$Nothing, lastUpdated: $elm$core$Maybe$Nothing, navigationKey: key, routeIdFormText: '', routes: $pzp1997$assoc_list$AssocList$empty, routesByStopId: $pzp1997$assoc_list$AssocList$empty, selections: selections, stopIdFormText: '', stops: $pzp1997$assoc_list$AssocList$empty, streamState: initStreamState, url: url},
+			{currentTime: $elm$core$Maybe$Nothing, lastUpdated: $elm$core$Maybe$Nothing, modal: $author$project$Model$NoModal, navigationKey: key, routeIdFormText: '', routes: _List_Nil, routesByStopId: $pzp1997$assoc_list$AssocList$empty, selections: selections, stopIdFormText: '', stops: $pzp1997$assoc_list$AssocList$empty, streamState: initStreamState, url: url},
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
@@ -15326,6 +15327,9 @@ var $author$project$Main$subscriptions = function (_v0) {
 				A2($elm$time$Time$every, 1000, $author$project$Model$Tick),
 				$author$project$Main$streamEventSub
 			]));
+};
+var $author$project$Model$RoutePicker = function (a) {
+	return {$: 'RoutePicker', a: a};
 };
 var $author$project$Selection$addRouteId = F2(
 	function (routeId, selection) {
@@ -16222,22 +16226,68 @@ var $author$project$Main$update = F2(
 						$author$project$Selection$removeRouteId(routeId),
 						model.selections));
 				return A2($author$project$Main$registerNewSelections, model, newSelections);
+			case 'CloseModal':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{modal: $author$project$Model$NoModal}),
+					$elm$core$Platform$Cmd$none);
+			case 'OpenRoutePicker':
+				var index = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							modal: $author$project$Model$RoutePicker(index)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'PickRoute':
+				var routeId = msg.a;
+				var routePickerIndex = function () {
+					var _v7 = model.modal;
+					if (_v7.$ === 'RoutePicker') {
+						var index = _v7.a;
+						return index;
+					} else {
+						return $elm$core$Maybe$Nothing;
+					}
+				}();
+				var newSelections = function () {
+					if (routePickerIndex.$ === 'Nothing') {
+						return _Utils_ap(
+							model.selections,
+							_List_fromArray(
+								[
+									$author$project$Selection$WithoutStop(
+									{
+										directionId: $elm$core$Maybe$Nothing,
+										routeIds: _List_fromArray(
+											[routeId])
+									})
+								]));
+					} else {
+						var index = routePickerIndex.a;
+						return A3(
+							$elm_community$list_extra$List$Extra$updateAt,
+							index,
+							$author$project$Selection$addRouteId(routeId),
+							model.selections);
+					}
+				}();
+				var modelWithClosedModal = _Utils_update(
+					model,
+					{modal: $author$project$Model$NoModal});
+				return A2($author$project$Main$registerNewSelections, modelWithClosedModal, newSelections);
 			case 'ReceiveRoutes':
 				var apiResult = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							routes: $pzp1997$assoc_list$AssocList$fromList(
-								A2(
-									$elm$core$List$map,
-									function (route) {
-										return _Utils_Tuple2(route.id, route);
-									},
-									A2(
-										$elm$core$Result$withDefault,
-										_List_Nil,
-										A2($elm$core$Result$map, $author$project$Mbta$Api$getPrimaryData, apiResult))))
+							routes: A2(
+								$elm$core$Result$withDefault,
+								_List_Nil,
+								A2($elm$core$Result$map, $author$project$Mbta$Api$getPrimaryData, apiResult))
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 'ReceiveStops':
@@ -16292,9 +16342,9 @@ var $author$project$Main$update = F2(
 						}),
 					$elm$core$Platform$Cmd$none);
 			default:
-				var _v6 = $author$project$Main$streamPredictions(model.selections);
-				var initStreamState = _v6.a;
-				var streamUrl = _v6.b;
+				var _v8 = $author$project$Main$streamPredictions(model.selections);
+				var initStreamState = _v8.a;
+				var streamUrl = _v8.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -16302,9 +16352,30 @@ var $author$project$Main$update = F2(
 					$author$project$Main$startStream(streamUrl));
 		}
 	});
-var $mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
-	function (a, b) {
-		return {$: 'FontFamily', a: a, b: b};
+var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
+	function (a, b, c, d) {
+		return {$: 'Rgba', a: a, b: b, c: c, d: d};
+	});
+var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
+var $avh4$elm_color$Color$toRgba = function (_v0) {
+	var r = _v0.a;
+	var g = _v0.b;
+	var b = _v0.c;
+	var a = _v0.d;
+	return {alpha: a, blue: b, green: g, red: r};
+};
+var $author$project$ViewHelpers$avh4ColorToElmUiColor = function (avh4Color) {
+	var _v0 = $avh4$elm_color$Color$toRgba(avh4Color);
+	var red = _v0.red;
+	var green = _v0.green;
+	var blue = _v0.blue;
+	var alpha = _v0.alpha;
+	return A4($mdgriffith$elm_ui$Element$rgba, red, green, blue, alpha);
+};
+var $avh4$elm_color$Color$charcoal = A4($avh4$elm_color$Color$RgbaSpace, 85 / 255, 87 / 255, 83 / 255, 1.0);
+var $mdgriffith$elm_ui$Internal$Model$Colored = F3(
+	function (a, b, c) {
+		return {$: 'Colored', a: a, b: b, c: c};
 	});
 var $mdgriffith$elm_ui$Internal$Model$StyleClass = F2(
 	function (a, b) {
@@ -16319,6 +16390,43 @@ var $mdgriffith$elm_ui$Internal$Flag$Second = function (a) {
 var $mdgriffith$elm_ui$Internal$Flag$flag = function (i) {
 	return (i > 31) ? $mdgriffith$elm_ui$Internal$Flag$Second(1 << (i - 32)) : $mdgriffith$elm_ui$Internal$Flag$Flag(1 << i);
 };
+var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
+var $mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
+	return $elm$core$String$fromInt(
+		$elm$core$Basics$round(x * 255));
+};
+var $mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_v0) {
+	var red = _v0.a;
+	var green = _v0.b;
+	var blue = _v0.c;
+	var alpha = _v0.d;
+	return $mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + $mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
+};
+var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$bgColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'background-color',
+			clr));
+};
+var $mdgriffith$elm_ui$Internal$Flag$fontColor = $mdgriffith$elm_ui$Internal$Flag$flag(14);
+var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$fontColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
+			'color',
+			fontColor));
+};
+var $mdgriffith$elm_ui$Internal$Model$FontFamily = F2(
+	function (a, b) {
+		return {$: 'FontFamily', a: a, b: b};
+	});
 var $mdgriffith$elm_ui$Internal$Flag$fontFamily = $mdgriffith$elm_ui$Internal$Flag$flag(5);
 var $elm$core$String$toLower = _String_toLower;
 var $elm$core$String$words = _String_words;
@@ -16367,6 +16475,23 @@ var $mdgriffith$elm_ui$Element$Font$family = function (families) {
 			$mdgriffith$elm_ui$Internal$Model$FontFamily,
 			A3($elm$core$List$foldl, $mdgriffith$elm_ui$Internal$Model$renderFontClassName, 'ff-', families),
 			families));
+};
+var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
+var $mdgriffith$elm_ui$Internal$Model$Nearby = F2(
+	function (a, b) {
+		return {$: 'Nearby', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
+var $mdgriffith$elm_ui$Element$createNearby = F2(
+	function (loc, element) {
+		if (element.$ === 'Empty') {
+			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
+		} else {
+			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
+		}
+	});
+var $mdgriffith$elm_ui$Element$inFront = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
 var $mdgriffith$elm_ui$Internal$Style$classes = {above: 'a', active: 'atv', alignBottom: 'ab', alignCenterX: 'cx', alignCenterY: 'cy', alignContainerBottom: 'acb', alignContainerCenterX: 'accx', alignContainerCenterY: 'accy', alignContainerRight: 'acr', alignLeft: 'al', alignRight: 'ar', alignTop: 'at', alignedHorizontally: 'ah', alignedVertically: 'av', any: 's', behind: 'bh', below: 'b', bold: 'w7', borderDashed: 'bd', borderDotted: 'bdt', borderNone: 'bn', borderSolid: 'bs', capturePointerEvents: 'cpe', clip: 'cp', clipX: 'cpx', clipY: 'cpy', column: 'c', container: 'ctr', contentBottom: 'cb', contentCenterX: 'ccx', contentCenterY: 'ccy', contentLeft: 'cl', contentRight: 'cr', contentTop: 'ct', cursorPointer: 'cptr', cursorText: 'ctxt', focus: 'fcs', focusedWithin: 'focus-within', fullSize: 'fs', grid: 'g', hasBehind: 'hbh', heightContent: 'hc', heightExact: 'he', heightFill: 'hf', heightFillPortion: 'hfp', hover: 'hv', imageContainer: 'ic', inFront: 'fr', inputMultiline: 'iml', inputMultilineFiller: 'imlf', inputMultilineParent: 'imlp', inputMultilineWrapper: 'implw', inputText: 'it', italic: 'i', link: 'lnk', nearby: 'nb', noTextSelection: 'notxt', onLeft: 'ol', onRight: 'or', opaque: 'oq', overflowHidden: 'oh', page: 'pg', paragraph: 'p', passPointerEvents: 'ppe', root: 'ui', row: 'r', scrollbars: 'sb', scrollbarsX: 'sbx', scrollbarsY: 'sby', seButton: 'sbt', single: 'e', sizeByCapital: 'cap', spaceEvenly: 'sev', strike: 'sk', text: 't', textCenter: 'tc', textExtraBold: 'w8', textExtraLight: 'w2', textHeavy: 'w9', textJustify: 'tj', textJustifyAll: 'tja', textLeft: 'tl', textLight: 'w3', textMedium: 'w5', textNormalWeight: 'w4', textRight: 'tr', textSemiBold: 'w6', textThin: 'w1', textUnitalicized: 'tun', transition: 'ts', transparent: 'clr', underline: 'u', widthContent: 'wc', widthExact: 'we', widthFill: 'wf', widthFillPortion: 'wfp', wrapped: 'wrp'};
 var $mdgriffith$elm_ui$Internal$Model$Attr = function (a) {
@@ -16517,10 +16642,6 @@ var $mdgriffith$elm_ui$Internal$Model$lengthClassName = function (x) {
 			var len = x.b;
 			return 'max' + ($elm$core$String$fromInt(max) + $mdgriffith$elm_ui$Internal$Model$lengthClassName(len));
 	}
-};
-var $mdgriffith$elm_ui$Internal$Model$floatClass = function (x) {
-	return $elm$core$String$fromInt(
-		$elm$core$Basics$round(x * 255));
 };
 var $mdgriffith$elm_ui$Internal$Model$transformClass = function (transform) {
 	switch (transform.$) {
@@ -21626,10 +21747,6 @@ var $mdgriffith$elm_ui$Internal$Model$element = F4(
 	});
 var $mdgriffith$elm_ui$Internal$Model$AllowHover = {$: 'AllowHover'};
 var $mdgriffith$elm_ui$Internal$Model$Layout = {$: 'Layout'};
-var $mdgriffith$elm_ui$Internal$Model$Rgba = F4(
-	function (a, b, c, d) {
-		return {$: 'Rgba', a: a, b: b, c: c, d: d};
-	});
 var $mdgriffith$elm_ui$Internal$Model$focusDefaultStyle = {
 	backgroundColor: $elm$core$Maybe$Nothing,
 	borderColor: $elm$core$Maybe$Nothing,
@@ -21764,10 +21881,6 @@ var $mdgriffith$elm_ui$Internal$Model$renderRoot = F3(
 					_List_fromArray(
 						[child]))));
 	});
-var $mdgriffith$elm_ui$Internal$Model$Colored = F3(
-	function (a, b, c) {
-		return {$: 'Colored', a: a, b: b, c: c};
-	});
 var $mdgriffith$elm_ui$Internal$Model$FontSize = function (a) {
 	return {$: 'FontSize', a: a};
 };
@@ -21775,16 +21888,7 @@ var $mdgriffith$elm_ui$Internal$Model$SansSerif = {$: 'SansSerif'};
 var $mdgriffith$elm_ui$Internal$Model$Typeface = function (a) {
 	return {$: 'Typeface', a: a};
 };
-var $mdgriffith$elm_ui$Internal$Flag$bgColor = $mdgriffith$elm_ui$Internal$Flag$flag(8);
-var $mdgriffith$elm_ui$Internal$Flag$fontColor = $mdgriffith$elm_ui$Internal$Flag$flag(14);
 var $mdgriffith$elm_ui$Internal$Flag$fontSize = $mdgriffith$elm_ui$Internal$Flag$flag(4);
-var $mdgriffith$elm_ui$Internal$Model$formatColorClass = function (_v0) {
-	var red = _v0.a;
-	var green = _v0.b;
-	var blue = _v0.c;
-	var alpha = _v0.d;
-	return $mdgriffith$elm_ui$Internal$Model$floatClass(red) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(green) + ('-' + ($mdgriffith$elm_ui$Internal$Model$floatClass(blue) + ('-' + $mdgriffith$elm_ui$Internal$Model$floatClass(alpha))))));
-};
 var $mdgriffith$elm_ui$Internal$Model$rootStyle = function () {
 	var families = _List_fromArray(
 		[
@@ -21847,32 +21951,9 @@ var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
 var $mdgriffith$elm_ui$Element$Font$sansSerif = $mdgriffith$elm_ui$Internal$Model$SansSerif;
 var $mdgriffith$elm_ui$Element$Font$typeface = $mdgriffith$elm_ui$Internal$Model$Typeface;
-var $author$project$Model$AddSelection = function (a) {
-	return {$: 'AddSelection', a: a};
+var $author$project$Model$OpenRoutePicker = function (a) {
+	return {$: 'OpenRoutePicker', a: a};
 };
-var $author$project$Model$TypeRouteId = function (a) {
-	return {$: 'TypeRouteId', a: a};
-};
-var $author$project$Model$TypeStopId = function (a) {
-	return {$: 'TypeStopId', a: a};
-};
-var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
-var $avh4$elm_color$Color$toRgba = function (_v0) {
-	var r = _v0.a;
-	var g = _v0.b;
-	var b = _v0.c;
-	var a = _v0.d;
-	return {alpha: a, blue: b, green: g, red: r};
-};
-var $author$project$ViewHelpers$avh4ColorToElmUiColor = function (avh4Color) {
-	var _v0 = $avh4$elm_color$Color$toRgba(avh4Color);
-	var red = _v0.red;
-	var green = _v0.green;
-	var blue = _v0.blue;
-	var alpha = _v0.alpha;
-	return A4($mdgriffith$elm_ui$Element$rgba, red, green, blue, alpha);
-};
-var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
@@ -21886,7 +21967,6 @@ var $elm$html$Html$Attributes$boolProperty = F2(
 			$elm$json$Json$Encode$bool(bool));
 	});
 var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
-var $mdgriffith$elm_ui$Internal$Model$NoAttribute = {$: 'NoAttribute'};
 var $mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
 	if (((attr.$ === 'StyleClass') && (attr.b.$ === 'PseudoSelector')) && (attr.b.a.$ === 'Focus')) {
 		var _v1 = attr.b;
@@ -22008,6 +22088,68 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
+var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
+var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'border-color',
+			clr));
+};
+var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $mdgriffith$elm_ui$Element$image = F2(
+	function (attrs, _v0) {
+		var src = _v0.src;
+		var description = _v0.description;
+		var imageAttributes = A2(
+			$elm$core$List$filter,
+			function (a) {
+				switch (a.$) {
+					case 'Width':
+						return true;
+					case 'Height':
+						return true;
+					default:
+						return false;
+				}
+			},
+			attrs);
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asEl,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
+				attrs),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[
+						A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asEl,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('img'),
+						_Utils_ap(
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Internal$Model$Attr(
+									$elm$html$Html$Attributes$src(src)),
+									$mdgriffith$elm_ui$Internal$Model$Attr(
+									$elm$html$Html$Attributes$alt(description))
+								]),
+							imageAttributes),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
+					])));
+	});
 var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
 	function (a, b, c, d, e) {
 		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
@@ -22025,10 +22167,10 @@ var $mdgriffith$elm_ui$Element$padding = function (x) {
 			x,
 			x));
 };
-var $mdgriffith$elm_ui$Element$rgb = F3(
-	function (r, g, b) {
-		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
-	});
+var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
+};
+var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
 var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
 var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 	return A2(
@@ -22040,6 +22182,63 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			'border-radius',
 			$elm$core$String$fromInt(radius) + 'px'));
 };
+var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
+var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var $mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + $elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
+var $author$project$View$addPill = function (index) {
+	return A2(
+		$mdgriffith$elm_ui$Element$Input$button,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$padding(4),
+				$mdgriffith$elm_ui$Element$Border$rounded(24),
+				$mdgriffith$elm_ui$Element$Border$color(
+				$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$white)),
+				$mdgriffith$elm_ui$Element$Border$width(2)
+			]),
+		{
+			label: A2(
+				$mdgriffith$elm_ui$Element$image,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width(
+						$mdgriffith$elm_ui$Element$px(16)),
+						$mdgriffith$elm_ui$Element$height(
+						$mdgriffith$elm_ui$Element$px(16))
+					]),
+				{description: 'Add route', src: '/assets/add.svg'}),
+			onPress: $elm$core$Maybe$Just(
+				$author$project$Model$OpenRoutePicker(index))
+		});
+};
+var $author$project$Model$AddSelection = function (a) {
+	return {$: 'AddSelection', a: a};
+};
+var $author$project$Model$TypeRouteId = function (a) {
+	return {$: 'TypeRouteId', a: a};
+};
+var $author$project$Model$TypeStopId = function (a) {
+	return {$: 'TypeStopId', a: a};
+};
+var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
+var $mdgriffith$elm_ui$Element$rgb = F3(
+	function (r, g, b) {
+		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+	});
 var $mdgriffith$elm_ui$Internal$Model$boxShadowClass = function (shadow) {
 	return $elm$core$String$concat(
 		_List_fromArray(
@@ -22064,26 +22263,10 @@ var $mdgriffith$elm_ui$Element$Border$shadow = function (almostShade) {
 			'box-shadow',
 			$mdgriffith$elm_ui$Internal$Model$formatBoxShadow(shade)));
 };
-var $author$project$View$unit = 16;
-var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var $mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + $elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
+var $author$project$ViewHelpers$unit = 16;
 var $author$project$View$buttonStyles = _List_fromArray(
 	[
-		$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 2) | 0),
+		$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0),
 		$mdgriffith$elm_ui$Element$Border$width(1),
 		$mdgriffith$elm_ui$Element$Border$rounded(4),
 		$mdgriffith$elm_ui$Element$Border$shadow(
@@ -22094,16 +22277,6 @@ var $author$project$View$buttonStyles = _List_fromArray(
 			size: 0.0
 		})
 	]);
-var $mdgriffith$elm_ui$Element$Font$color = function (fontColor) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$fontColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'fc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(fontColor),
-			'color',
-			fontColor));
-};
 var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
 var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
 var $mdgriffith$elm_ui$Element$column = F2(
@@ -22239,18 +22412,6 @@ var $mdgriffith$elm_ui$Element$Input$autofill = A2(
 	$mdgriffith$elm_ui$Internal$Model$Attr,
 	$elm$html$Html$Attributes$attribute('autocomplete'));
 var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
-var $mdgriffith$elm_ui$Internal$Model$Nearby = F2(
-	function (a, b) {
-		return {$: 'Nearby', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Element$createNearby = F2(
-	function (loc, element) {
-		if (element.$ === 'Empty') {
-			return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-		} else {
-			return A2($mdgriffith$elm_ui$Internal$Model$Nearby, loc, element);
-		}
-	});
 var $mdgriffith$elm_ui$Element$behindContent = function (element) {
 	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
 };
@@ -22295,27 +22456,6 @@ var $mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding = function (
 };
 var $mdgriffith$elm_ui$Internal$Flag$overflow = $mdgriffith$elm_ui$Internal$Flag$flag(20);
 var $mdgriffith$elm_ui$Element$clip = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clip);
-var $mdgriffith$elm_ui$Element$Background$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$bgColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bg-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'background-color',
-			clr));
-};
-var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
-var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'border-color',
-			clr));
-};
 var $mdgriffith$elm_ui$Element$Input$darkGrey = A3($mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
 var $mdgriffith$elm_ui$Element$paddingXY = F2(
 	function (x, y) {
@@ -22384,10 +22524,6 @@ var $mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute = function (label) {
 	} else {
 		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
 	}
-};
-var $mdgriffith$elm_ui$Internal$Model$InFront = {$: 'InFront'};
-var $mdgriffith$elm_ui$Element$inFront = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$InFront, element);
 };
 var $mdgriffith$elm_ui$Element$Input$isConstrained = function (len) {
 	isConstrained:
@@ -23046,7 +23182,7 @@ var $author$project$View$addSelectionForm = function (model) {
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
-				$mdgriffith$elm_ui$Element$spacing($author$project$View$unit)
+				$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit)
 			]),
 		_List_fromArray(
 			[
@@ -23119,7 +23255,6 @@ var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 };
 var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
-var $avh4$elm_color$Color$charcoal = A4($avh4$elm_color$Color$RgbaSpace, 85 / 255, 87 / 255, 83 / 255, 1.0);
 var $mdgriffith$elm_ui$Internal$Model$Max = F2(
 	function (a, b) {
 		return {$: 'Max', a: a, b: b};
@@ -23163,7 +23298,7 @@ var $author$project$View$refreshButton = function (model) {
 		$mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
 			[
-				$mdgriffith$elm_ui$Element$spacing($author$project$View$unit),
+				$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit),
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 			]),
 		_List_fromArray(
@@ -23211,61 +23346,6 @@ var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$Al
 var $author$project$Model$ToggleDirection = function (a) {
 	return {$: 'ToggleDirection', a: a};
 };
-var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
-var $elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
-var $mdgriffith$elm_ui$Element$image = F2(
-	function (attrs, _v0) {
-		var src = _v0.src;
-		var description = _v0.description;
-		var imageAttributes = A2(
-			$elm$core$List$filter,
-			function (a) {
-				switch (a.$) {
-					case 'Width':
-						return true;
-					case 'Height':
-						return true;
-					default:
-						return false;
-				}
-			},
-			attrs);
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
-				attrs),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[
-						A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asEl,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('img'),
-						_Utils_ap(
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Internal$Model$Attr(
-									$elm$html$Html$Attributes$src(src)),
-									$mdgriffith$elm_ui$Internal$Model$Attr(
-									$elm$html$Html$Attributes$alt(description))
-								]),
-							imageAttributes),
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
-					])));
-	});
-var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
 var $author$project$View$directionIcon = F2(
 	function (index, directionId) {
 		var icon = function () {
@@ -23360,6 +23440,8 @@ var $author$project$Mbta$Extra$routeAbbreviation = function (route) {
 		switch (_v1.a) {
 			case 'Red':
 				return $elm$core$Maybe$Just('RL');
+			case 'Mattapan':
+				return $elm$core$Maybe$Just('M');
 			case 'Orange':
 				return $elm$core$Maybe$Just('OL');
 			case 'Blue':
@@ -23400,6 +23482,10 @@ var $author$project$Mbta$Extra$routeAbbreviation = function (route) {
 				return $elm$core$Maybe$Just('PRO');
 			case 'CR-Foxboro':
 				return $elm$core$Maybe$Just('FXB');
+			case 'Boat-F1':
+				return $elm$core$Maybe$Just('HNG');
+			case 'Boat-F4':
+				return $elm$core$Maybe$Just('CHA');
 			default:
 				return $elm$core$Maybe$Nothing;
 		}
@@ -23423,7 +23509,6 @@ var $author$project$Pill$pill = function (route) {
 				route.longName,
 				$author$project$Mbta$Extra$routeAbbreviation(route))));
 };
-var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $author$project$Pill$unknownPill = function (_v0) {
 	var routeIdText = _v0.a;
 	return A2(
@@ -23613,7 +23698,7 @@ var $author$project$View$selectedRoutePills = F3(
 			$mdgriffith$elm_ui$Element$wrappedRow,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$spacing(($author$project$View$unit / 2) | 0),
+					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			$elm$core$List$concat(
@@ -23717,7 +23802,8 @@ var $author$project$View$unselectedRoutePills = F2(
 			$mdgriffith$elm_ui$Element$wrappedRow,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$spacing(($author$project$View$unit / 2) | 0)
+					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
 				$elm$core$List$map,
@@ -23740,7 +23826,7 @@ var $author$project$View$emptyPrediction = A2(
 	$mdgriffith$elm_ui$Element$el,
 	_List_fromArray(
 		[
-			$mdgriffith$elm_ui$Element$padding($author$project$View$unit)
+			$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit)
 		]),
 	$mdgriffith$elm_ui$Element$text('No predicted trips'));
 var $author$project$Mbta$Api$getIncludedRoute = F2(
@@ -24723,8 +24809,8 @@ var $author$project$View$viewPrediction = F3(
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$px($author$project$View$unit * 8)),
-							$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 2) | 0),
+							$mdgriffith$elm_ui$Element$px($author$project$ViewHelpers$unit * 8)),
+							$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0),
 							$mdgriffith$elm_ui$Element$Font$variant($mdgriffith$elm_ui$Element$Font$tabularNumbers)
 						]),
 					A2($author$project$View$viewPredictionTime, currentTime, prediction)),
@@ -24733,7 +24819,7 @@ var $author$project$View$viewPrediction = F3(
 					_List_fromArray(
 						[
 							$mdgriffith$elm_ui$Element$width(
-							$mdgriffith$elm_ui$Element$px($author$project$View$unit * 2))
+							$mdgriffith$elm_ui$Element$px($author$project$ViewHelpers$unit * 2))
 						]),
 					function () {
 						var _v0 = prediction.platformCode;
@@ -24745,7 +24831,7 @@ var $author$project$View$viewPrediction = F3(
 								$mdgriffith$elm_ui$Element$el,
 								_List_fromArray(
 									[
-										$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 4) | 0),
+										$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 4) | 0),
 										$mdgriffith$elm_ui$Element$centerX,
 										$mdgriffith$elm_ui$Element$Border$width(1),
 										$mdgriffith$elm_ui$Element$Border$rounded(4)
@@ -24759,8 +24845,8 @@ var $author$project$View$viewPrediction = F3(
 						[
 							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
 							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-							$mdgriffith$elm_ui$Element$padding(($author$project$View$unit / 2) | 0),
-							$mdgriffith$elm_ui$Element$spacing(($author$project$View$unit / 4) | 0)
+							$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0),
+							$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 4) | 0)
 						]),
 					_List_fromArray(
 						[
@@ -24896,7 +24982,7 @@ var $author$project$View$viewCompleteSelection = F6(
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing($author$project$View$unit)
+					$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit)
 				]),
 			_List_fromArray(
 				[
@@ -24927,10 +25013,39 @@ var $author$project$View$viewCompleteSelection = F6(
 					$mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
 						[
-							$mdgriffith$elm_ui$Element$padding($author$project$View$unit)
+							$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit)
 						]),
 					$mdgriffith$elm_ui$Element$text('Choose routes'))
 				]));
+	});
+var $author$project$View$incompleteRoutePills = F2(
+	function (index, selectedRouteIds) {
+		return A2(
+			$mdgriffith$elm_ui$Element$wrappedRow,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			_Utils_ap(
+				A2(
+					$elm$core$List$map,
+					function (routeId) {
+						return A2(
+							$mdgriffith$elm_ui$Element$Input$button,
+							_List_Nil,
+							{
+								label: $author$project$Pill$unknownPill(routeId),
+								onPress: $elm$core$Maybe$Just(
+									A2($author$project$Model$RemoveRouteFromSelection, index, routeId))
+							});
+					},
+					selectedRouteIds),
+				_List_fromArray(
+					[
+						$author$project$View$addPill(
+						$elm$core$Maybe$Just(index))
+					])));
 	});
 var $author$project$View$viewPartialSelection = F2(
 	function (index, partialSelection) {
@@ -24939,7 +25054,7 @@ var $author$project$View$viewPartialSelection = F2(
 			_List_fromArray(
 				[
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing($author$project$View$unit)
+					$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit)
 				]),
 			_List_fromArray(
 				[
@@ -24952,7 +25067,7 @@ var $author$project$View$viewPartialSelection = F2(
 						]),
 					_List_fromArray(
 						[
-							A3($author$project$View$selectedRoutePills, index, _List_Nil, partialSelection.routeIds),
+							A2($author$project$View$incompleteRoutePills, index, partialSelection.routeIds),
 							A2(
 							$mdgriffith$elm_ui$Element$el,
 							_List_fromArray(
@@ -24968,7 +25083,7 @@ var $author$project$View$viewPartialSelection = F2(
 					$mdgriffith$elm_ui$Element$el,
 					_List_fromArray(
 						[
-							$mdgriffith$elm_ui$Element$padding($author$project$View$unit)
+							$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit)
 						]),
 					$mdgriffith$elm_ui$Element$text('Choose stop'))
 				]));
@@ -24979,7 +25094,7 @@ var $author$project$View$viewSelections = F5(
 			$mdgriffith$elm_ui$Element$column,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$spacing(2 * $author$project$View$unit),
+					$mdgriffith$elm_ui$Element$spacing(2 * $author$project$ViewHelpers$unit),
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
@@ -25006,15 +25121,11 @@ var $author$project$View$ui = function (model) {
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
-				$mdgriffith$elm_ui$Element$padding($author$project$View$unit),
-				$mdgriffith$elm_ui$Element$spacing($author$project$View$unit),
+				$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit),
+				$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit),
 				$mdgriffith$elm_ui$Element$centerX,
 				$mdgriffith$elm_ui$Element$width(
-				A2($mdgriffith$elm_ui$Element$maximum, 400, $mdgriffith$elm_ui$Element$fill)),
-				$mdgriffith$elm_ui$Element$Background$color(
-				$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$charcoal)),
-				$mdgriffith$elm_ui$Element$Font$color(
-				$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$white))
+				A2($mdgriffith$elm_ui$Element$maximum, 400, $mdgriffith$elm_ui$Element$fill))
 			]),
 		function () {
 			var _v0 = $author$project$Mbta$Api$streamResult(model.streamState);
@@ -25022,6 +25133,7 @@ var $author$project$View$ui = function (model) {
 				return _List_fromArray(
 					[
 						$mdgriffith$elm_ui$Element$text('Loading...'),
+						$author$project$View$addPill($elm$core$Maybe$Nothing),
 						$author$project$View$addSelectionForm(model),
 						$author$project$View$refreshButton(model)
 					]);
@@ -25049,12 +25161,125 @@ var $author$project$View$ui = function (model) {
 							model.stops,
 							data,
 							model.selections),
+							$author$project$View$addPill($elm$core$Maybe$Nothing),
 							$author$project$View$addSelectionForm(model),
 							$author$project$View$refreshButton(model)
 						]);
 				}
 			}
 		}());
+};
+var $author$project$Model$CloseModal = {$: 'CloseModal'};
+var $avh4$elm_color$Color$darkCharcoal = A4($avh4$elm_color$Color$RgbaSpace, 46 / 255, 52 / 255, 54 / 255, 1.0);
+var $author$project$Modal$background = A2(
+	$mdgriffith$elm_ui$Element$el,
+	_List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+			$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+			$mdgriffith$elm_ui$Element$Background$color(
+			$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$darkCharcoal)),
+			$mdgriffith$elm_ui$Element$alpha(0.5),
+			$mdgriffith$elm_ui$Element$Events$onClick($author$project$Model$CloseModal)
+		]),
+	$mdgriffith$elm_ui$Element$none);
+var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $mdgriffith$elm_ui$Element$scrollbars = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
+var $author$project$Modal$modalWrapper = function (child) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit * 2),
+				$mdgriffith$elm_ui$Element$behindContent($author$project$Modal$background),
+				$mdgriffith$elm_ui$Element$scrollbars
+			]),
+		A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$centerX,
+					$mdgriffith$elm_ui$Element$centerY,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$scrollbars
+				]),
+			child));
+};
+var $author$project$Model$PickRoute = function (a) {
+	return {$: 'PickRoute', a: a};
+};
+var $avh4$elm_color$Color$lightCharcoal = A4($avh4$elm_color$Color$RgbaSpace, 136 / 255, 138 / 255, 133 / 255, 1.0);
+var $author$project$Modal$routePickerRoute = function (route) {
+	return A2(
+		$mdgriffith$elm_ui$Element$row,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 4) | 0)
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$mdgriffith$elm_ui$Element$el,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$width(
+						$mdgriffith$elm_ui$Element$px($author$project$ViewHelpers$unit * 4))
+					]),
+				$author$project$Pill$pill(route)),
+				A2(
+				$mdgriffith$elm_ui$Element$paragraph,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$mdgriffith$elm_ui$Element$text(route.longName)
+					]))
+			]));
+};
+var $author$project$Modal$routePicker = function (routes) {
+	return A2(
+		$mdgriffith$elm_ui$Element$column,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+			]),
+		A2(
+			$elm$core$List$map,
+			function (route) {
+				return A2(
+					$mdgriffith$elm_ui$Element$Input$button,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Background$color(
+							$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$charcoal)),
+							$mdgriffith$elm_ui$Element$Border$color(
+							$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$lightCharcoal)),
+							$mdgriffith$elm_ui$Element$Border$widthEach(
+							{bottom: 1, left: 0, right: 0, top: 0}),
+							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+						]),
+					{
+						label: $author$project$Modal$routePickerRoute(route),
+						onPress: $elm$core$Maybe$Just(
+							$author$project$Model$PickRoute(route.id))
+					});
+			},
+			routes));
+};
+var $author$project$Modal$view = function (model) {
+	var _v0 = model.modal;
+	if (_v0.$ === 'NoModal') {
+		return $mdgriffith$elm_ui$Element$none;
+	} else {
+		return $author$project$Modal$modalWrapper(
+			$author$project$Modal$routePicker(model.routes));
+	}
 };
 var $author$project$View$view = function (model) {
 	return {
@@ -25064,12 +25289,18 @@ var $author$project$View$view = function (model) {
 				$mdgriffith$elm_ui$Element$layout,
 				_List_fromArray(
 					[
+						$mdgriffith$elm_ui$Element$Background$color(
+						$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$charcoal)),
+						$mdgriffith$elm_ui$Element$Font$color(
+						$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$white)),
 						$mdgriffith$elm_ui$Element$Font$family(
 						_List_fromArray(
 							[
 								$mdgriffith$elm_ui$Element$Font$typeface('Inter'),
 								$mdgriffith$elm_ui$Element$Font$sansSerif
-							]))
+							])),
+						$mdgriffith$elm_ui$Element$inFront(
+						$author$project$Modal$view(model))
 					]),
 				$author$project$View$ui(model))
 			]),
@@ -25078,4 +25309,4 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{init: $author$project$Main$init, onUrlChange: $author$project$Model$OnUrlChange, onUrlRequest: $author$project$Model$OnUrlRequest, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$View$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Selection.CompleteSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"},"Selection.PartialSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Selection.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"DeleteSelection":["Basics.Int"],"ToggleDirection":["Basics.Int"],"AddRouteToSelection":["Basics.Int","Mbta.RouteId"],"RemoveRouteFromSelection":["Basics.Int","Mbta.RouteId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"ReceiveRoutesForStopId":["Mbta.StopId","Mbta.Api.ApiResult (List.List Mbta.Route)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Selection.Selection":{"args":[],"tags":{"WithoutStop":["Selection.PartialSelection"],"WithStop":["Selection.CompleteSelection"]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Selection.CompleteSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"},"Selection.PartialSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Selection.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"DeleteSelection":["Basics.Int"],"ToggleDirection":["Basics.Int"],"AddRouteToSelection":["Basics.Int","Mbta.RouteId"],"CloseModal":[],"OpenRoutePicker":["Maybe.Maybe Basics.Int"],"PickRoute":["Mbta.RouteId"],"RemoveRouteFromSelection":["Basics.Int","Mbta.RouteId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"ReceiveRoutesForStopId":["Mbta.StopId","Mbta.Api.ApiResult (List.List Mbta.Route)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Selection.Selection":{"args":[],"tags":{"WithoutStop":["Selection.PartialSelection"],"WithStop":["Selection.CompleteSelection"]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
