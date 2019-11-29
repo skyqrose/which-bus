@@ -82,58 +82,30 @@ viewSelections currentTime routesByStopId stops data selections =
         ]
         (List.indexedMap
             (\index selection ->
-                case selection of
-                    Selection.WithoutStop partialSelection ->
-                        viewPartialSelection
-                            index
-                            partialSelection
+                let
+                    stop : Maybe Mbta.Stop
+                    stop =
+                        Dict.get selection.stopId stops
 
-                    Selection.WithStop completeSelection ->
-                        let
-                            stop : Maybe Mbta.Stop
-                            stop =
-                                Dict.get completeSelection.stopId stops
-
-                            routes : List Mbta.Route
-                            routes =
-                                Dict.get completeSelection.stopId routesByStopId
-                                    |> Maybe.withDefault []
-                        in
-                        viewCompleteSelection
-                            index
-                            currentTime
-                            routes
-                            stop
-                            data
-                            completeSelection
+                    routes : List Mbta.Route
+                    routes =
+                        Dict.get selection.stopId routesByStopId
+                            |> Maybe.withDefault []
+                in
+                viewSelection
+                    index
+                    currentTime
+                    routes
+                    stop
+                    data
+                    selection
             )
             selections
         )
 
 
-viewPartialSelection : Int -> Selection.PartialSelection -> Element Msg
-viewPartialSelection index partialSelection =
-    El.column
-        [ El.width El.fill
-        , El.spacing unit
-        ]
-        [ El.row
-            [ El.width El.fill
-            , El.spacing 4
-            ]
-            [ incompleteRoutePills index partialSelection.routeIds
-            , El.el [ El.alignRight ] (directionIcon index partialSelection.directionId)
-            , El.el [ El.alignRight ] (removeSelection index)
-            ]
-        , El.el
-            [ El.padding unit
-            ]
-            (El.text "Choose stop")
-        ]
-
-
-viewCompleteSelection : Int -> Time.Posix -> List Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection.CompleteSelection -> Element Msg
-viewCompleteSelection index currentTime routes stop data selection =
+viewSelection : Int -> Time.Posix -> List Mbta.Route -> Maybe Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element Msg
+viewSelection index currentTime routes stop data selection =
     let
         ( selectedRoutes, unselectedRoutes ) =
             List.partition
@@ -188,7 +160,7 @@ viewCompleteSelection index currentTime routes stop data selection =
         ]
 
 
-selectionStopName : Maybe Mbta.Stop -> Selection.CompleteSelection -> Element Msg
+selectionStopName : Maybe Mbta.Stop -> Selection -> Element Msg
 selectionStopName stop selection =
     let
         (Mbta.StopId stopIdText) =
@@ -300,25 +272,7 @@ unselectedRoutePills index unselectedRoutes =
         )
 
 
-incompleteRoutePills : Int -> List Mbta.RouteId -> Element Msg
-incompleteRoutePills index selectedRouteIds =
-    El.wrappedRow
-        [ El.spacing (unit // 2)
-        , El.width El.fill
-        ]
-        (List.map
-            (\routeId ->
-                Input.button
-                    []
-                    { onPress = Just (RemoveRouteFromSelection index routeId)
-                    , label = Pill.unknownPill routeId
-                    }
-            )
-            selectedRouteIds
-        )
-
-
-viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection.CompleteSelection -> Element msg
+viewPredictions : Time.Posix -> Mbta.Api.Data (List Mbta.Prediction) -> Selection -> Element msg
 viewPredictions currentTime data selection =
     let
         predictions =
@@ -561,44 +515,30 @@ addSelectionForm model =
         , Input.button
             buttonStyles
             { onPress =
-                let
-                    routeIds : List Mbta.RouteId
-                    routeIds =
-                        model.routeIdFormText
-                            |> String.split "."
-                            |> List.filter ((/=) "")
-                            |> List.map Mbta.RouteId
-
-                    maybeStopId : Maybe Mbta.StopId
-                    maybeStopId =
-                        case model.stopIdFormText of
-                            "" ->
-                                Nothing
-
-                            _ ->
-                                Just (Mbta.StopId model.stopIdFormText)
-
-                    selection : Selection
-                    selection =
-                        case maybeStopId of
-                            Nothing ->
-                                Selection.WithoutStop
-                                    { routeIds = routeIds
-                                    , directionId = Nothing
-                                    }
-
-                            Just stopId ->
-                                Selection.WithStop
-                                    { routeIds = routeIds
-                                    , stopId = stopId
-                                    , directionId = Nothing
-                                    }
-                in
-                if Selection.isValid selection then
-                    Just (AddSelection selection)
+                if model.stopIdFormText == "" then
+                    Nothing
 
                 else
-                    Nothing
+                    let
+                        routeIds : List Mbta.RouteId
+                        routeIds =
+                            model.routeIdFormText
+                                |> String.split "."
+                                |> List.filter ((/=) "")
+                                |> List.map Mbta.RouteId
+
+                        stopId : Mbta.StopId
+                        stopId =
+                            Mbta.StopId model.stopIdFormText
+
+                        selection : Selection
+                        selection =
+                            { routeIds = routeIds
+                            , stopId = stopId
+                            , directionId = Nothing
+                            }
+                    in
+                    Just (AddSelection selection)
             , label = El.text "Add Stop"
             }
         ]

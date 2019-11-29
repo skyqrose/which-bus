@@ -51,34 +51,17 @@ parseSelectionFields routeIdsString stopIdString directionIdString =
         routeIds =
             parseRouteIds routeIdsString
 
+        stopIdResult : Maybe Mbta.StopId
+        stopIdResult =
+            parseStopId stopIdString
+
         directionIdResult : Maybe (Maybe Mbta.DirectionId)
         directionIdResult =
             parseDirectionId directionIdString
     in
-    Maybe.andThen
-        (\directionId ->
-            case parseStopId stopIdString of
-                Nothing ->
-                    if List.isEmpty routeIds then
-                        Nothing
-
-                    else
-                        Just
-                            (Selection.WithoutStop
-                                { routeIds = routeIds
-                                , directionId = directionId
-                                }
-                            )
-
-                Just stopId ->
-                    Just
-                        (Selection.WithStop
-                            { routeIds = routeIds
-                            , stopId = stopId
-                            , directionId = directionId
-                            }
-                        )
-        )
+    Maybe.map2
+        (Selection routeIds)
+        stopIdResult
         directionIdResult
 
 
@@ -132,23 +115,16 @@ encodeSelectionAsQueryParam selection =
     let
         routeIdsString : String
         routeIdsString =
-            selection
-                |> Selection.routeIds
+            selection.routeIds
                 |> List.map (\(Mbta.RouteId routeId) -> routeId)
                 |> String.join "."
 
-        stopIdString : String
-        stopIdString =
-            case Selection.stopId selection of
-                Just (Mbta.StopId stopId) ->
-                    stopId
-
-                Nothing ->
-                    ""
+        (Mbta.StopId stopIdString) =
+            selection.stopId
 
         directionIdString : String
         directionIdString =
-            case Selection.directionId selection of
+            case selection.directionId of
                 Nothing ->
                     ""
 

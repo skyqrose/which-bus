@@ -160,7 +160,7 @@ update msg model =
                             let
                                 newDirectionId : Maybe Mbta.DirectionId
                                 newDirectionId =
-                                    case Selection.directionId selection of
+                                    case selection.directionId of
                                         Nothing ->
                                             Just Mbta.D1
 
@@ -193,7 +193,6 @@ update msg model =
                         |> List.Extra.updateAt
                             index
                             (Selection.removeRouteId routeId)
-                        |> List.filter Selection.isValid
             in
             registerNewSelections model newSelections
 
@@ -233,11 +232,10 @@ update msg model =
                     let
                         newSelection : Selection
                         newSelection =
-                            Selection.WithStop
-                                { routeIds = routeIds
-                                , stopId = stopId
-                                , directionId = directionId
-                                }
+                            { routeIds = routeIds
+                            , stopId = stopId
+                            , directionId = directionId
+                            }
 
                         newSelections : List Selection
                         newSelections =
@@ -400,7 +398,6 @@ getStops existingStops selections =
         stopIds : List Mbta.StopId
         stopIds =
             selections
-                |> Selection.filter
                 |> List.map .stopId
                 -- Don't refetch stops that we already have
                 |> List.filter (\stopId -> not (Dict.member stopId existingStops))
@@ -415,7 +412,6 @@ getStops existingStops selections =
 getRoutesByStopId : Dict Mbta.StopId (List Mbta.Route) -> List Selection -> Cmd Msg
 getRoutesByStopId existingRoutesByStopId selections =
     selections
-        |> Selection.filter
         |> List.map .stopId
         -- Don't refetch data that we already have
         |> List.filter (\stopId -> not (Dict.member stopId existingRoutesByStopId))
@@ -445,20 +441,6 @@ getStopsForRoutes routeIds directionId =
 
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
 streamPredictions selections =
-    let
-        -- only need predictions for complete selections
-        completeSelections : List Selection.CompleteSelection
-        completeSelections =
-            Selection.filter selections
-
-        routeIds : List Mbta.RouteId
-        routeIds =
-            List.concatMap .routeIds completeSelections
-
-        stopIds : List Mbta.StopId
-        stopIds =
-            List.map .stopId completeSelections
-    in
     Mbta.Api.streamPredictions
         apiHost
         [ Mbta.Api.include Mbta.Api.predictionStop
@@ -467,8 +449,8 @@ streamPredictions selections =
         , Mbta.Api.include Mbta.Api.predictionRoute
         , Mbta.Api.include Mbta.Api.predictionSchedule
         ]
-        [ Mbta.Api.filterPredictionsByRouteIds routeIds
-        , Mbta.Api.filterPredictionsByStopIds stopIds
+        [ Mbta.Api.filterPredictionsByRouteIds (List.concatMap .routeIds selections)
+        , Mbta.Api.filterPredictionsByStopIds (List.map .stopId selections)
         ]
 
 

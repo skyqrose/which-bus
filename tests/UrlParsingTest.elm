@@ -26,11 +26,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Nothing
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
                             ]
             , test "parses a selection with a directionId" <|
                 \_ ->
@@ -38,11 +37,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Just Mbta.D1
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
                             ]
             , test "doesn't take a selection with a bad directionId" <|
                 \_ ->
@@ -57,11 +55,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Just Mbta.D1
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId1", Mbta.RouteId "routeId2" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
                             ]
             , test "filters out empty route ids" <|
                 \_ ->
@@ -69,11 +66,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId1" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Just Mbta.D1
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
                             ]
             , test "allows a selection to have no route ids" <|
                 \_ ->
@@ -81,11 +77,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = []
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Just Mbta.D1
-                                }
+                            [ { routeIds = []
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Just Mbta.D1
+                              }
                             ]
             , test "allows a selection to have no route ids and no direction" <|
                 \_ ->
@@ -93,34 +88,25 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = []
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Nothing
-                                }
+                            [ { routeIds = []
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
                             ]
-            , test "allows a selection with no stop id" <|
+            , test "ignores a selection with no stop id" <|
                 \_ ->
                     Just "stop=routeId,,0"
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithoutStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , directionId = Just Mbta.D0
-                                }
-                            ]
-            , test "allows a selection with no stop id and no direction" <|
+                            []
+            , test "ignores a selection with no stop id and no direction" <|
                 \_ ->
                     Just "stop=routeId,"
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithoutStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , directionId = Nothing
-                                }
-                            ]
+                            []
             , test "doesn't take a selection without a route or stop" <|
                 \_ ->
                     Just "stop=,"
@@ -147,16 +133,14 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId1" ]
-                                , stopId = Mbta.StopId "stopId1"
-                                , directionId = Nothing
-                                }
-                            , Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId2" ]
-                                , stopId = Mbta.StopId "stopId2"
-                                , directionId = Just Mbta.D0
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId1" ]
+                              , stopId = Mbta.StopId "stopId1"
+                              , directionId = Nothing
+                              }
+                            , { routeIds = [ Mbta.RouteId "routeId2" ]
+                              , stopId = Mbta.StopId "stopId2"
+                              , directionId = Just Mbta.D0
+                              }
                             ]
             , test "includes a selection even if another is badly formatted" <|
                 \_ ->
@@ -164,11 +148,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Nothing
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
                             ]
             , test "includes a selection when there are other query params" <|
                 \_ ->
@@ -176,11 +159,10 @@ suite =
                         |> urlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Nothing
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
                             ]
             , test "works when the url has other stuff in it" <|
                 \_ ->
@@ -188,11 +170,10 @@ suite =
                         |> fullUrlWithQuery
                         |> UrlParsing.parseSelectionsFromUrl
                         |> Expect.equal
-                            [ Selection.WithStop
-                                { routeIds = [ Mbta.RouteId "routeId" ]
-                                , stopId = Mbta.StopId "stopId"
-                                , directionId = Nothing
-                                }
+                            [ { routeIds = [ Mbta.RouteId "routeId" ]
+                              , stopId = Mbta.StopId "stopId"
+                              , directionId = Nothing
+                              }
                             ]
             ]
         ]

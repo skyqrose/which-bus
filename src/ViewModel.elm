@@ -8,7 +8,7 @@ import Maybe.Extra
 import Mbta
 import Mbta.Api
 import Mbta.Extra
-import Selection
+import Selection exposing (Selection)
 import Time
 
 
@@ -25,7 +25,7 @@ type alias ShownPrediction =
     }
 
 
-predictionsForSelection : Mbta.Api.Data (List Mbta.Prediction) -> Selection.CompleteSelection -> List ShownPrediction
+predictionsForSelection : Mbta.Api.Data (List Mbta.Prediction) -> Selection -> List ShownPrediction
 predictionsForSelection data selection =
     let
         predictions : List Mbta.Prediction

@@ -69,4 +69,3 @@ type NewSelectionState
     | ChoosingRoute
     | ChoosingStop (List Mbta.RouteId) (Maybe Mbta.DirectionId) (List Mbta.Stop)
     | ChoosingExtraRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId)
-
