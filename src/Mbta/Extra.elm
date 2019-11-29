@@ -16,6 +16,9 @@ routeAbbreviation route =
                 Mbta.RouteId "Red" ->
                     Just "RL"
 
+                Mbta.RouteId "Mattapan" ->
+                    Just "M"
+
                 Mbta.RouteId "Orange" ->
                     Just "OL"
 
@@ -75,6 +78,12 @@ routeAbbreviation route =
 
                 Mbta.RouteId "CR-Foxboro" ->
                     Just "FXB"
+
+                Mbta.RouteId "Boat-F1" ->
+                    Just "HNG"
+
+                Mbta.RouteId "Boat-F4" ->
+                    Just "CHA"
 
                 _ ->
                     Nothing
