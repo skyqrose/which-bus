@@ -73,7 +73,7 @@ ui model =
 viewSelections : Time.Posix -> Dict Mbta.StopId (List Mbta.Route) -> Dict Mbta.StopId Mbta.Stop -> Mbta.Api.Data (List Mbta.Prediction) -> List Selection -> Element Msg
 viewSelections currentTime routesByStopId stops data selections =
     El.column
-        [ El.spacing unit
+        [ El.spacing (2 * unit)
         , El.width El.fill
         ]
         (List.indexedMap
@@ -168,7 +168,10 @@ selectionStopName stop selection =
                 |> Maybe.map Mbta.stopName
                 |> Maybe.withDefault stopIdText
     in
-    El.text stopName
+    El.el
+        [ Font.size 24
+        ]
+        (El.text stopName)
 
 
 directionIcon : Int -> Maybe Mbta.DirectionId -> Element Msg
