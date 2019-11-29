@@ -40,6 +40,8 @@ type Msg
     | TypeDirection (Maybe Mbta.DirectionId)
     | DeleteSelection Int
     | ToggleDirection Int
+    | AddRouteToSelection Int Mbta.RouteId
+    | RemoveRouteFromSelection Int Mbta.RouteId
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
     | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))

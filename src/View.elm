@@ -132,8 +132,8 @@ viewSelection index currentTime routes stop data selection =
             , El.el [ El.alignRight ] (directionIcon index selection.directionId)
             , El.el [ El.alignRight ] (removeSelection index)
             ]
-        , selectedRoutePills selectedRoutes unknownSelectedRouteIds
-        , unselectedRoutePills unselectedRoutes
+        , selectedRoutePills index selectedRoutes unknownSelectedRouteIds
+        , unselectedRoutePills index unselectedRoutes
         , viewPredictions currentTime data selection
         ]
 
@@ -197,27 +197,47 @@ removeSelection index =
         }
 
 
-selectedRoutePills : List Mbta.Route -> List Mbta.RouteId -> Element Msg
-selectedRoutePills selectedRoutes unknownSelectedRouteIds =
+selectedRoutePills : Int -> List Mbta.Route -> List Mbta.RouteId -> Element Msg
+selectedRoutePills index selectedRoutes unknownSelectedRouteIds =
     El.wrappedRow
         [ El.spacing unit
         ]
         (List.concat
             [ List.map
-                Pill.pill
+                (\route ->
+                    Input.button
+                        []
+                        { onPress = Just (RemoveRouteFromSelection index route.id)
+                        , label = Pill.pill route
+                        }
+                )
                 selectedRoutes
-            , List.map Pill.unknownPill unknownSelectedRouteIds
+            , List.map
+                (\routeId ->
+                    Input.button
+                        []
+                        { onPress = Just (RemoveRouteFromSelection index routeId)
+                        , label = Pill.unknownPill routeId
+                        }
+                )
+                unknownSelectedRouteIds
             ]
         )
 
 
-unselectedRoutePills : List Mbta.Route -> Element Msg
-unselectedRoutePills unselectedRoutes =
+unselectedRoutePills : Int -> List Mbta.Route -> Element Msg
+unselectedRoutePills index unselectedRoutes =
     El.wrappedRow
         [ El.spacing unit
         ]
         (List.map
-            Pill.pill
+            (\route ->
+                Input.button
+                    []
+                    { onPress = Just (AddRouteToSelection index route.id)
+                    , label = Pill.pill route
+                    }
+            )
             unselectedRoutes
         )
 

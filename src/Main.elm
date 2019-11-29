@@ -178,6 +178,36 @@ update msg model =
             in
             registerNewSelections model newSelections
 
+        AddRouteToSelection index routeId ->
+            let
+                newSelections =
+                    List.Extra.updateAt
+                        index
+                        (\selection ->
+                            { selection
+                                | routeIds =
+                                    routeId :: selection.routeIds
+                            }
+                        )
+                        model.selections
+            in
+            registerNewSelections model newSelections
+
+        RemoveRouteFromSelection index routeId ->
+            let
+                newSelections =
+                    List.Extra.updateAt
+                        index
+                        (\selection ->
+                            { selection
+                                | routeIds =
+                                    List.Extra.remove routeId selection.routeIds
+                            }
+                        )
+                        model.selections
+            in
+            registerNewSelections model newSelections
+
         ReceiveRoutes apiResult ->
             ( { model
                 | routes =
