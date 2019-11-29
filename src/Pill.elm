@@ -1,5 +1,6 @@
 module Pill exposing
-    ( pill
+    ( listSpacing
+    , pill
     , unknownPill
     )
 
@@ -52,3 +53,11 @@ unknownPill (Mbta.RouteId routeIdText) =
         (El.text
             routeIdText
         )
+
+
+{-| When showing a list of pills with `El.wrappedRow`,
+this is the spacing to use between them.
+-}
+listSpacing : El.Attribute msg
+listSpacing =
+    El.spacing (ViewHelpers.unit // 2)

@@ -225,7 +225,7 @@ removeSelection index =
 selectedRoutePills : Int -> List Mbta.Route -> List Mbta.RouteId -> Element Msg
 selectedRoutePills index selectedRoutes unknownSelectedRouteIds =
     El.wrappedRow
-        [ El.spacing (unit // 2)
+        [ Pill.listSpacing
         , El.width El.fill
         ]
         (List.concat
@@ -254,7 +254,7 @@ selectedRoutePills index selectedRoutes unknownSelectedRouteIds =
 unselectedRoutePills : Int -> List Mbta.Route -> Element Msg
 unselectedRoutePills index unselectedRoutes =
     El.wrappedRow
-        [ El.spacing (unit // 2)
+        [ Pill.listSpacing
         , El.width El.fill
         ]
         (List.map

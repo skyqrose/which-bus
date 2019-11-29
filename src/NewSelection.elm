@@ -25,11 +25,20 @@ viewModal routes newSelectionState =
 
         ChoosingStop routeIds directionId loadedStops ->
             modalWrapper
-                (chooseStop loadedStops)
+                (chooseStop (selectedRoutes routes routeIds) loadedStops)
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
                 (chooseRoute routes)
+
+
+selectedRoutes : List Mbta.Route -> List Mbta.RouteId -> List Mbta.Route
+selectedRoutes allRoutes selectedRouteIds =
+    List.filter
+        (\route ->
+            List.member route.id selectedRouteIds
+        )
+        allRoutes
 
 
 modalWrapper : Element Msg -> Element Msg
@@ -127,8 +136,8 @@ routeListRoute route =
         ]
 
 
-chooseStop : List Mbta.Stop -> Element Msg
-chooseStop stops =
+chooseStop : List Mbta.Route -> List Mbta.Stop -> Element Msg
+chooseStop routes stops =
     El.column
         [ El.width El.fill
         ]
@@ -137,6 +146,13 @@ chooseStop stops =
             , Font.size 24
             ]
             (El.text "Choose Stop")
+        , El.wrappedRow
+            [ Pill.listSpacing
+            ]
+            (List.map
+                Pill.pill
+                routes
+            )
         , stopList stops
         ]
 
