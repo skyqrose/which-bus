@@ -1,6 +1,5 @@
 module UrlParsing exposing (parseSelectionsFromUrl, setSelectionsInUrl)
 
-import Maybe.Extra
 import Mbta
 import Selection exposing (Selection)
 import Url
