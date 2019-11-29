@@ -1,6 +1,5 @@
 module Model exposing
-    ( Modal(..)
-    , Model
+    ( Model
     , Msg(..)
     , NewSelectionState(..)
     )
@@ -26,7 +25,6 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
-    , modal : Modal
     , newSelectionState : NewSelectionState
 
     -- data
@@ -51,9 +49,6 @@ type
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
-    | CloseModal
-    | OpenRoutePicker (Maybe Int)
-    | PickRoute Mbta.RouteId
     | NewSelectionStart
     | NewSelectionChoseRoute Mbta.RouteId
     | NewSelectionChoseDirection (Maybe Mbta.DirectionId)
@@ -75,8 +70,3 @@ type NewSelectionState
     | ChoosingStop (List Mbta.RouteId) (Maybe Mbta.DirectionId) (List Mbta.Stop)
     | ChoosingExtraRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId)
 
-
-type Modal
-    = NoModal
-      -- Index for which selection to add to. Nothing means make a new selection.
-    | RoutePicker (Maybe Int)

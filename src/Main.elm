@@ -52,7 +52,6 @@ init flags url key =
       , selections = selections
       , routeIdFormText = ""
       , stopIdFormText = ""
-      , modal = NoModal
       , newSelectionState = NotMakingNewSelection
       , routes = []
       , stops = Dict.empty
@@ -197,57 +196,6 @@ update msg model =
                         |> List.filter Selection.isValid
             in
             registerNewSelections model newSelections
-
-        CloseModal ->
-            ( { model
-                | modal = NoModal
-              }
-            , Cmd.none
-            )
-
-        OpenRoutePicker index ->
-            ( { model
-                | modal = RoutePicker index
-              }
-            , Cmd.none
-            )
-
-        PickRoute routeId ->
-            let
-                routePickerIndex : Maybe Int
-                routePickerIndex =
-                    case model.modal of
-                        RoutePicker index ->
-                            index
-
-                        _ ->
-                            Nothing
-
-                newSelections : List Selection
-                newSelections =
-                    case routePickerIndex of
-                        Nothing ->
-                            model.selections
-                                ++ [ Selection.WithoutStop
-                                        { routeIds = [ routeId ]
-                                        , directionId = Nothing
-                                        }
-                                   ]
-
-                        Just index ->
-                            -- add to a current selection
-                            List.Extra.updateAt
-                                index
-                                (Selection.addRouteId routeId)
-                                model.selections
-
-                modelWithClosedModal : Model
-                modelWithClosedModal =
-                    { model
-                        | modal = NoModal
-                    }
-            in
-            registerNewSelections modelWithClosedModal newSelections
 
         NewSelectionStart ->
             ( { model
