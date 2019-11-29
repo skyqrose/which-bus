@@ -60,7 +60,7 @@ init flags url key =
     , Cmd.batch
         [ Task.perform Tick Time.now
         , getRoutes
-        , getStops selections
+        , getStops Dict.empty selections
         , getRoutesByStopId Dict.empty selections
         , startStream streamUrl
         ]
@@ -115,7 +115,7 @@ update msg model =
                 , selections = newSelections
               }
             , Cmd.batch
-                [ getStops newSelections
+                [ getStops model.stops newSelections
                 , getRoutesByStopId model.routesByStopId newSelections
                 , startStream streamUrl
                 ]
@@ -210,11 +210,14 @@ update msg model =
         ReceiveStops apiResult ->
             ( { model
                 | stops =
-                    apiResult
-                        |> Result.map Mbta.Api.getPrimaryData
-                        |> Result.withDefault []
-                        |> List.map (\stop -> ( Mbta.stopId stop, stop ))
-                        |> Dict.fromList
+                    Dict.union
+                        model.stops
+                        (apiResult
+                            |> Result.map Mbta.Api.getPrimaryData
+                            |> Result.withDefault []
+                            |> List.map (\stop -> ( Mbta.stopId stop, stop ))
+                            |> Dict.fromList
+                        )
               }
             , Cmd.none
             )
@@ -297,14 +300,16 @@ getRoutes =
         []
 
 
-getStops : List Selection -> Cmd Msg
-getStops selections =
+getStops : Dict Mbta.StopId Mbta.Stop -> List Selection -> Cmd Msg
+getStops existingStops selections =
     let
         stopIds : List Mbta.StopId
         stopIds =
             selections
                 |> Selection.filter
                 |> List.map .stopId
+                -- Don't refetch stops that we already have
+                |> List.filter (\stopId -> not (Dict.member stopId existingStops))
     in
     Mbta.Api.getStops
         ReceiveStops
@@ -318,20 +323,16 @@ getRoutesByStopId existingRoutesByStopId selections =
     selections
         |> Selection.filter
         |> List.map .stopId
+        -- Don't refetch data that we already have
+        |> List.filter (\stopId -> not (Dict.member stopId existingRoutesByStopId))
         |> List.map
             (\stopId ->
-                case Dict.get stopId existingRoutesByStopId of
-                    Just (_ :: _) ->
-                        -- Already have a result, don't need to refetch
-                        Cmd.none
-
-                    _ ->
-                        Mbta.Api.getRoutes
-                            (ReceiveRoutesForStopId stopId)
-                            apiHost
-                            []
-                            [ Mbta.Api.filterRoutesByStopIds [ stopId ]
-                            ]
+                Mbta.Api.getRoutes
+                    (ReceiveRoutesForStopId stopId)
+                    apiHost
+                    []
+                    [ Mbta.Api.filterRoutesByStopIds [ stopId ]
+                    ]
             )
         |> Cmd.batch
 
