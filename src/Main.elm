@@ -181,10 +181,23 @@ update msg model =
             )
 
         NewSelectionChoseRoute routeId ->
+            let
+                ( existingRouteIds, directionId ) =
+                    case model.newSelectionState of
+                        ChoosingExtraRoutes routeIds existingDirectionId ->
+                            ( routeIds, existingDirectionId )
+
+                        _ ->
+                            ( [], Nothing )
+
+                newRouteIds =
+                    existingRouteIds ++ [ routeId ]
+            in
             ( { model
-                | newSelectionState = ChoosingStop [ routeId ] Nothing []
+                | newSelectionState =
+                    ChoosingStop newRouteIds directionId []
               }
-            , getStopsForRoutes [ routeId ] Nothing
+            , getStopsForRoutes newRouteIds directionId
             )
 
         NewSelectionChoseDirection directionId ->

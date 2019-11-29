@@ -101,15 +101,49 @@ buttonList msg viewElem elems =
         )
 
 
-pillList : List Mbta.Route -> Element msg
-pillList routes =
+pillList : List Mbta.Route -> Bool -> Element Msg
+pillList routes showAddRouteButton =
     El.wrappedRow
         [ Pill.listSpacing
         ]
-        (List.map
-            Pill.pill
-            routes
+        (List.append
+            (List.map
+                (\route ->
+                    Input.button
+                        []
+                        { onPress = Just (NewSelectionRemoveRoute route.id)
+                        , label = Pill.pill route
+                        }
+                )
+                routes
+            )
+            (if showAddRouteButton then
+                [ addPill ]
+
+             else
+                []
+            )
         )
+
+
+addPill : Element Msg
+addPill =
+    Input.button
+        [ El.padding 4
+        , Border.rounded 24
+        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
+        , Border.width 2
+        ]
+        { onPress = Just NewSelectionAddExtraRoute
+        , label =
+            El.image
+                [ El.width (El.px 16)
+                , El.height (El.px 16)
+                ]
+                { src = "/assets/add.svg"
+                , description = "Add route"
+                }
+        }
 
 
 chooseRoute : List Mbta.Route -> Element Msg
@@ -135,8 +169,8 @@ chooseExtraRoute allRoutes selectedRouteIds =
             [ El.padding (unit // 2)
             , Font.size 24
             ]
-            (El.text "Choose Another Routes")
-        , pillList (selectedRoutes allRoutes selectedRouteIds)
+            (El.text "Choose Another Route")
+        , pillList (selectedRoutes allRoutes selectedRouteIds) False
         , routeList allRoutes
         ]
 
@@ -172,7 +206,7 @@ chooseStop routes stops =
             , Font.size 24
             ]
             (El.text "Choose Stop")
-        , pillList routes
+        , pillList routes True
         , stopList stops
         ]
 
@@ -188,23 +222,3 @@ stopList stops =
 stopListStop : Mbta.Stop -> Element msg
 stopListStop stop =
     El.text (Mbta.stopName stop)
-
-
-addPill : Element Msg
-addPill =
-    Input.button
-        [ El.padding 4
-        , Border.rounded 24
-        , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
-        , Border.width 2
-        ]
-        { onPress = Just NewSelectionStart
-        , label =
-            El.image
-                [ El.width (El.px 16)
-                , El.height (El.px 16)
-                ]
-                { src = "/assets/add.svg"
-                , description = "Add route"
-                }
-        }
