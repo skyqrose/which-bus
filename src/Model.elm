@@ -64,6 +64,7 @@ type
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
     | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))
+    | ReceiveStopsForRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId) (Mbta.Api.ApiResult (List Mbta.Stop))
     | StreamMsg String Decode.Value
     | RefreshStream
 

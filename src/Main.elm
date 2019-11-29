@@ -5,6 +5,7 @@ import Browser
 import Browser.Navigation as Navigation
 import Json.Decode as Decode
 import List.Extra
+import Maybe.Extra
 import Mbta
 import Mbta.Api
 import Model exposing (..)
@@ -259,7 +260,7 @@ update msg model =
             ( { model
                 | newSelectionState = ChoosingStop [ routeId ] Nothing []
               }
-            , Cmd.none
+            , getStopsForRoutes [ routeId ] Nothing
             )
 
         NewSelectionChoseDirection directionId ->
@@ -268,7 +269,7 @@ update msg model =
                     ( { model
                         | newSelectionState = ChoosingStop routeIds directionId []
                       }
-                    , Cmd.none
+                    , getStopsForRoutes routeIds directionId
                     )
 
                 _ ->
@@ -356,6 +357,30 @@ update msg model =
               }
             , Cmd.none
             )
+
+        ReceiveStopsForRoutes requestRouteIds requestDirectionId apiResult ->
+            case model.newSelectionState of
+                ChoosingStop currentRouteIds currentDirectionId _ ->
+                    if requestRouteIds == currentRouteIds && requestDirectionId == currentDirectionId then
+                        ( { model
+                            | newSelectionState =
+                                apiResult
+                                    |> Result.map Mbta.Api.getPrimaryData
+                                    |> Result.withDefault []
+                                    |> ChoosingStop requestRouteIds requestDirectionId
+                          }
+                        , Cmd.none
+                        )
+
+                    else
+                        ( model
+                        , Cmd.none
+                        )
+
+                _ ->
+                    ( model
+                    , Cmd.none
+                    )
 
         StreamMsg eventName dataJson ->
             ( { model
@@ -456,6 +481,18 @@ getRoutesByStopId existingRoutesByStopId selections =
                     ]
             )
         |> Cmd.batch
+
+
+getStopsForRoutes : List Mbta.RouteId -> Maybe Mbta.DirectionId -> Cmd Msg
+getStopsForRoutes routeIds directionId =
+    Mbta.Api.getStops
+        (ReceiveStopsForRoutes routeIds directionId)
+        apiHost
+        []
+        (Maybe.Extra.cons
+            (Maybe.map Mbta.Api.filterStopsByDirectionId directionId)
+            [ Mbta.Api.filterStopsByRouteIds routeIds ]
+        )
 
 
 streamPredictions : List Selection -> ( Mbta.Api.StreamState Mbta.Prediction, String )
