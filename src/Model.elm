@@ -1,5 +1,6 @@
 module Model exposing
-    ( Model
+    ( Modal(..)
+    , Model
     , Msg(..)
     )
 
@@ -24,9 +25,10 @@ type alias Model =
     , selections : List Selection
     , routeIdFormText : String
     , stopIdFormText : String
+    , modal : Modal
 
     -- data
-    , routes : Dict Mbta.RouteId Mbta.Route
+    , routes : List Mbta.Route
     , stops : Dict Mbta.StopId Mbta.Stop
     , routesByStopId : Dict Mbta.StopId (List Mbta.Route)
     , streamState : Mbta.Api.StreamState Mbta.Prediction
@@ -47,6 +49,7 @@ type
     | DeleteSelection Int
     | ToggleDirection Int
     | AddRouteToSelection Int Mbta.RouteId
+    | OpenRoutePicker
       -- data
     | RemoveRouteFromSelection Int Mbta.RouteId
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
@@ -54,3 +57,8 @@ type
     | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))
     | StreamMsg String Decode.Value
     | RefreshStream
+
+
+type Modal
+    = NoModal
+    | RoutePicker

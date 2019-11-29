@@ -43,6 +43,14 @@ ui model =
         , El.width (El.maximum 400 El.fill)
         , Background.color (ViewHelpers.avh4ColorToElmUiColor Color.charcoal)
         , Font.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
+        , El.inFront
+            (case model.modal of
+                NoModal ->
+                    El.none
+
+                RoutePicker ->
+                    routePicker model.routes
+            )
         ]
         (case Mbta.Api.streamResult model.streamState of
             Mbta.Api.Loading ->
@@ -524,7 +532,7 @@ addPill =
         , Border.color (ViewHelpers.avh4ColorToElmUiColor Color.white)
         , Border.width 2
         ]
-        { onPress = Nothing
+        { onPress = Just OpenRoutePicker
         , label =
             El.image
                 [ El.width (El.px 16)
@@ -534,6 +542,22 @@ addPill =
                 , description = "Add route"
                 }
         }
+
+
+routePicker : List Mbta.Route -> Element Msg
+routePicker routes =
+    El.column
+        []
+        (List.map
+            (\route ->
+                El.el
+                    [ Background.color (ViewHelpers.avh4ColorToElmUiColor route.color)
+                    , Font.color (ViewHelpers.avh4ColorToElmUiColor route.textColor)
+                    ]
+                    (El.text route.longName)
+            )
+            routes
+        )
 
 
 addSelectionForm : Model -> Element Msg

@@ -51,7 +51,8 @@ init flags url key =
       , selections = selections
       , routeIdFormText = ""
       , stopIdFormText = ""
-      , routes = Dict.empty
+      , modal = NoModal
+      , routes = []
       , stops = Dict.empty
       , routesByStopId = Dict.empty
       , streamState = initStreamState
@@ -195,14 +196,19 @@ update msg model =
             in
             registerNewSelections model newSelections
 
+        OpenRoutePicker ->
+            ( { model
+                | modal = RoutePicker
+              }
+            , Cmd.none
+            )
+
         ReceiveRoutes apiResult ->
             ( { model
                 | routes =
                     apiResult
                         |> Result.map Mbta.Api.getPrimaryData
                         |> Result.withDefault []
-                        |> List.map (\route -> ( route.id, route ))
-                        |> Dict.fromList
               }
             , Cmd.none
             )
