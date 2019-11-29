@@ -221,4 +221,6 @@ stopList stops =
 
 stopListStop : Mbta.Stop -> Element msg
 stopListStop stop =
-    El.text (Mbta.stopName stop)
+    El.paragraph
+        []
+        [ El.text (Mbta.stopName stop) ]
