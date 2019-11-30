@@ -10865,7 +10865,8 @@ var $elm$core$Basics$never = function (_v0) {
 	}
 };
 var $elm$browser$Browser$application = _Browser_application;
-var $author$project$Model$NoModal = {$: 'NoModal'};
+var $author$project$Model$ChoosingRoute = {$: 'ChoosingRoute'};
+var $author$project$Model$NotMakingNewSelection = {$: 'NotMakingNewSelection'};
 var $author$project$Model$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -14621,19 +14622,6 @@ var $author$project$Model$ReceiveRoutesForStopId = F2(
 	function (a, b) {
 		return {$: 'ReceiveRoutesForStopId', a: a, b: b};
 	});
-var $author$project$Selection$filter = function (maybeSelections) {
-	return A2(
-		$elm$core$List$filterMap,
-		function (selection) {
-			if (selection.$ === 'WithoutStop') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var completeSelection = selection.a;
-				return $elm$core$Maybe$Just(completeSelection);
-			}
-		},
-		maybeSelections);
-};
 var $author$project$Mbta$Api$Filter = function (a) {
 	return {$: 'Filter', a: a};
 };
@@ -14715,7 +14703,7 @@ var $author$project$Main$getRoutesByStopId = F2(
 						function ($) {
 							return $.stopId;
 						},
-						$author$project$Selection$filter(selections)))));
+						selections))));
 	});
 var $author$project$Model$ReceiveStops = function (a) {
 	return {$: 'ReceiveStops', a: a};
@@ -14739,7 +14727,7 @@ var $author$project$Main$getStops = F2(
 				function ($) {
 					return $.stopId;
 				},
-				$author$project$Selection$filter(selections)));
+				selections));
 		return A4(
 			$author$project$Mbta$Api$getStops,
 			$author$project$Model$ReceiveStops,
@@ -14920,20 +14908,9 @@ var $elm$url$Url$Parser$Query$custom = F2(
 						A2($elm$core$Dict$get, key, dict)));
 			});
 	});
-var $author$project$Selection$WithStop = function (a) {
-	return {$: 'WithStop', a: a};
-};
-var $author$project$Selection$WithoutStop = function (a) {
-	return {$: 'WithoutStop', a: a};
-};
-var $elm$core$Maybe$andThen = F2(
-	function (callback, maybeValue) {
-		if (maybeValue.$ === 'Just') {
-			var value = maybeValue.a;
-			return callback(value);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
+var $author$project$Selection$Selection = F3(
+	function (routeIds, stopId, directionId) {
+		return {directionId: directionId, routeIds: routeIds, stopId: stopId};
 	});
 var $author$project$UrlParsing$parseDirectionId = function (directionIdString) {
 	switch (directionIdString) {
@@ -14968,23 +14945,13 @@ var $author$project$UrlParsing$parseStopId = function (stopIdString) {
 };
 var $author$project$UrlParsing$parseSelectionFields = F3(
 	function (routeIdsString, stopIdString, directionIdString) {
+		var stopIdResult = $author$project$UrlParsing$parseStopId(stopIdString);
 		var routeIds = $author$project$UrlParsing$parseRouteIds(routeIdsString);
 		var directionIdResult = $author$project$UrlParsing$parseDirectionId(directionIdString);
-		return A2(
-			$elm$core$Maybe$andThen,
-			function (directionId) {
-				var _v0 = $author$project$UrlParsing$parseStopId(stopIdString);
-				if (_v0.$ === 'Nothing') {
-					return $elm$core$List$isEmpty(routeIds) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-						$author$project$Selection$WithoutStop(
-							{directionId: directionId, routeIds: routeIds}));
-				} else {
-					var stopId = _v0.a;
-					return $elm$core$Maybe$Just(
-						$author$project$Selection$WithStop(
-							{directionId: directionId, routeIds: routeIds, stopId: stopId}));
-				}
-			},
+		return A3(
+			$elm$core$Maybe$map2,
+			$author$project$Selection$Selection(routeIds),
+			stopIdResult,
 			directionIdResult);
 	});
 var $author$project$UrlParsing$parseSelection = function (queryValue) {
@@ -15084,19 +15051,6 @@ var $author$project$Mbta$Api$streamPredictions = F3(
 				includes));
 	});
 var $author$project$Main$streamPredictions = function (selections) {
-	var completeSelections = $author$project$Selection$filter(selections);
-	var routeIds = A2(
-		$elm$core$List$concatMap,
-		function ($) {
-			return $.routeIds;
-		},
-		completeSelections);
-	var stopIds = A2(
-		$elm$core$List$map,
-		function ($) {
-			return $.stopId;
-		},
-		completeSelections);
 	return A3(
 		$author$project$Mbta$Api$streamPredictions,
 		$author$project$Main$apiHost,
@@ -15110,8 +15064,20 @@ var $author$project$Main$streamPredictions = function (selections) {
 			]),
 		_List_fromArray(
 			[
-				$author$project$Mbta$Api$filterPredictionsByRouteIds(routeIds),
-				$author$project$Mbta$Api$filterPredictionsByStopIds(stopIds)
+				$author$project$Mbta$Api$filterPredictionsByRouteIds(
+				A2(
+					$elm$core$List$concatMap,
+					function ($) {
+						return $.routeIds;
+					},
+					selections)),
+				$author$project$Mbta$Api$filterPredictionsByStopIds(
+				A2(
+					$elm$core$List$map,
+					function ($) {
+						return $.stopId;
+					},
+					selections))
 			]));
 };
 var $author$project$Main$init = F3(
@@ -15121,7 +15087,18 @@ var $author$project$Main$init = F3(
 		var initStreamState = _v0.a;
 		var streamUrl = _v0.b;
 		return _Utils_Tuple2(
-			{currentTime: $elm$core$Maybe$Nothing, lastUpdated: $elm$core$Maybe$Nothing, modal: $author$project$Model$NoModal, navigationKey: key, routeIdFormText: '', routes: _List_Nil, routesByStopId: $pzp1997$assoc_list$AssocList$empty, selections: selections, stopIdFormText: '', stops: $pzp1997$assoc_list$AssocList$empty, streamState: initStreamState, url: url},
+			{
+				currentTime: $elm$core$Maybe$Nothing,
+				lastUpdated: $elm$core$Maybe$Nothing,
+				navigationKey: key,
+				newSelectionState: $elm$core$List$isEmpty(selections) ? $author$project$Model$ChoosingRoute : $author$project$Model$NotMakingNewSelection,
+				routes: _List_Nil,
+				routesByStopId: $pzp1997$assoc_list$AssocList$empty,
+				selections: selections,
+				stops: $pzp1997$assoc_list$AssocList$empty,
+				streamState: initStreamState,
+				url: url
+			},
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
@@ -15328,46 +15305,26 @@ var $author$project$Main$subscriptions = function (_v0) {
 				$author$project$Main$streamEventSub
 			]));
 };
-var $author$project$Model$RoutePicker = function (a) {
-	return {$: 'RoutePicker', a: a};
-};
+var $author$project$Model$ChoosingExtraRoutes = F2(
+	function (a, b) {
+		return {$: 'ChoosingExtraRoutes', a: a, b: b};
+	});
+var $author$project$Model$ChoosingStop = F3(
+	function (a, b, c) {
+		return {$: 'ChoosingStop', a: a, b: b, c: c};
+	});
 var $author$project$Selection$addRouteId = F2(
 	function (routeId, selection) {
-		if (selection.$ === 'WithoutStop') {
-			var partialSelection = selection.a;
-			return $author$project$Selection$WithoutStop(
-				_Utils_update(
-					partialSelection,
-					{
-						routeIds: A2(
-							$elm$core$List$append,
-							partialSelection.routeIds,
-							_List_fromArray(
-								[routeId]))
-					}));
-		} else {
-			var completeSelection = selection.a;
-			return $author$project$Selection$WithStop(
-				_Utils_update(
-					completeSelection,
-					{
-						routeIds: A2(
-							$elm$core$List$append,
-							completeSelection.routeIds,
-							_List_fromArray(
-								[routeId]))
-					}));
-		}
+		return _Utils_update(
+			selection,
+			{
+				routeIds: A2(
+					$elm$core$List$append,
+					selection.routeIds,
+					_List_fromArray(
+						[routeId]))
+			});
 	});
-var $author$project$Selection$directionId = function (selection) {
-	if (selection.$ === 'WithoutStop') {
-		var partialSelection = selection.a;
-		return partialSelection.directionId;
-	} else {
-		var completeSelection = selection.a;
-		return completeSelection.directionId;
-	}
-};
 var $pzp1997$assoc_list$AssocList$fromList = function (alist) {
 	return A3(
 		$elm$core$List$foldl,
@@ -15384,66 +15341,95 @@ var $author$project$Mbta$Api$getPrimaryData = function (_v0) {
 	var data = _v0.a;
 	return data.primaryData;
 };
-var $author$project$Selection$isValid = function (selection) {
-	if (selection.$ === 'WithoutStop') {
-		return true;
-	} else {
-		var completeSelection = selection.a;
-		return !$elm$core$List$isEmpty(completeSelection.routeIds);
-	}
-};
-var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
-var $author$project$Selection$routeIds = function (selection) {
-	if (selection.$ === 'WithoutStop') {
-		var partialSelection = selection.a;
-		return partialSelection.routeIds;
-	} else {
-		var completeSelection = selection.a;
-		return completeSelection.routeIds;
-	}
-};
-var $author$project$Selection$stopId = function (selection) {
-	if (selection.$ === 'WithoutStop') {
-		return $elm$core$Maybe$Nothing;
-	} else {
-		var completeSelection = selection.a;
-		return $elm$core$Maybe$Just(completeSelection.stopId);
-	}
-};
-var $author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
-	var stopIdString = function () {
-		var _v4 = $author$project$Selection$stopId(selection);
-		if (_v4.$ === 'Just') {
-			var stopId = _v4.a.a;
-			return stopId;
+var $author$project$Model$ReceiveStopsForRoutes = F3(
+	function (a, b, c) {
+		return {$: 'ReceiveStopsForRoutes', a: a, b: b, c: c};
+	});
+var $elm_community$maybe_extra$Maybe$Extra$cons = F2(
+	function (item, list) {
+		if (item.$ === 'Just') {
+			var v = item.a;
+			return A2($elm$core$List$cons, v, list);
 		} else {
-			return '';
+			return list;
+		}
+	});
+var $author$project$Mbta$Api$filterByDirectionId = function (directionId) {
+	var directionIdString = function () {
+		if (directionId.$ === 'D0') {
+			return '0';
+		} else {
+			return '1';
 		}
 	}();
+	return $author$project$Mbta$Api$Filter(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'direction_id',
+				_List_fromArray(
+					[directionIdString]))
+			]));
+};
+var $author$project$Mbta$Api$filterStopsByDirectionId = function (directionId) {
+	return $author$project$Mbta$Api$filterByDirectionId(directionId);
+};
+var $author$project$Mbta$Api$filterStopsByRouteIds = function (routeIds) {
+	return A3($author$project$Mbta$Api$filterByList, 'route', $author$project$Mbta$Api$routeIdToString, routeIds);
+};
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Main$getStopsForRoutes = F2(
+	function (routeIds, directionId) {
+		return A4(
+			$author$project$Mbta$Api$getStops,
+			A2($author$project$Model$ReceiveStopsForRoutes, routeIds, directionId),
+			$author$project$Main$apiHost,
+			_List_Nil,
+			A2(
+				$elm_community$maybe_extra$Maybe$Extra$cons,
+				A2($elm$core$Maybe$map, $author$project$Mbta$Api$filterStopsByDirectionId, directionId),
+				_List_fromArray(
+					[
+						$author$project$Mbta$Api$filterStopsByRouteIds(routeIds)
+					])));
+	});
+var $elm$browser$Browser$Navigation$pushUrl = _Browser_pushUrl;
+var $author$project$UrlParsing$encodeSelectionAsQueryParam = function (selection) {
 	var routeIdsString = A2(
 		$elm$core$String$join,
 		'.',
 		A2(
 			$elm$core$List$map,
-			function (_v3) {
-				var routeId = _v3.a;
+			function (_v4) {
+				var routeId = _v4.a;
 				return routeId;
 			},
-			$author$project$Selection$routeIds(selection)));
+			selection.routeIds));
 	var directionIdString = function () {
-		var _v0 = $author$project$Selection$directionId(selection);
-		if (_v0.$ === 'Nothing') {
+		var _v1 = selection.directionId;
+		if (_v1.$ === 'Nothing') {
 			return '';
 		} else {
-			if (_v0.a.$ === 'D0') {
-				var _v1 = _v0.a;
+			if (_v1.a.$ === 'D0') {
+				var _v2 = _v1.a;
 				return ',0';
 			} else {
-				var _v2 = _v0.a;
+				var _v3 = _v1.a;
 				return ',1';
 			}
 		}
 	}();
+	var _v0 = selection.stopId;
+	var stopIdString = _v0.a;
 	return $elm$core$String$concat(
 		_List_fromArray(
 			['stop=', routeIdsString, ',', stopIdString, directionIdString]));
@@ -15513,6 +15499,19 @@ var $author$project$Main$registerNewSelections = F2(
 				model.navigationKey,
 				$elm$url$Url$toString(
 					A2($author$project$UrlParsing$setSelectionsInUrl, newSelections, model.url))));
+	});
+var $elm_community$list_extra$List$Extra$remove = F2(
+	function (x, xs) {
+		if (!xs.b) {
+			return _List_Nil;
+		} else {
+			var y = xs.a;
+			var ys = xs.b;
+			return _Utils_eq(x, y) ? ys : A2(
+				$elm$core$List$cons,
+				y,
+				A2($elm_community$list_extra$List$Extra$remove, x, ys));
+		}
 	});
 var $elm$core$List$tail = function (list) {
 	if (list.b) {
@@ -15665,38 +15664,13 @@ var $elm_community$list_extra$List$Extra$removeAt = F2(
 			}
 		}
 	});
-var $elm_community$list_extra$List$Extra$remove = F2(
-	function (x, xs) {
-		if (!xs.b) {
-			return _List_Nil;
-		} else {
-			var y = xs.a;
-			var ys = xs.b;
-			return _Utils_eq(x, y) ? ys : A2(
-				$elm$core$List$cons,
-				y,
-				A2($elm_community$list_extra$List$Extra$remove, x, ys));
-		}
-	});
 var $author$project$Selection$removeRouteId = F2(
 	function (routeId, selection) {
-		if (selection.$ === 'WithoutStop') {
-			var partialSelection = selection.a;
-			return $author$project$Selection$WithoutStop(
-				_Utils_update(
-					partialSelection,
-					{
-						routeIds: A2($elm_community$list_extra$List$Extra$remove, routeId, partialSelection.routeIds)
-					}));
-		} else {
-			var completeSelection = selection.a;
-			return $author$project$Selection$WithStop(
-				_Utils_update(
-					completeSelection,
-					{
-						routeIds: A2($elm_community$list_extra$List$Extra$remove, routeId, completeSelection.routeIds)
-					}));
-		}
+		return _Utils_update(
+			selection,
+			{
+				routeIds: A2($elm_community$list_extra$List$Extra$remove, routeId, selection.routeIds)
+			});
 	});
 var $elm$time$Time$posixToMillis = function (_v0) {
 	var millis = _v0.a;
@@ -15714,19 +15688,9 @@ var $author$project$Main$restartStream = function (model) {
 };
 var $author$project$Selection$setDirectionId = F2(
 	function (newDirectionId, selection) {
-		if (selection.$ === 'WithoutStop') {
-			var partialSelection = selection.a;
-			return $author$project$Selection$WithoutStop(
-				_Utils_update(
-					partialSelection,
-					{directionId: newDirectionId}));
-		} else {
-			var completeSelection = selection.a;
-			return $author$project$Selection$WithStop(
-				_Utils_update(
-					completeSelection,
-					{directionId: newDirectionId}));
-		}
+		return _Utils_update(
+			selection,
+			{directionId: newDirectionId});
 	});
 var $pzp1997$assoc_list$AssocList$union = F2(
 	function (_v0, rightDict) {
@@ -16156,27 +16120,6 @@ var $author$project$Main$update = F2(
 								A2($author$project$Main$getRoutesByStopId, model.routesByStopId, newSelections),
 								$author$project$Main$startStream(streamUrl)
 							])));
-			case 'AddSelection':
-				var newSelection = msg.a;
-				var newSelections = _Utils_ap(
-					model.selections,
-					_List_fromArray(
-						[newSelection]));
-				return A2($author$project$Main$registerNewSelections, model, newSelections);
-			case 'TypeRouteId':
-				var text = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{routeIdFormText: text}),
-					$elm$core$Platform$Cmd$none);
-			case 'TypeStopId':
-				var text = msg.a;
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{stopIdFormText: text}),
-					$elm$core$Platform$Cmd$none);
 			case 'DeleteSelection':
 				var index = msg.a;
 				var newSelections = A2($elm_community$list_extra$List$Extra$removeAt, index, model.selections);
@@ -16188,7 +16131,7 @@ var $author$project$Main$update = F2(
 					index,
 					function (selection) {
 						var newDirectionId = function () {
-							var _v3 = $author$project$Selection$directionId(selection);
+							var _v3 = selection.directionId;
 							if (_v3.$ === 'Nothing') {
 								return $elm$core$Maybe$Just($author$project$Mbta$D1);
 							} else {
@@ -16217,67 +16160,167 @@ var $author$project$Main$update = F2(
 			case 'RemoveRouteFromSelection':
 				var index = msg.a;
 				var routeId = msg.b;
-				var newSelections = A2(
-					$elm$core$List$filter,
-					$author$project$Selection$isValid,
-					A3(
-						$elm_community$list_extra$List$Extra$updateAt,
-						index,
-						$author$project$Selection$removeRouteId(routeId),
-						model.selections));
+				var newSelections = A3(
+					$elm_community$list_extra$List$Extra$updateAt,
+					index,
+					$author$project$Selection$removeRouteId(routeId),
+					model.selections);
 				return A2($author$project$Main$registerNewSelections, model, newSelections);
-			case 'CloseModal':
+			case 'NewSelectionStart':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{modal: $author$project$Model$NoModal}),
+						{newSelectionState: $author$project$Model$ChoosingRoute}),
 					$elm$core$Platform$Cmd$none);
-			case 'OpenRoutePicker':
-				var index = msg.a;
+			case 'NewSelectionChoseRoute':
+				var routeId = msg.a;
+				var _v6 = function () {
+					var _v7 = model.newSelectionState;
+					if (_v7.$ === 'ChoosingExtraRoutes') {
+						var routeIds = _v7.a;
+						var existingDirectionId = _v7.b;
+						return _Utils_Tuple2(routeIds, existingDirectionId);
+					} else {
+						return _Utils_Tuple2(_List_Nil, $elm$core$Maybe$Nothing);
+					}
+				}();
+				var existingRouteIds = _v6.a;
+				var directionId = _v6.b;
+				var newRouteIds = _Utils_ap(
+					existingRouteIds,
+					_List_fromArray(
+						[routeId]));
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
-							modal: $author$project$Model$RoutePicker(index)
+							newSelectionState: A3($author$project$Model$ChoosingStop, newRouteIds, directionId, _List_Nil)
 						}),
-					$elm$core$Platform$Cmd$none);
-			case 'PickRoute':
+					A2($author$project$Main$getStopsForRoutes, newRouteIds, directionId));
+			case 'NewSelectionChoseDirection':
+				var directionId = msg.a;
+				var _v8 = model.newSelectionState;
+				if (_v8.$ === 'ChoosingStop') {
+					var routeIds = _v8.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								newSelectionState: A3($author$project$Model$ChoosingStop, routeIds, directionId, _List_Nil)
+							}),
+						A2($author$project$Main$getStopsForRoutes, routeIds, directionId));
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{newSelectionState: $author$project$Model$NotMakingNewSelection}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'NewSelectionChoseStop':
+				var stopId = msg.a;
+				var _v9 = model.newSelectionState;
+				if (_v9.$ === 'ChoosingStop') {
+					var routeIds = _v9.a;
+					var directionId = _v9.b;
+					var newSelection = {directionId: directionId, routeIds: routeIds, stopId: stopId};
+					var newSelections = A2(
+						$elm$core$List$append,
+						model.selections,
+						_List_fromArray(
+							[newSelection]));
+					var modelWithClosedNewSelection = _Utils_update(
+						model,
+						{newSelectionState: $author$project$Model$NotMakingNewSelection});
+					return A2($author$project$Main$registerNewSelections, modelWithClosedNewSelection, newSelections);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{newSelectionState: $author$project$Model$NotMakingNewSelection}),
+						$elm$core$Platform$Cmd$none);
+				}
+			case 'NewSelectionAddExtraRoute':
+				var _v10 = model.newSelectionState;
+				if (_v10.$ === 'ChoosingStop') {
+					var routeIds = _v10.a;
+					var directionId = _v10.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								newSelectionState: A2($author$project$Model$ChoosingExtraRoutes, routeIds, directionId)
+							}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'NewSelectionRemoveRoute':
 				var routeId = msg.a;
-				var routePickerIndex = function () {
-					var _v7 = model.modal;
-					if (_v7.$ === 'RoutePicker') {
-						var index = _v7.a;
-						return index;
-					} else {
-						return $elm$core$Maybe$Nothing;
-					}
-				}();
-				var newSelections = function () {
-					if (routePickerIndex.$ === 'Nothing') {
-						return _Utils_ap(
-							model.selections,
-							_List_fromArray(
-								[
-									$author$project$Selection$WithoutStop(
-									{
-										directionId: $elm$core$Maybe$Nothing,
-										routeIds: _List_fromArray(
-											[routeId])
-									})
-								]));
-					} else {
-						var index = routePickerIndex.a;
-						return A3(
-							$elm_community$list_extra$List$Extra$updateAt,
-							index,
-							$author$project$Selection$addRouteId(routeId),
-							model.selections);
-					}
-				}();
-				var modelWithClosedModal = _Utils_update(
-					model,
-					{modal: $author$project$Model$NoModal});
-				return A2($author$project$Main$registerNewSelections, modelWithClosedModal, newSelections);
+				var _v11 = model.newSelectionState;
+				switch (_v11.$) {
+					case 'ChoosingStop':
+						var routeIds = _v11.a;
+						var directionId = _v11.b;
+						var newRouteIds = A2($elm_community$list_extra$List$Extra$remove, routeId, routeIds);
+						return $elm$core$List$isEmpty(newRouteIds) ? _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{newSelectionState: $author$project$Model$ChoosingRoute}),
+							$elm$core$Platform$Cmd$none) : _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									newSelectionState: A3($author$project$Model$ChoosingStop, newRouteIds, directionId, _List_Nil)
+								}),
+							A2($author$project$Main$getStopsForRoutes, newRouteIds, directionId));
+					case 'ChoosingExtraRoutes':
+						var routeIds = _v11.a;
+						var directionId = _v11.b;
+						var newRouteIds = A2($elm_community$list_extra$List$Extra$remove, routeId, routeIds);
+						return $elm$core$List$isEmpty(newRouteIds) ? _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{newSelectionState: $author$project$Model$ChoosingRoute}),
+							$elm$core$Platform$Cmd$none) : _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									newSelectionState: A2($author$project$Model$ChoosingExtraRoutes, newRouteIds, directionId)
+								}),
+							$elm$core$Platform$Cmd$none);
+					default:
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'NewSelectionBack':
+				var _v12 = model.newSelectionState;
+				switch (_v12.$) {
+					case 'ChoosingStop':
+						var routeIds = _v12.a;
+						var directionId = _v12.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{newSelectionState: $author$project$Model$ChoosingRoute}),
+							$elm$core$Platform$Cmd$none);
+					case 'ChoosingExtraRoutes':
+						var routeIds = _v12.a;
+						var directionId = _v12.b;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									newSelectionState: A3($author$project$Model$ChoosingStop, routeIds, directionId, _List_Nil)
+								}),
+							A2($author$project$Main$getStopsForRoutes, routeIds, directionId));
+					default:
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'NewSelectionCancel':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{newSelectionState: $author$project$Model$NotMakingNewSelection}),
+					$elm$core$Platform$Cmd$none);
 			case 'ReceiveRoutes':
 				var apiResult = msg.a;
 				return _Utils_Tuple2(
@@ -16330,6 +16373,31 @@ var $author$project$Main$update = F2(
 								model.routesByStopId)
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'ReceiveStopsForRoutes':
+				var requestRouteIds = msg.a;
+				var requestDirectionId = msg.b;
+				var apiResult = msg.c;
+				var _v13 = model.newSelectionState;
+				if (_v13.$ === 'ChoosingStop') {
+					var currentRouteIds = _v13.a;
+					var currentDirectionId = _v13.b;
+					return (_Utils_eq(requestRouteIds, currentRouteIds) && _Utils_eq(requestDirectionId, currentDirectionId)) ? _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								newSelectionState: A3(
+									$author$project$Model$ChoosingStop,
+									requestRouteIds,
+									requestDirectionId,
+									A2(
+										$elm$core$Result$withDefault,
+										_List_Nil,
+										A2($elm$core$Result$map, $author$project$Mbta$Api$getPrimaryData, apiResult)))
+							}),
+						$elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 			case 'StreamMsg':
 				var eventName = msg.a;
 				var dataJson = msg.b;
@@ -16342,9 +16410,9 @@ var $author$project$Main$update = F2(
 						}),
 					$elm$core$Platform$Cmd$none);
 			default:
-				var _v8 = $author$project$Main$streamPredictions(model.selections);
-				var initStreamState = _v8.a;
-				var streamUrl = _v8.b;
+				var _v14 = $author$project$Main$streamPredictions(model.selections);
+				var initStreamState = _v14.a;
+				var streamUrl = _v14.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -16835,16 +16903,6 @@ var $mdgriffith$elm_ui$Internal$Model$formatBoxShadow = function (shadow) {
 					$mdgriffith$elm_ui$Internal$Model$formatColor(shadow.color))
 				])));
 };
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $elm$core$Tuple$mapFirst = F2(
 	function (func, _v0) {
 		var x = _v0.a;
@@ -21951,9 +22009,54 @@ var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
 var $mdgriffith$elm_ui$Element$Font$sansSerif = $mdgriffith$elm_ui$Internal$Model$SansSerif;
 var $mdgriffith$elm_ui$Element$Font$typeface = $mdgriffith$elm_ui$Internal$Model$Typeface;
-var $author$project$Model$OpenRoutePicker = function (a) {
-	return {$: 'OpenRoutePicker', a: a};
+var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
+	return {$: 'AlignX', a: a};
 };
+var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
+var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
+var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
+var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
+var $mdgriffith$elm_ui$Internal$Model$Height = function (a) {
+	return {$: 'Height', a: a};
+};
+var $mdgriffith$elm_ui$Element$height = $mdgriffith$elm_ui$Internal$Model$Height;
+var $mdgriffith$elm_ui$Internal$Model$Content = {$: 'Content'};
+var $mdgriffith$elm_ui$Element$shrink = $mdgriffith$elm_ui$Internal$Model$Content;
+var $mdgriffith$elm_ui$Internal$Model$Width = function (a) {
+	return {$: 'Width', a: a};
+};
+var $mdgriffith$elm_ui$Element$width = $mdgriffith$elm_ui$Internal$Model$Width;
+var $mdgriffith$elm_ui$Element$column = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asColumn,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
+var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
+	return {$: 'Fill', a: a};
+};
+var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
+var $mdgriffith$elm_ui$Internal$Model$Max = F2(
+	function (a, b) {
+		return {$: 'Max', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Element$maximum = F2(
+	function (i, l) {
+		return A2($mdgriffith$elm_ui$Internal$Model$Max, i, l);
+	});
+var $author$project$Model$NewSelectionStart = {$: 'NewSelectionStart'};
 var $mdgriffith$elm_ui$Internal$Model$Button = {$: 'Button'};
 var $mdgriffith$elm_ui$Internal$Model$Describe = function (a) {
 	return {$: 'Describe', a: a};
@@ -21979,10 +22082,6 @@ var $mdgriffith$elm_ui$Element$Input$hasFocusStyle = function (attr) {
 var $mdgriffith$elm_ui$Element$Input$focusDefault = function (attrs) {
 	return A2($elm$core$List$any, $mdgriffith$elm_ui$Element$Input$hasFocusStyle, attrs) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Internal$Model$htmlClass('focusable');
 };
-var $mdgriffith$elm_ui$Internal$Model$Height = function (a) {
-	return {$: 'Height', a: a};
-};
-var $mdgriffith$elm_ui$Element$height = $mdgriffith$elm_ui$Internal$Model$Height;
 var $mdgriffith$elm_ui$Element$Events$onClick = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onClick);
 var $mdgriffith$elm_ui$Element$Input$enter = 'Enter';
 var $elm$virtual_dom$VirtualDom$MayPreventDefault = function (a) {
@@ -22024,18 +22123,12 @@ var $mdgriffith$elm_ui$Internal$Model$Class = F2(
 	});
 var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
 var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var $mdgriffith$elm_ui$Internal$Model$Content = {$: 'Content'};
-var $mdgriffith$elm_ui$Element$shrink = $mdgriffith$elm_ui$Internal$Model$Content;
 var $elm$html$Html$Attributes$tabindex = function (n) {
 	return A2(
 		_VirtualDom_attribute,
 		'tabIndex',
 		$elm$core$String$fromInt(n));
 };
-var $mdgriffith$elm_ui$Internal$Model$Width = function (a) {
-	return {$: 'Width', a: a};
-};
-var $mdgriffith$elm_ui$Element$width = $mdgriffith$elm_ui$Internal$Model$Width;
 var $mdgriffith$elm_ui$Element$Input$button = F2(
 	function (attrs, _v0) {
 		var onPress = _v0.onPress;
@@ -22088,68 +22181,6 @@ var $mdgriffith$elm_ui$Element$Input$button = F2(
 				_List_fromArray(
 					[label])));
 	});
-var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
-var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderColor,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Colored,
-			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
-			'border-color',
-			clr));
-};
-var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
-var $elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
-var $mdgriffith$elm_ui$Element$image = F2(
-	function (attrs, _v0) {
-		var src = _v0.src;
-		var description = _v0.description;
-		var imageAttributes = A2(
-			$elm$core$List$filter,
-			function (a) {
-				switch (a.$) {
-					case 'Width':
-						return true;
-					case 'Height':
-						return true;
-					default:
-						return false;
-				}
-			},
-			attrs);
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
-				attrs),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[
-						A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asEl,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('img'),
-						_Utils_ap(
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Internal$Model$Attr(
-									$elm$html$Html$Attributes$src(src)),
-									$mdgriffith$elm_ui$Internal$Model$Attr(
-									$elm$html$Html$Attributes$alt(description))
-								]),
-							imageAttributes),
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
-					])));
-	});
 var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
 	function (a, b, c, d, e) {
 		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
@@ -22167,10 +22198,10 @@ var $mdgriffith$elm_ui$Element$padding = function (x) {
 			x,
 			x));
 };
-var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
-	return {$: 'Px', a: a};
-};
-var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
+var $mdgriffith$elm_ui$Element$rgb = F3(
+	function (r, g, b) {
+		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
+	});
 var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
 var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 	return A2(
@@ -22182,63 +22213,6 @@ var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
 			'border-radius',
 			$elm$core$String$fromInt(radius) + 'px'));
 };
-var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
-var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
-	function (a, b, c, d, e) {
-		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
-	});
-var $mdgriffith$elm_ui$Element$Border$width = function (v) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
-			'b-' + $elm$core$String$fromInt(v),
-			v,
-			v,
-			v,
-			v));
-};
-var $author$project$View$addPill = function (index) {
-	return A2(
-		$mdgriffith$elm_ui$Element$Input$button,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$padding(4),
-				$mdgriffith$elm_ui$Element$Border$rounded(24),
-				$mdgriffith$elm_ui$Element$Border$color(
-				$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$white)),
-				$mdgriffith$elm_ui$Element$Border$width(2)
-			]),
-		{
-			label: A2(
-				$mdgriffith$elm_ui$Element$image,
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$width(
-						$mdgriffith$elm_ui$Element$px(16)),
-						$mdgriffith$elm_ui$Element$height(
-						$mdgriffith$elm_ui$Element$px(16))
-					]),
-				{description: 'Add route', src: '/assets/add.svg'}),
-			onPress: $elm$core$Maybe$Just(
-				$author$project$Model$OpenRoutePicker(index))
-		});
-};
-var $author$project$Model$AddSelection = function (a) {
-	return {$: 'AddSelection', a: a};
-};
-var $author$project$Model$TypeRouteId = function (a) {
-	return {$: 'TypeRouteId', a: a};
-};
-var $author$project$Model$TypeStopId = function (a) {
-	return {$: 'TypeStopId', a: a};
-};
-var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
-var $mdgriffith$elm_ui$Element$rgb = F3(
-	function (r, g, b) {
-		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
-	});
 var $mdgriffith$elm_ui$Internal$Model$boxShadowClass = function (shadow) {
 	return $elm$core$String$concat(
 		_List_fromArray(
@@ -22264,6 +22238,22 @@ var $mdgriffith$elm_ui$Element$Border$shadow = function (almostShade) {
 			$mdgriffith$elm_ui$Internal$Model$formatBoxShadow(shade)));
 };
 var $author$project$ViewHelpers$unit = 16;
+var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
+	function (a, b, c, d, e) {
+		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
+	});
+var $mdgriffith$elm_ui$Element$Border$width = function (v) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderWidth,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$BorderWidth,
+			'b-' + $elm$core$String$fromInt(v),
+			v,
+			v,
+			v,
+			v));
+};
 var $author$project$View$buttonStyles = _List_fromArray(
 	[
 		$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0),
@@ -22277,44 +22267,51 @@ var $author$project$View$buttonStyles = _List_fromArray(
 			size: 0.0
 		})
 	]);
-var $mdgriffith$elm_ui$Internal$Model$AsColumn = {$: 'AsColumn'};
-var $mdgriffith$elm_ui$Internal$Model$asColumn = $mdgriffith$elm_ui$Internal$Model$AsColumn;
-var $mdgriffith$elm_ui$Element$column = F2(
-	function (attrs, children) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asColumn,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentTop + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentLeft)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
-var $mdgriffith$elm_ui$Element$Input$Above = {$: 'Above'};
-var $mdgriffith$elm_ui$Element$Input$Label = F3(
-	function (a, b, c) {
-		return {$: 'Label', a: a, b: b, c: c};
-	});
-var $mdgriffith$elm_ui$Element$Input$labelAbove = $mdgriffith$elm_ui$Element$Input$Label($mdgriffith$elm_ui$Element$Input$Above);
 var $mdgriffith$elm_ui$Internal$Model$Text = function (a) {
 	return {$: 'Text', a: a};
 };
 var $mdgriffith$elm_ui$Element$text = function (content) {
 	return $mdgriffith$elm_ui$Internal$Model$Text(content);
 };
-var $author$project$View$label = function (text) {
-	return A2(
-		$mdgriffith$elm_ui$Element$Input$labelAbove,
-		_List_Nil,
-		$mdgriffith$elm_ui$Element$text(text));
+var $author$project$View$newSelection = A2(
+	$mdgriffith$elm_ui$Element$Input$button,
+	$author$project$View$buttonStyles,
+	{
+		label: $mdgriffith$elm_ui$Element$text('New'),
+		onPress: $elm$core$Maybe$Just($author$project$Model$NewSelectionStart)
+	});
+var $author$project$Model$RefreshStream = {$: 'RefreshStream'};
+var $author$project$View$lastUpdatedText = function (model) {
+	var _v0 = _Utils_Tuple2(model.currentTime, model.lastUpdated);
+	if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
+		var currentTime = _v0.a.a;
+		var lastUpdated = _v0.b.a;
+		var timeDifferenceMinutes = (((($elm$time$Time$posixToMillis(currentTime) - $elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) / 60) | 0;
+		return $elm$core$String$fromInt(timeDifferenceMinutes) + ' minutes ago';
+	} else {
+		return 'Never';
+	}
 };
+var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
+var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
+var $mdgriffith$elm_ui$Element$row = F2(
+	function (attrs, children) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asRow,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+					A2(
+						$elm$core$List$cons,
+						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+						attrs))),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
+	});
 var $mdgriffith$elm_ui$Internal$Model$SpacingStyle = F3(
 	function (a, b, c) {
 		return {$: 'SpacingStyle', a: a, b: b, c: c};
@@ -22334,965 +22331,6 @@ var $mdgriffith$elm_ui$Element$spacing = function (x) {
 			x,
 			x));
 };
-var $mdgriffith$elm_ui$Element$Input$TextInputNode = function (a) {
-	return {$: 'TextInputNode', a: a};
-};
-var $mdgriffith$elm_ui$Element$Input$TextArea = {$: 'TextArea'};
-var $mdgriffith$elm_ui$Internal$Model$LivePolite = {$: 'LivePolite'};
-var $mdgriffith$elm_ui$Element$Region$announce = $mdgriffith$elm_ui$Internal$Model$Describe($mdgriffith$elm_ui$Internal$Model$LivePolite);
-var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
-var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
-var $mdgriffith$elm_ui$Element$Input$applyLabel = F3(
-	function (attrs, label, input) {
-		if (label.$ === 'HiddenLabel') {
-			var labelText = label.a;
-			return A4(
-				$mdgriffith$elm_ui$Internal$Model$element,
-				$mdgriffith$elm_ui$Internal$Model$asColumn,
-				$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
-				attrs,
-				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-					_List_fromArray(
-						[input])));
-		} else {
-			var position = label.a;
-			var labelAttrs = label.b;
-			var labelChild = label.c;
-			var labelElement = A4(
-				$mdgriffith$elm_ui$Internal$Model$element,
-				$mdgriffith$elm_ui$Internal$Model$asEl,
-				$mdgriffith$elm_ui$Internal$Model$div,
-				labelAttrs,
-				$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-					_List_fromArray(
-						[labelChild])));
-			switch (position.$) {
-				case 'Above':
-					return A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asColumn,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
-						attrs,
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-							_List_fromArray(
-								[labelElement, input])));
-				case 'Below':
-					return A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asColumn,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
-						attrs,
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-							_List_fromArray(
-								[input, labelElement])));
-				case 'OnRight':
-					return A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asRow,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
-						attrs,
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-							_List_fromArray(
-								[input, labelElement])));
-				default:
-					return A4(
-						$mdgriffith$elm_ui$Internal$Model$element,
-						$mdgriffith$elm_ui$Internal$Model$asRow,
-						$mdgriffith$elm_ui$Internal$Model$NodeName('label'),
-						attrs,
-						$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-							_List_fromArray(
-								[labelElement, input])));
-			}
-		}
-	});
-var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
-var $mdgriffith$elm_ui$Element$Input$autofill = A2(
-	$elm$core$Basics$composeL,
-	$mdgriffith$elm_ui$Internal$Model$Attr,
-	$elm$html$Html$Attributes$attribute('autocomplete'));
-var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
-var $mdgriffith$elm_ui$Element$behindContent = function (element) {
-	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
-};
-var $mdgriffith$elm_ui$Internal$Model$MoveY = function (a) {
-	return {$: 'MoveY', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$TransformComponent = F2(
-	function (a, b) {
-		return {$: 'TransformComponent', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$moveY = $mdgriffith$elm_ui$Internal$Flag$flag(26);
-var $mdgriffith$elm_ui$Element$moveUp = function (y) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$TransformComponent,
-		$mdgriffith$elm_ui$Internal$Flag$moveY,
-		$mdgriffith$elm_ui$Internal$Model$MoveY(-y));
-};
-var $mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding = function (attrs) {
-	var gatherSpacing = F2(
-		function (attr, found) {
-			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
-				var _v2 = attr.b;
-				var x = _v2.b;
-				var y = _v2.c;
-				if (found.$ === 'Nothing') {
-					return $elm$core$Maybe$Just(y);
-				} else {
-					return found;
-				}
-			} else {
-				return found;
-			}
-		});
-	var _v0 = A3($elm$core$List$foldr, gatherSpacing, $elm$core$Maybe$Nothing, attrs);
-	if (_v0.$ === 'Nothing') {
-		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-	} else {
-		var vSpace = _v0.a;
-		return $mdgriffith$elm_ui$Element$moveUp(
-			$elm$core$Basics$floor(vSpace / 2));
-	}
-};
-var $mdgriffith$elm_ui$Internal$Flag$overflow = $mdgriffith$elm_ui$Internal$Flag$flag(20);
-var $mdgriffith$elm_ui$Element$clip = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.clip);
-var $mdgriffith$elm_ui$Element$Input$darkGrey = A3($mdgriffith$elm_ui$Element$rgb, 186 / 255, 189 / 255, 182 / 255);
-var $mdgriffith$elm_ui$Element$paddingXY = F2(
-	function (x, y) {
-		return _Utils_eq(x, y) ? A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				'p-' + $elm$core$String$fromInt(x),
-				x,
-				x,
-				x,
-				x)) : A2(
-			$mdgriffith$elm_ui$Internal$Model$StyleClass,
-			$mdgriffith$elm_ui$Internal$Flag$padding,
-			A5(
-				$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-				'p-' + ($elm$core$String$fromInt(x) + ('-' + $elm$core$String$fromInt(y))),
-				y,
-				x,
-				y,
-				x));
-	});
-var $mdgriffith$elm_ui$Element$Input$defaultTextPadding = A2($mdgriffith$elm_ui$Element$paddingXY, 12, 12);
-var $mdgriffith$elm_ui$Internal$Model$Fill = function (a) {
-	return {$: 'Fill', a: a};
-};
-var $mdgriffith$elm_ui$Element$fill = $mdgriffith$elm_ui$Internal$Model$Fill(1);
-var $mdgriffith$elm_ui$Element$Input$white = A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1);
-var $mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle = _List_fromArray(
-	[
-		$mdgriffith$elm_ui$Element$Input$defaultTextPadding,
-		$mdgriffith$elm_ui$Element$Border$rounded(3),
-		$mdgriffith$elm_ui$Element$Border$color($mdgriffith$elm_ui$Element$Input$darkGrey),
-		$mdgriffith$elm_ui$Element$Background$color($mdgriffith$elm_ui$Element$Input$white),
-		$mdgriffith$elm_ui$Element$Border$width(1),
-		$mdgriffith$elm_ui$Element$spacing(5),
-		$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-		$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink)
-	]);
-var $mdgriffith$elm_ui$Element$Input$getHeight = function (attr) {
-	if (attr.$ === 'Height') {
-		var h = attr.a;
-		return $elm$core$Maybe$Just(h);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $mdgriffith$elm_ui$Internal$Model$Label = function (a) {
-	return {$: 'Label', a: a};
-};
-var $mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute = function (label) {
-	if (label.$ === 'HiddenLabel') {
-		var textLabel = label.a;
-		return $mdgriffith$elm_ui$Internal$Model$Describe(
-			$mdgriffith$elm_ui$Internal$Model$Label(textLabel));
-	} else {
-		return $mdgriffith$elm_ui$Internal$Model$NoAttribute;
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$isConstrained = function (len) {
-	isConstrained:
-	while (true) {
-		switch (len.$) {
-			case 'Content':
-				return false;
-			case 'Px':
-				return true;
-			case 'Fill':
-				return true;
-			case 'Min':
-				var l = len.b;
-				var $temp$len = l;
-				len = $temp$len;
-				continue isConstrained;
-			default:
-				var l = len.b;
-				return true;
-		}
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$isHiddenLabel = function (label) {
-	if (label.$ === 'HiddenLabel') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$isStacked = function (label) {
-	if (label.$ === 'Label') {
-		var loc = label.a;
-		switch (loc.$) {
-			case 'OnRight':
-				return false;
-			case 'OnLeft':
-				return false;
-			case 'Above':
-				return true;
-			default:
-				return true;
-		}
-	} else {
-		return true;
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$negateBox = function (box) {
-	return {bottom: -box.bottom, left: -box.left, right: -box.right, top: -box.top};
-};
-var $mdgriffith$elm_ui$Internal$Model$paddingName = F4(
-	function (top, right, bottom, left) {
-		return 'pad-' + ($elm$core$String$fromInt(top) + ('-' + ($elm$core$String$fromInt(right) + ('-' + ($elm$core$String$fromInt(bottom) + ('-' + $elm$core$String$fromInt(left)))))));
-	});
-var $mdgriffith$elm_ui$Element$paddingEach = function (_v0) {
-	var top = _v0.top;
-	var right = _v0.right;
-	var bottom = _v0.bottom;
-	var left = _v0.left;
-	return (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) ? A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + $elm$core$String$fromInt(top),
-			top,
-			top,
-			top,
-			top)) : A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			A4($mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
-			top,
-			right,
-			bottom,
-			left));
-};
-var $mdgriffith$elm_ui$Element$htmlAttribute = $mdgriffith$elm_ui$Internal$Model$Attr;
-var $mdgriffith$elm_ui$Element$Input$isFill = function (len) {
-	isFill:
-	while (true) {
-		switch (len.$) {
-			case 'Fill':
-				return true;
-			case 'Content':
-				return false;
-			case 'Px':
-				return false;
-			case 'Min':
-				var l = len.b;
-				var $temp$len = l;
-				len = $temp$len;
-				continue isFill;
-			default:
-				var l = len.b;
-				var $temp$len = l;
-				len = $temp$len;
-				continue isFill;
-		}
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$isPixel = function (len) {
-	isPixel:
-	while (true) {
-		switch (len.$) {
-			case 'Content':
-				return false;
-			case 'Px':
-				return true;
-			case 'Fill':
-				return false;
-			case 'Min':
-				var l = len.b;
-				var $temp$len = l;
-				len = $temp$len;
-				continue isPixel;
-			default:
-				var l = len.b;
-				var $temp$len = l;
-				len = $temp$len;
-				continue isPixel;
-		}
-	}
-};
-var $mdgriffith$elm_ui$Element$Input$redistributeOver = F4(
-	function (isMultiline, stacked, attr, els) {
-		switch (attr.$) {
-			case 'Nearby':
-				return _Utils_update(
-					els,
-					{
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					});
-			case 'Width':
-				var width = attr.a;
-				return $mdgriffith$elm_ui$Element$Input$isFill(width) ? _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
-						input: A2($elm$core$List$cons, attr, els.input),
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					}) : (stacked ? _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
-					}) : _Utils_update(
-					els,
-					{
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					}));
-			case 'Height':
-				var height = attr.a;
-				return (!stacked) ? _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					}) : ($mdgriffith$elm_ui$Element$Input$isFill(height) ? _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent),
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					}) : ($mdgriffith$elm_ui$Element$Input$isPixel(height) ? _Utils_update(
-					els,
-					{
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					}) : _Utils_update(
-					els,
-					{
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					})));
-			case 'AlignX':
-				return _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
-					});
-			case 'AlignY':
-				return _Utils_update(
-					els,
-					{
-						fullParent: A2($elm$core$List$cons, attr, els.fullParent)
-					});
-			case 'StyleClass':
-				switch (attr.b.$) {
-					case 'SpacingStyle':
-						var _v1 = attr.b;
-						return _Utils_update(
-							els,
-							{
-								fullParent: A2($elm$core$List$cons, attr, els.fullParent),
-								input: A2($elm$core$List$cons, attr, els.input),
-								parent: A2($elm$core$List$cons, attr, els.parent),
-								wrapper: A2($elm$core$List$cons, attr, els.wrapper)
-							});
-					case 'PaddingStyle':
-						var cls = attr.a;
-						var _v2 = attr.b;
-						var pad = _v2.a;
-						var t = _v2.b;
-						var r = _v2.c;
-						var b = _v2.d;
-						var l = _v2.e;
-						if (isMultiline) {
-							return _Utils_update(
-								els,
-								{
-									cover: A2($elm$core$List$cons, attr, els.cover),
-									parent: A2($elm$core$List$cons, attr, els.parent)
-								});
-						} else {
-							var reducedVerticalPadding = $mdgriffith$elm_ui$Element$paddingEach(
-								{
-									bottom: b - A2($elm$core$Basics$min, t, b),
-									left: l,
-									right: r,
-									top: t - A2($elm$core$Basics$min, t, b)
-								});
-							var newLineHeight = $mdgriffith$elm_ui$Element$htmlAttribute(
-								A2(
-									$elm$html$Html$Attributes$style,
-									'line-height',
-									'calc(1.0em + ' + ($elm$core$String$fromInt(
-										2 * A2($elm$core$Basics$min, t, b)) + 'px)')));
-							var newHeight = $mdgriffith$elm_ui$Element$htmlAttribute(
-								A2(
-									$elm$html$Html$Attributes$style,
-									'height',
-									'calc(1.0em + ' + ($elm$core$String$fromInt(
-										2 * A2($elm$core$Basics$min, t, b)) + 'px)')));
-							return _Utils_update(
-								els,
-								{
-									cover: A2($elm$core$List$cons, attr, els.cover),
-									input: A2(
-										$elm$core$List$cons,
-										newHeight,
-										A2($elm$core$List$cons, newLineHeight, els.input)),
-									parent: A2($elm$core$List$cons, reducedVerticalPadding, els.parent)
-								});
-						}
-					case 'BorderWidth':
-						var _v3 = attr.b;
-						return _Utils_update(
-							els,
-							{
-								cover: A2($elm$core$List$cons, attr, els.cover),
-								parent: A2($elm$core$List$cons, attr, els.parent)
-							});
-					case 'Transform':
-						return _Utils_update(
-							els,
-							{
-								cover: A2($elm$core$List$cons, attr, els.cover),
-								parent: A2($elm$core$List$cons, attr, els.parent)
-							});
-					case 'FontSize':
-						return _Utils_update(
-							els,
-							{
-								fullParent: A2($elm$core$List$cons, attr, els.fullParent)
-							});
-					case 'FontFamily':
-						var _v4 = attr.b;
-						return _Utils_update(
-							els,
-							{
-								fullParent: A2($elm$core$List$cons, attr, els.fullParent)
-							});
-					default:
-						var flag = attr.a;
-						var cls = attr.b;
-						return _Utils_update(
-							els,
-							{
-								parent: A2($elm$core$List$cons, attr, els.parent)
-							});
-				}
-			case 'NoAttribute':
-				return els;
-			case 'Attr':
-				var a = attr.a;
-				return _Utils_update(
-					els,
-					{
-						input: A2($elm$core$List$cons, attr, els.input)
-					});
-			case 'Describe':
-				return _Utils_update(
-					els,
-					{
-						input: A2($elm$core$List$cons, attr, els.input)
-					});
-			case 'Class':
-				return _Utils_update(
-					els,
-					{
-						parent: A2($elm$core$List$cons, attr, els.parent)
-					});
-			default:
-				return _Utils_update(
-					els,
-					{
-						input: A2($elm$core$List$cons, attr, els.input)
-					});
-		}
-	});
-var $mdgriffith$elm_ui$Element$Input$redistribute = F3(
-	function (isMultiline, stacked, attrs) {
-		return function (redist) {
-			return {
-				cover: $elm$core$List$reverse(redist.cover),
-				fullParent: $elm$core$List$reverse(redist.fullParent),
-				input: $elm$core$List$reverse(redist.input),
-				parent: $elm$core$List$reverse(redist.parent),
-				wrapper: $elm$core$List$reverse(redist.wrapper)
-			};
-		}(
-			A3(
-				$elm$core$List$foldl,
-				A2($mdgriffith$elm_ui$Element$Input$redistributeOver, isMultiline, stacked),
-				{cover: _List_Nil, fullParent: _List_Nil, input: _List_Nil, parent: _List_Nil, wrapper: _List_Nil},
-				attrs));
-	});
-var $mdgriffith$elm_ui$Element$Input$renderBox = function (_v0) {
-	var top = _v0.top;
-	var right = _v0.right;
-	var bottom = _v0.bottom;
-	var left = _v0.left;
-	return $elm$core$String$fromInt(top) + ('px ' + ($elm$core$String$fromInt(right) + ('px ' + ($elm$core$String$fromInt(bottom) + ('px ' + ($elm$core$String$fromInt(left) + 'px'))))));
-};
-var $mdgriffith$elm_ui$Internal$Model$Transparency = F2(
-	function (a, b) {
-		return {$: 'Transparency', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$transparency = $mdgriffith$elm_ui$Internal$Flag$flag(0);
-var $mdgriffith$elm_ui$Element$alpha = function (o) {
-	var transparency = function (x) {
-		return 1 - x;
-	}(
-		A2(
-			$elm$core$Basics$min,
-			1.0,
-			A2($elm$core$Basics$max, 0.0, o)));
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$transparency,
-		A2(
-			$mdgriffith$elm_ui$Internal$Model$Transparency,
-			'transparency-' + $mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
-			transparency));
-};
-var $mdgriffith$elm_ui$Element$Input$charcoal = A3($mdgriffith$elm_ui$Element$rgb, 136 / 255, 138 / 255, 133 / 255);
-var $mdgriffith$elm_ui$Element$el = F2(
-	function (attrs, child) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-					attrs)),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-				_List_fromArray(
-					[child])));
-	});
-var $mdgriffith$elm_ui$Element$Input$renderPlaceholder = F3(
-	function (_v0, forPlaceholder, on) {
-		var placeholderAttrs = _v0.a;
-		var placeholderEl = _v0.b;
-		return A2(
-			$mdgriffith$elm_ui$Element$el,
-			_Utils_ap(
-				forPlaceholder,
-				_Utils_ap(
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Font$color($mdgriffith$elm_ui$Element$Input$charcoal),
-							$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.noTextSelection + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.passPointerEvents)),
-							$mdgriffith$elm_ui$Element$clip,
-							$mdgriffith$elm_ui$Element$Border$color(
-							A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0)),
-							$mdgriffith$elm_ui$Element$Background$color(
-							A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0)),
-							$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-							$mdgriffith$elm_ui$Element$alpha(
-							on ? 1 : 0)
-						]),
-					placeholderAttrs)),
-			placeholderEl);
-	});
-var $mdgriffith$elm_ui$Element$scrollbarY = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbarsY);
-var $elm$html$Html$Attributes$spellcheck = $elm$html$Html$Attributes$boolProperty('spellcheck');
-var $mdgriffith$elm_ui$Element$Input$spellcheck = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Attributes$spellcheck);
-var $mdgriffith$elm_ui$Internal$Model$unstyled = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Unstyled, $elm$core$Basics$always);
-var $mdgriffith$elm_ui$Element$Input$value = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Attributes$value);
-var $mdgriffith$elm_ui$Element$Input$textHelper = F3(
-	function (textInput, attrs, textOptions) {
-		var withDefaults = _Utils_ap($mdgriffith$elm_ui$Element$Input$defaultTextBoxStyle, attrs);
-		var redistributed = A3(
-			$mdgriffith$elm_ui$Element$Input$redistribute,
-			_Utils_eq(textInput.type_, $mdgriffith$elm_ui$Element$Input$TextArea),
-			$mdgriffith$elm_ui$Element$Input$isStacked(textOptions.label),
-			withDefaults);
-		var onlySpacing = function (attr) {
-			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'SpacingStyle')) {
-				var _v9 = attr.b;
-				return true;
-			} else {
-				return false;
-			}
-		};
-		var heightConstrained = function () {
-			var _v7 = textInput.type_;
-			if (_v7.$ === 'TextInputNode') {
-				var inputType = _v7.a;
-				return false;
-			} else {
-				return A2(
-					$elm$core$Maybe$withDefault,
-					false,
-					A2(
-						$elm$core$Maybe$map,
-						$mdgriffith$elm_ui$Element$Input$isConstrained,
-						$elm$core$List$head(
-							$elm$core$List$reverse(
-								A2($elm$core$List$filterMap, $mdgriffith$elm_ui$Element$Input$getHeight, withDefaults)))));
-			}
-		}();
-		var getPadding = function (attr) {
-			if ((attr.$ === 'StyleClass') && (attr.b.$ === 'PaddingStyle')) {
-				var cls = attr.a;
-				var _v6 = attr.b;
-				var pad = _v6.a;
-				var t = _v6.b;
-				var r = _v6.c;
-				var b = _v6.d;
-				var l = _v6.e;
-				return $elm$core$Maybe$Just(
-					{
-						bottom: A2(
-							$elm$core$Basics$max,
-							0,
-							$elm$core$Basics$floor(b - 3)),
-						left: A2(
-							$elm$core$Basics$max,
-							0,
-							$elm$core$Basics$floor(l - 3)),
-						right: A2(
-							$elm$core$Basics$max,
-							0,
-							$elm$core$Basics$floor(r - 3)),
-						top: A2(
-							$elm$core$Basics$max,
-							0,
-							$elm$core$Basics$floor(t - 3))
-					});
-			} else {
-				return $elm$core$Maybe$Nothing;
-			}
-		};
-		var parentPadding = A2(
-			$elm$core$Maybe$withDefault,
-			{bottom: 0, left: 0, right: 0, top: 0},
-			$elm$core$List$head(
-				$elm$core$List$reverse(
-					A2($elm$core$List$filterMap, getPadding, withDefaults))));
-		var inputElement = A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asEl,
-			function () {
-				var _v3 = textInput.type_;
-				if (_v3.$ === 'TextInputNode') {
-					var inputType = _v3.a;
-					return $mdgriffith$elm_ui$Internal$Model$NodeName('input');
-				} else {
-					return $mdgriffith$elm_ui$Internal$Model$NodeName('textarea');
-				}
-			}(),
-			_Utils_ap(
-				function () {
-					var _v4 = textInput.type_;
-					if (_v4.$ === 'TextInputNode') {
-						var inputType = _v4.a;
-						return _List_fromArray(
-							[
-								$mdgriffith$elm_ui$Internal$Model$Attr(
-								$elm$html$Html$Attributes$type_(inputType)),
-								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputText)
-							]);
-					} else {
-						return _List_fromArray(
-							[
-								$mdgriffith$elm_ui$Element$clip,
-								$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-								$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultiline),
-								$mdgriffith$elm_ui$Element$Input$calcMoveToCompensateForPadding(withDefaults),
-								$mdgriffith$elm_ui$Element$paddingEach(parentPadding),
-								$mdgriffith$elm_ui$Internal$Model$Attr(
-								A2(
-									$elm$html$Html$Attributes$style,
-									'margin',
-									$mdgriffith$elm_ui$Element$Input$renderBox(
-										$mdgriffith$elm_ui$Element$Input$negateBox(parentPadding)))),
-								$mdgriffith$elm_ui$Internal$Model$Attr(
-								A2($elm$html$Html$Attributes$style, 'box-sizing', 'content-box'))
-							]);
-					}
-				}(),
-				_Utils_ap(
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Input$value(textOptions.text),
-							$mdgriffith$elm_ui$Internal$Model$Attr(
-							$elm$html$Html$Events$onInput(textOptions.onChange)),
-							$mdgriffith$elm_ui$Element$Input$hiddenLabelAttribute(textOptions.label),
-							$mdgriffith$elm_ui$Element$Input$spellcheck(textInput.spellchecked),
-							A2(
-							$elm$core$Maybe$withDefault,
-							$mdgriffith$elm_ui$Internal$Model$NoAttribute,
-							A2($elm$core$Maybe$map, $mdgriffith$elm_ui$Element$Input$autofill, textInput.autofill))
-						]),
-					redistributed.input)),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil));
-		var wrappedInput = function () {
-			var _v0 = textInput.type_;
-			if (_v0.$ === 'TextArea') {
-				return A4(
-					$mdgriffith$elm_ui$Internal$Model$element,
-					$mdgriffith$elm_ui$Internal$Model$asEl,
-					$mdgriffith$elm_ui$Internal$Model$div,
-					_Utils_ap(
-						(heightConstrained ? $elm$core$List$cons($mdgriffith$elm_ui$Element$scrollbarY) : $elm$core$Basics$identity)(
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-									A2($elm$core$List$any, $mdgriffith$elm_ui$Element$Input$hasFocusStyle, withDefaults) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.focusedWithin),
-									$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineWrapper)
-								])),
-						redistributed.parent),
-					$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-						_List_fromArray(
-							[
-								A4(
-								$mdgriffith$elm_ui$Internal$Model$element,
-								$mdgriffith$elm_ui$Internal$Model$asParagraph,
-								$mdgriffith$elm_ui$Internal$Model$div,
-								A2(
-									$elm$core$List$cons,
-									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-									A2(
-										$elm$core$List$cons,
-										$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-										A2(
-											$elm$core$List$cons,
-											$mdgriffith$elm_ui$Element$inFront(inputElement),
-											A2(
-												$elm$core$List$cons,
-												$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineParent),
-												redistributed.wrapper)))),
-								$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-									function () {
-										if (textOptions.text === '') {
-											var _v1 = textOptions.placeholder;
-											if (_v1.$ === 'Nothing') {
-												return _List_fromArray(
-													[
-														$mdgriffith$elm_ui$Element$text('\u00A0')
-													]);
-											} else {
-												var place = _v1.a;
-												return _List_fromArray(
-													[
-														A3($mdgriffith$elm_ui$Element$Input$renderPlaceholder, place, _List_Nil, textOptions.text === '')
-													]);
-											}
-										} else {
-											return _List_fromArray(
-												[
-													$mdgriffith$elm_ui$Internal$Model$unstyled(
-													A2(
-														$elm$html$Html$span,
-														_List_fromArray(
-															[
-																$elm$html$Html$Attributes$class($mdgriffith$elm_ui$Internal$Style$classes.inputMultilineFiller)
-															]),
-														_List_fromArray(
-															[
-																$elm$html$Html$text(textOptions.text + '\u00A0')
-															])))
-												]);
-										}
-									}()))
-							])));
-			} else {
-				var inputType = _v0.a;
-				return A4(
-					$mdgriffith$elm_ui$Internal$Model$element,
-					$mdgriffith$elm_ui$Internal$Model$asEl,
-					$mdgriffith$elm_ui$Internal$Model$div,
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-						A2(
-							$elm$core$List$cons,
-							A2($elm$core$List$any, $mdgriffith$elm_ui$Element$Input$hasFocusStyle, withDefaults) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.focusedWithin),
-							$elm$core$List$concat(
-								_List_fromArray(
-									[
-										redistributed.parent,
-										function () {
-										var _v2 = textOptions.placeholder;
-										if (_v2.$ === 'Nothing') {
-											return _List_Nil;
-										} else {
-											var place = _v2.a;
-											return _List_fromArray(
-												[
-													$mdgriffith$elm_ui$Element$behindContent(
-													A3($mdgriffith$elm_ui$Element$Input$renderPlaceholder, place, redistributed.cover, textOptions.text === ''))
-												]);
-										}
-									}()
-									])))),
-					$mdgriffith$elm_ui$Internal$Model$Unkeyed(
-						_List_fromArray(
-							[inputElement])));
-			}
-		}();
-		return A3(
-			$mdgriffith$elm_ui$Element$Input$applyLabel,
-			A2(
-				$elm$core$List$cons,
-				A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorText),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$Input$isHiddenLabel(textOptions.label) ? $mdgriffith$elm_ui$Internal$Model$NoAttribute : $mdgriffith$elm_ui$Element$spacing(5),
-					A2($elm$core$List$cons, $mdgriffith$elm_ui$Element$Region$announce, redistributed.fullParent))),
-			textOptions.label,
-			wrappedInput);
-	});
-var $mdgriffith$elm_ui$Element$Input$text = $mdgriffith$elm_ui$Element$Input$textHelper(
-	{
-		autofill: $elm$core$Maybe$Nothing,
-		spellchecked: false,
-		type_: $mdgriffith$elm_ui$Element$Input$TextInputNode('text')
-	});
-var $author$project$View$addSelectionForm = function (model) {
-	return A2(
-		$mdgriffith$elm_ui$Element$column,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit)
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$mdgriffith$elm_ui$Element$Input$text,
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Font$color(
-						$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$black))
-					]),
-				{
-					label: $author$project$View$label('Route Ids (period separated)'),
-					onChange: $author$project$Model$TypeRouteId,
-					placeholder: $elm$core$Maybe$Nothing,
-					text: model.routeIdFormText
-				}),
-				A2(
-				$mdgriffith$elm_ui$Element$Input$text,
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$Font$color(
-						$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$black))
-					]),
-				{
-					label: $author$project$View$label('Stop Id'),
-					onChange: $author$project$Model$TypeStopId,
-					placeholder: $elm$core$Maybe$Nothing,
-					text: model.stopIdFormText
-				}),
-				A2(
-				$mdgriffith$elm_ui$Element$Input$button,
-				$author$project$View$buttonStyles,
-				{
-					label: $mdgriffith$elm_ui$Element$text('Add Stop'),
-					onPress: function () {
-						var routeIds = A2(
-							$elm$core$List$map,
-							$author$project$Mbta$RouteId,
-							A2(
-								$elm$core$List$filter,
-								$elm$core$Basics$neq(''),
-								A2($elm$core$String$split, '.', model.routeIdFormText)));
-						var maybeStopId = function () {
-							var _v1 = model.stopIdFormText;
-							if (_v1 === '') {
-								return $elm$core$Maybe$Nothing;
-							} else {
-								return $elm$core$Maybe$Just(
-									$author$project$Mbta$StopId(model.stopIdFormText));
-							}
-						}();
-						var selection = function () {
-							if (maybeStopId.$ === 'Nothing') {
-								return $author$project$Selection$WithoutStop(
-									{directionId: $elm$core$Maybe$Nothing, routeIds: routeIds});
-							} else {
-								var stopId = maybeStopId.a;
-								return $author$project$Selection$WithStop(
-									{directionId: $elm$core$Maybe$Nothing, routeIds: routeIds, stopId: stopId});
-							}
-						}();
-						return $author$project$Selection$isValid(selection) ? $elm$core$Maybe$Just(
-							$author$project$Model$AddSelection(selection)) : $elm$core$Maybe$Nothing;
-					}()
-				})
-			]));
-};
-var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
-	return {$: 'AlignX', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
-var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
-var $mdgriffith$elm_ui$Internal$Model$Max = F2(
-	function (a, b) {
-		return {$: 'Max', a: a, b: b};
-	});
-var $mdgriffith$elm_ui$Element$maximum = F2(
-	function (i, l) {
-		return A2($mdgriffith$elm_ui$Internal$Model$Max, i, l);
-	});
-var $author$project$Model$RefreshStream = {$: 'RefreshStream'};
-var $author$project$View$lastUpdatedText = function (model) {
-	var _v0 = _Utils_Tuple2(model.currentTime, model.lastUpdated);
-	if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
-		var currentTime = _v0.a.a;
-		var lastUpdated = _v0.b.a;
-		var timeDifferenceMinutes = (((($elm$time$Time$posixToMillis(currentTime) - $elm$time$Time$posixToMillis(lastUpdated)) / 1000) | 0) / 60) | 0;
-		return $elm$core$String$fromInt(timeDifferenceMinutes) + ' minutes ago';
-	} else {
-		return 'Never';
-	}
-};
-var $mdgriffith$elm_ui$Element$row = F2(
-	function (attrs, children) {
-		return A4(
-			$mdgriffith$elm_ui$Internal$Model$element,
-			$mdgriffith$elm_ui$Internal$Model$asRow,
-			$mdgriffith$elm_ui$Internal$Model$div,
-			A2(
-				$elm$core$List$cons,
-				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.contentLeft + (' ' + $mdgriffith$elm_ui$Internal$Style$classes.contentCenterY)),
-				A2(
-					$elm$core$List$cons,
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
-					A2(
-						$elm$core$List$cons,
-						$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
-						attrs))),
-			$mdgriffith$elm_ui$Internal$Model$Unkeyed(children));
-	});
 var $author$project$View$refreshButton = function (model) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
@@ -23346,6 +22384,80 @@ var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$Al
 var $author$project$Model$ToggleDirection = function (a) {
 	return {$: 'ToggleDirection', a: a};
 };
+var $elm$html$Html$Attributes$alt = $elm$html$Html$Attributes$stringProperty('alt');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $mdgriffith$elm_ui$Element$image = F2(
+	function (attrs, _v0) {
+		var src = _v0.src;
+		var description = _v0.description;
+		var imageAttributes = A2(
+			$elm$core$List$filter,
+			function (a) {
+				switch (a.$) {
+					case 'Width':
+						return true;
+					case 'Height':
+						return true;
+					default:
+						return false;
+				}
+			},
+			attrs);
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asEl,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.imageContainer),
+				attrs),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[
+						A4(
+						$mdgriffith$elm_ui$Internal$Model$element,
+						$mdgriffith$elm_ui$Internal$Model$asEl,
+						$mdgriffith$elm_ui$Internal$Model$NodeName('img'),
+						_Utils_ap(
+							_List_fromArray(
+								[
+									$mdgriffith$elm_ui$Internal$Model$Attr(
+									$elm$html$Html$Attributes$src(src)),
+									$mdgriffith$elm_ui$Internal$Model$Attr(
+									$elm$html$Html$Attributes$alt(description))
+								]),
+							imageAttributes),
+						$mdgriffith$elm_ui$Internal$Model$Unkeyed(_List_Nil))
+					])));
+	});
+var $mdgriffith$elm_ui$Internal$Model$Px = function (a) {
+	return {$: 'Px', a: a};
+};
+var $mdgriffith$elm_ui$Element$px = $mdgriffith$elm_ui$Internal$Model$Px;
+var $author$project$ViewHelpers$iconButton = F2(
+	function (msg, _v0) {
+		var src = _v0.src;
+		var description = _v0.description;
+		return A2(
+			$mdgriffith$elm_ui$Element$Input$button,
+			_List_Nil,
+			{
+				label: A2(
+					$mdgriffith$elm_ui$Element$image,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$height(
+							$mdgriffith$elm_ui$Element$px(20))
+						]),
+					{description: description, src: src}),
+				onPress: $elm$core$Maybe$Just(msg)
+			});
+	});
 var $author$project$View$directionIcon = F2(
 	function (index, directionId) {
 		var icon = function () {
@@ -23362,20 +22474,26 @@ var $author$project$View$directionIcon = F2(
 			}
 		}();
 		return A2(
-			$mdgriffith$elm_ui$Element$Input$button,
-			_List_Nil,
-			{
-				label: A2(
-					$mdgriffith$elm_ui$Element$image,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$height(
-							$mdgriffith$elm_ui$Element$px(20))
-						]),
-					icon),
-				onPress: $elm$core$Maybe$Just(
-					$author$project$Model$ToggleDirection(index))
-			});
+			$author$project$ViewHelpers$iconButton,
+			$author$project$Model$ToggleDirection(index),
+			icon);
+	});
+var $mdgriffith$elm_ui$Element$el = F2(
+	function (attrs, child) {
+		return A4(
+			$mdgriffith$elm_ui$Internal$Model$element,
+			$mdgriffith$elm_ui$Internal$Model$asEl,
+			$mdgriffith$elm_ui$Internal$Model$div,
+			A2(
+				$elm$core$List$cons,
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$shrink),
+				A2(
+					$elm$core$List$cons,
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$shrink),
+					attrs)),
+			$mdgriffith$elm_ui$Internal$Model$Unkeyed(
+				_List_fromArray(
+					[child])));
 	});
 var $elm$core$List$member = F2(
 	function (x, xs) {
@@ -23411,25 +22529,15 @@ var $author$project$Model$DeleteSelection = function (a) {
 };
 var $author$project$View$removeSelection = function (index) {
 	return A2(
-		$mdgriffith$elm_ui$Element$Input$button,
-		_List_Nil,
-		{
-			label: A2(
-				$mdgriffith$elm_ui$Element$image,
-				_List_fromArray(
-					[
-						$mdgriffith$elm_ui$Element$height(
-						$mdgriffith$elm_ui$Element$px(20))
-					]),
-				{description: 'remove', src: '/assets/close.svg'}),
-			onPress: $elm$core$Maybe$Just(
-				$author$project$Model$DeleteSelection(index))
-		});
+		$author$project$ViewHelpers$iconButton,
+		$author$project$Model$DeleteSelection(index),
+		{description: 'remove', src: '/assets/close.svg'});
 };
 var $author$project$Model$RemoveRouteFromSelection = F2(
 	function (a, b) {
 		return {$: 'RemoveRouteFromSelection', a: a, b: b};
 	});
+var $author$project$Pill$listSpacing = $mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0);
 var $author$project$Mbta$Extra$routeAbbreviation = function (route) {
 	var _v0 = route.shortName;
 	if (_v0.$ === 'Just') {
@@ -23509,6 +22617,8 @@ var $author$project$Pill$pill = function (route) {
 				route.longName,
 				$author$project$Mbta$Extra$routeAbbreviation(route))));
 };
+var $avh4$elm_color$Color$black = A4($avh4$elm_color$Color$RgbaSpace, 0 / 255, 0 / 255, 0 / 255, 1.0);
+var $avh4$elm_color$Color$white = A4($avh4$elm_color$Color$RgbaSpace, 255 / 255, 255 / 255, 255 / 255, 1.0);
 var $author$project$Pill$unknownPill = function (_v0) {
 	var routeIdText = _v0.a;
 	return A2(
@@ -23579,6 +22689,35 @@ var $mdgriffith$elm_ui$Internal$Model$extractSpacingAndPadding = function (attrs
 			}),
 		_Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing),
 		attrs);
+};
+var $mdgriffith$elm_ui$Internal$Model$paddingName = F4(
+	function (top, right, bottom, left) {
+		return 'pad-' + ($elm$core$String$fromInt(top) + ('-' + ($elm$core$String$fromInt(right) + ('-' + ($elm$core$String$fromInt(bottom) + ('-' + $elm$core$String$fromInt(left)))))));
+	});
+var $mdgriffith$elm_ui$Element$paddingEach = function (_v0) {
+	var top = _v0.top;
+	var right = _v0.right;
+	var bottom = _v0.bottom;
+	var left = _v0.left;
+	return (_Utils_eq(top, right) && (_Utils_eq(top, bottom) && _Utils_eq(top, left))) ? A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(top),
+			top,
+			top,
+			top,
+			top)) : A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			A4($mdgriffith$elm_ui$Internal$Model$paddingName, top, right, bottom, left),
+			top,
+			right,
+			bottom,
+			left));
 };
 var $mdgriffith$elm_ui$Element$wrappedRow = F2(
 	function (attrs, children) {
@@ -23698,7 +22837,7 @@ var $author$project$View$selectedRoutePills = F3(
 			$mdgriffith$elm_ui$Element$wrappedRow,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
+					$author$project$Pill$listSpacing,
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			$elm$core$List$concat(
@@ -23796,13 +22935,34 @@ var $author$project$Model$AddRouteToSelection = F2(
 	function (a, b) {
 		return {$: 'AddRouteToSelection', a: a, b: b};
 	});
+var $mdgriffith$elm_ui$Internal$Model$Transparency = F2(
+	function (a, b) {
+		return {$: 'Transparency', a: a, b: b};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$transparency = $mdgriffith$elm_ui$Internal$Flag$flag(0);
+var $mdgriffith$elm_ui$Element$alpha = function (o) {
+	var transparency = function (x) {
+		return 1 - x;
+	}(
+		A2(
+			$elm$core$Basics$min,
+			1.0,
+			A2($elm$core$Basics$max, 0.0, o)));
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$transparency,
+		A2(
+			$mdgriffith$elm_ui$Internal$Model$Transparency,
+			'transparency-' + $mdgriffith$elm_ui$Internal$Model$floatClass(transparency),
+			transparency));
+};
 var $author$project$View$unselectedRoutePills = F2(
 	function (index, unselectedRoutes) {
 		return A2(
 			$mdgriffith$elm_ui$Element$wrappedRow,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
+					$author$project$Pill$listSpacing,
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 				]),
 			A2(
@@ -23829,6 +22989,15 @@ var $author$project$View$emptyPrediction = A2(
 			$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit)
 		]),
 	$mdgriffith$elm_ui$Element$text('No predicted trips'));
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
 var $author$project$Mbta$Api$getIncludedRoute = F2(
 	function (routeId, _v0) {
 		var data = _v0.a;
@@ -24670,6 +23839,17 @@ var $author$project$View$absoluteTimeString = function (time) {
 					A2($elm$time$Time$toMinute, $author$project$View$timeZone, time)))
 			]));
 };
+var $mdgriffith$elm_ui$Internal$Flag$borderColor = $mdgriffith$elm_ui$Internal$Flag$flag(28);
+var $mdgriffith$elm_ui$Element$Border$color = function (clr) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderColor,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Colored,
+			'bc-' + $mdgriffith$elm_ui$Internal$Model$formatColorClass(clr),
+			'border-color',
+			clr));
+};
 var $mdgriffith$elm_ui$Element$Font$strike = $mdgriffith$elm_ui$Internal$Model$htmlClass($mdgriffith$elm_ui$Internal$Style$classes.strike);
 var $mdgriffith$elm_ui$Internal$Model$VariantActive = function (a) {
 	return {$: 'VariantActive', a: a};
@@ -24952,7 +24132,7 @@ var $author$project$View$viewPredictions = F3(
 				$author$project$View$viewPrediction(currentTime),
 				predictions));
 	});
-var $author$project$View$viewCompleteSelection = F6(
+var $author$project$View$viewSelection = F6(
 	function (index, currentTime, routes, stop, data, selection) {
 		var _v0 = A2(
 			$elm$core$List$partition,
@@ -25018,76 +24198,6 @@ var $author$project$View$viewCompleteSelection = F6(
 					$mdgriffith$elm_ui$Element$text('Choose routes'))
 				]));
 	});
-var $author$project$View$incompleteRoutePills = F2(
-	function (index, selectedRouteIds) {
-		return A2(
-			$mdgriffith$elm_ui$Element$wrappedRow,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0),
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-				]),
-			_Utils_ap(
-				A2(
-					$elm$core$List$map,
-					function (routeId) {
-						return A2(
-							$mdgriffith$elm_ui$Element$Input$button,
-							_List_Nil,
-							{
-								label: $author$project$Pill$unknownPill(routeId),
-								onPress: $elm$core$Maybe$Just(
-									A2($author$project$Model$RemoveRouteFromSelection, index, routeId))
-							});
-					},
-					selectedRouteIds),
-				_List_fromArray(
-					[
-						$author$project$View$addPill(
-						$elm$core$Maybe$Just(index))
-					])));
-	});
-var $author$project$View$viewPartialSelection = F2(
-	function (index, partialSelection) {
-		return A2(
-			$mdgriffith$elm_ui$Element$column,
-			_List_fromArray(
-				[
-					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$spacing($author$project$ViewHelpers$unit)
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$mdgriffith$elm_ui$Element$row,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-							$mdgriffith$elm_ui$Element$spacing(4)
-						]),
-					_List_fromArray(
-						[
-							A2($author$project$View$incompleteRoutePills, index, partialSelection.routeIds),
-							A2(
-							$mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[$mdgriffith$elm_ui$Element$alignRight]),
-							A2($author$project$View$directionIcon, index, partialSelection.directionId)),
-							A2(
-							$mdgriffith$elm_ui$Element$el,
-							_List_fromArray(
-								[$mdgriffith$elm_ui$Element$alignRight]),
-							$author$project$View$removeSelection(index))
-						])),
-					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit)
-						]),
-					$mdgriffith$elm_ui$Element$text('Choose stop'))
-				]));
-	});
 var $author$project$View$viewSelections = F5(
 	function (currentTime, routesByStopId, stops, data, selections) {
 		return A2(
@@ -25101,18 +24211,12 @@ var $author$project$View$viewSelections = F5(
 				$elm$core$List$indexedMap,
 				F2(
 					function (index, selection) {
-						if (selection.$ === 'WithoutStop') {
-							var partialSelection = selection.a;
-							return A2($author$project$View$viewPartialSelection, index, partialSelection);
-						} else {
-							var completeSelection = selection.a;
-							var stop = A2($pzp1997$assoc_list$AssocList$get, completeSelection.stopId, stops);
-							var routes = A2(
-								$elm$core$Maybe$withDefault,
-								_List_Nil,
-								A2($pzp1997$assoc_list$AssocList$get, completeSelection.stopId, routesByStopId));
-							return A6($author$project$View$viewCompleteSelection, index, currentTime, routes, stop, data, completeSelection);
-						}
+						var stop = A2($pzp1997$assoc_list$AssocList$get, selection.stopId, stops);
+						var routes = A2(
+							$elm$core$Maybe$withDefault,
+							_List_Nil,
+							A2($pzp1997$assoc_list$AssocList$get, selection.stopId, routesByStopId));
+						return A6($author$project$View$viewSelection, index, currentTime, routes, stop, data, selection);
 					}),
 				selections));
 	});
@@ -25133,8 +24237,7 @@ var $author$project$View$ui = function (model) {
 				return _List_fromArray(
 					[
 						$mdgriffith$elm_ui$Element$text('Loading...'),
-						$author$project$View$addPill($elm$core$Maybe$Nothing),
-						$author$project$View$addSelectionForm(model),
+						$author$project$View$newSelection,
 						$author$project$View$refreshButton(model)
 					]);
 			} else {
@@ -25161,62 +24264,137 @@ var $author$project$View$ui = function (model) {
 							model.stops,
 							data,
 							model.selections),
-							$author$project$View$addPill($elm$core$Maybe$Nothing),
-							$author$project$View$addSelectionForm(model),
+							$author$project$View$newSelection,
 							$author$project$View$refreshButton(model)
 						]);
 				}
 			}
 		}());
 };
-var $author$project$Model$CloseModal = {$: 'CloseModal'};
-var $avh4$elm_color$Color$darkCharcoal = A4($avh4$elm_color$Color$RgbaSpace, 46 / 255, 52 / 255, 54 / 255, 1.0);
-var $author$project$Modal$background = A2(
-	$mdgriffith$elm_ui$Element$el,
-	_List_fromArray(
-		[
-			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-			$mdgriffith$elm_ui$Element$Background$color(
-			$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$darkCharcoal)),
-			$mdgriffith$elm_ui$Element$alpha(0.5),
-			$mdgriffith$elm_ui$Element$Events$onClick($author$project$Model$CloseModal)
-		]),
-	$mdgriffith$elm_ui$Element$none);
-var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
-	return {$: 'AlignY', a: a};
-};
-var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
-var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
-var $mdgriffith$elm_ui$Element$scrollbars = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
-var $author$project$Modal$modalWrapper = function (child) {
-	return A2(
-		$mdgriffith$elm_ui$Element$el,
-		_List_fromArray(
-			[
-				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-				$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit * 2),
-				$mdgriffith$elm_ui$Element$behindContent($author$project$Modal$background),
-				$mdgriffith$elm_ui$Element$scrollbars
-			]),
-		A2(
-			$mdgriffith$elm_ui$Element$el,
+var $author$project$Model$NewSelectionBack = {$: 'NewSelectionBack'};
+var $author$project$Model$NewSelectionCancel = {$: 'NewSelectionCancel'};
+var $author$project$NewSelection$header = F2(
+	function (showBack, text) {
+		return A2(
+			$mdgriffith$elm_ui$Element$row,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$centerX,
-					$mdgriffith$elm_ui$Element$centerY,
 					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-					$mdgriffith$elm_ui$Element$scrollbars
+					$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0),
+					$mdgriffith$elm_ui$Element$spacing(($author$project$ViewHelpers$unit / 2) | 0)
 				]),
-			child));
+			_List_fromArray(
+				[
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Font$size(24)
+						]),
+					$mdgriffith$elm_ui$Element$text(text)),
+					showBack ? A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[$mdgriffith$elm_ui$Element$alignRight]),
+					A2(
+						$author$project$ViewHelpers$iconButton,
+						$author$project$Model$NewSelectionBack,
+						{description: 'back', src: '/assets/back.svg'})) : $mdgriffith$elm_ui$Element$none,
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[$mdgriffith$elm_ui$Element$alignRight]),
+					A2(
+						$author$project$ViewHelpers$iconButton,
+						$author$project$Model$NewSelectionCancel,
+						{description: 'close', src: '/assets/close.svg'}))
+				]));
+	});
+var $author$project$Model$NewSelectionRemoveRoute = function (a) {
+	return {$: 'NewSelectionRemoveRoute', a: a};
 };
-var $author$project$Model$PickRoute = function (a) {
-	return {$: 'PickRoute', a: a};
+var $author$project$Model$NewSelectionAddExtraRoute = {$: 'NewSelectionAddExtraRoute'};
+var $author$project$NewSelection$addPill = A2(
+	$mdgriffith$elm_ui$Element$Input$button,
+	_List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$padding(4),
+			$mdgriffith$elm_ui$Element$Border$rounded(24),
+			$mdgriffith$elm_ui$Element$Border$color(
+			$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$white)),
+			$mdgriffith$elm_ui$Element$Border$width(2)
+		]),
+	{
+		label: A2(
+			$mdgriffith$elm_ui$Element$image,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width(
+					$mdgriffith$elm_ui$Element$px(16)),
+					$mdgriffith$elm_ui$Element$height(
+					$mdgriffith$elm_ui$Element$px(16))
+				]),
+			{description: 'Add route', src: '/assets/add.svg'}),
+		onPress: $elm$core$Maybe$Just($author$project$Model$NewSelectionAddExtraRoute)
+	});
+var $author$project$NewSelection$pillList = F2(
+	function (routes, showAddRouteButton) {
+		return A2(
+			$mdgriffith$elm_ui$Element$wrappedRow,
+			_List_fromArray(
+				[$author$project$Pill$listSpacing]),
+			A2(
+				$elm$core$List$append,
+				A2(
+					$elm$core$List$map,
+					function (route) {
+						return A2(
+							$mdgriffith$elm_ui$Element$Input$button,
+							_List_Nil,
+							{
+								label: $author$project$Pill$pill(route),
+								onPress: $elm$core$Maybe$Just(
+									$author$project$Model$NewSelectionRemoveRoute(route.id))
+							});
+					},
+					routes),
+				showAddRouteButton ? _List_fromArray(
+					[$author$project$NewSelection$addPill]) : _List_Nil));
+	});
+var $author$project$Model$NewSelectionChoseRoute = function (a) {
+	return {$: 'NewSelectionChoseRoute', a: a};
 };
 var $avh4$elm_color$Color$lightCharcoal = A4($avh4$elm_color$Color$RgbaSpace, 136 / 255, 138 / 255, 133 / 255, 1.0);
-var $author$project$Modal$routePickerRoute = function (route) {
+var $author$project$NewSelection$buttonList = F3(
+	function (msg, viewElem, elems) {
+		return A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			A2(
+				$elm$core$List$map,
+				function (elem) {
+					return A2(
+						$mdgriffith$elm_ui$Element$Input$button,
+						_List_fromArray(
+							[
+								$mdgriffith$elm_ui$Element$Border$color(
+								$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$lightCharcoal)),
+								$mdgriffith$elm_ui$Element$Border$widthEach(
+								{bottom: 1, left: 0, right: 0, top: 0}),
+								$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+							]),
+						{
+							label: viewElem(elem),
+							onPress: $elm$core$Maybe$Just(
+								msg(elem))
+						});
+				},
+				elems));
+	});
+var $author$project$NewSelection$routeListRoute = function (route) {
 	return A2(
 		$mdgriffith$elm_ui$Element$row,
 		_List_fromArray(
@@ -25242,45 +24420,169 @@ var $author$project$Modal$routePickerRoute = function (route) {
 					]))
 			]));
 };
-var $author$project$Modal$routePicker = function (routes) {
+var $author$project$NewSelection$routeList = function (routes) {
+	return A3(
+		$author$project$NewSelection$buttonList,
+		A2(
+			$elm$core$Basics$composeL,
+			$author$project$Model$NewSelectionChoseRoute,
+			function ($) {
+				return $.id;
+			}),
+		$author$project$NewSelection$routeListRoute,
+		routes);
+};
+var $author$project$NewSelection$selectedRoutes = F2(
+	function (allRoutes, selectedRouteIds) {
+		return A2(
+			$elm$core$List$filter,
+			function (route) {
+				return A2($elm$core$List$member, route.id, selectedRouteIds);
+			},
+			allRoutes);
+	});
+var $author$project$NewSelection$chooseExtraRoute = F2(
+	function (allRoutes, selectedRouteIds) {
+		return A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			_List_fromArray(
+				[
+					A2($author$project$NewSelection$header, true, 'Choose Another Route'),
+					A2(
+					$author$project$NewSelection$pillList,
+					A2($author$project$NewSelection$selectedRoutes, allRoutes, selectedRouteIds),
+					false),
+					$author$project$NewSelection$routeList(allRoutes)
+				]));
+	});
+var $author$project$NewSelection$chooseRoute = function (allRoutes) {
 	return A2(
 		$mdgriffith$elm_ui$Element$column,
 		_List_fromArray(
 			[
 				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
 			]),
+		_List_fromArray(
+			[
+				A2($author$project$NewSelection$header, false, 'Choose Route'),
+				$author$project$NewSelection$routeList(allRoutes)
+			]));
+};
+var $author$project$Model$NewSelectionChoseStop = function (a) {
+	return {$: 'NewSelectionChoseStop', a: a};
+};
+var $author$project$NewSelection$stopListStop = function (stop) {
+	return A2(
+		$mdgriffith$elm_ui$Element$paragraph,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$padding(($author$project$ViewHelpers$unit / 2) | 0)
+			]),
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$text(
+				$author$project$Mbta$stopName(stop))
+			]));
+};
+var $author$project$NewSelection$stopList = function (stops) {
+	return A3(
+		$author$project$NewSelection$buttonList,
+		A2($elm$core$Basics$composeL, $author$project$Model$NewSelectionChoseStop, $author$project$Mbta$stopId),
+		$author$project$NewSelection$stopListStop,
+		stops);
+};
+var $author$project$NewSelection$chooseStop = F2(
+	function (routes, stops) {
+		return A2(
+			$mdgriffith$elm_ui$Element$column,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+				]),
+			_List_fromArray(
+				[
+					A2($author$project$NewSelection$header, true, 'Choose Stop'),
+					A2($author$project$NewSelection$pillList, routes, true),
+					$author$project$NewSelection$stopList(stops)
+				]));
+	});
+var $mdgriffith$elm_ui$Internal$Model$Behind = {$: 'Behind'};
+var $mdgriffith$elm_ui$Element$behindContent = function (element) {
+	return A2($mdgriffith$elm_ui$Element$createNearby, $mdgriffith$elm_ui$Internal$Model$Behind, element);
+};
+var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
+	return {$: 'AlignY', a: a};
+};
+var $mdgriffith$elm_ui$Internal$Model$CenterY = {$: 'CenterY'};
+var $mdgriffith$elm_ui$Element$centerY = $mdgriffith$elm_ui$Internal$Model$AlignY($mdgriffith$elm_ui$Internal$Model$CenterY);
+var $avh4$elm_color$Color$darkCharcoal = A4($avh4$elm_color$Color$RgbaSpace, 46 / 255, 52 / 255, 54 / 255, 1.0);
+var $author$project$NewSelection$modalBackground = A2(
+	$mdgriffith$elm_ui$Element$el,
+	_List_fromArray(
+		[
+			$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+			$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+			$mdgriffith$elm_ui$Element$Background$color(
+			$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$darkCharcoal)),
+			$mdgriffith$elm_ui$Element$alpha(0.5),
+			$mdgriffith$elm_ui$Element$Events$onClick($author$project$Model$NewSelectionCancel)
+		]),
+	$mdgriffith$elm_ui$Element$none);
+var $mdgriffith$elm_ui$Internal$Flag$overflow = $mdgriffith$elm_ui$Internal$Flag$flag(20);
+var $mdgriffith$elm_ui$Element$scrollbars = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$overflow, $mdgriffith$elm_ui$Internal$Style$classes.scrollbars);
+var $author$project$NewSelection$modalWrapper = function (child) {
+	return A2(
+		$mdgriffith$elm_ui$Element$el,
+		_List_fromArray(
+			[
+				$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+				$mdgriffith$elm_ui$Element$padding($author$project$ViewHelpers$unit * 2),
+				$mdgriffith$elm_ui$Element$behindContent($author$project$NewSelection$modalBackground),
+				$mdgriffith$elm_ui$Element$scrollbars
+			]),
 		A2(
-			$elm$core$List$map,
-			function (route) {
-				return A2(
-					$mdgriffith$elm_ui$Element$Input$button,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Background$color(
-							$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$charcoal)),
-							$mdgriffith$elm_ui$Element$Border$color(
-							$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$lightCharcoal)),
-							$mdgriffith$elm_ui$Element$Border$widthEach(
-							{bottom: 1, left: 0, right: 0, top: 0}),
-							$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-						]),
-					{
-						label: $author$project$Modal$routePickerRoute(route),
-						onPress: $elm$core$Maybe$Just(
-							$author$project$Model$PickRoute(route.id))
-					});
-			},
-			routes));
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Background$color(
+					$author$project$ViewHelpers$avh4ColorToElmUiColor($avh4$elm_color$Color$charcoal)),
+					$mdgriffith$elm_ui$Element$centerX,
+					$mdgriffith$elm_ui$Element$centerY,
+					$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+					$mdgriffith$elm_ui$Element$scrollbars
+				]),
+			child));
 };
-var $author$project$Modal$view = function (model) {
-	var _v0 = model.modal;
-	if (_v0.$ === 'NoModal') {
-		return $mdgriffith$elm_ui$Element$none;
-	} else {
-		return $author$project$Modal$modalWrapper(
-			$author$project$Modal$routePicker(model.routes));
-	}
-};
+var $author$project$NewSelection$viewModal = F2(
+	function (routes, newSelectionState) {
+		switch (newSelectionState.$) {
+			case 'NotMakingNewSelection':
+				return $mdgriffith$elm_ui$Element$none;
+			case 'ChoosingRoute':
+				return $author$project$NewSelection$modalWrapper(
+					$author$project$NewSelection$chooseRoute(routes));
+			case 'ChoosingStop':
+				var routeIds = newSelectionState.a;
+				var directionId = newSelectionState.b;
+				var loadedStops = newSelectionState.c;
+				return $author$project$NewSelection$modalWrapper(
+					A2(
+						$author$project$NewSelection$chooseStop,
+						A2($author$project$NewSelection$selectedRoutes, routes, routeIds),
+						loadedStops));
+			default:
+				var routeIds = newSelectionState.a;
+				var directionId = newSelectionState.b;
+				return $author$project$NewSelection$modalWrapper(
+					A2($author$project$NewSelection$chooseExtraRoute, routes, routeIds));
+		}
+	});
 var $author$project$View$view = function (model) {
 	return {
 		body: _List_fromArray(
@@ -25300,7 +24602,7 @@ var $author$project$View$view = function (model) {
 								$mdgriffith$elm_ui$Element$Font$sansSerif
 							])),
 						$mdgriffith$elm_ui$Element$inFront(
-						$author$project$Modal$view(model))
+						A2($author$project$NewSelection$viewModal, model.routes, model.newSelectionState))
 					]),
 				$author$project$View$ui(model))
 			]),
@@ -25309,4 +24611,4 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$application(
 	{init: $author$project$Main$init, onUrlChange: $author$project$Model$OnUrlChange, onUrlRequest: $author$project$Model$OnUrlRequest, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$View$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Selection.CompleteSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, stopId : Mbta.StopId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"},"Selection.PartialSelection":{"args":[],"type":"{ routeIds : List.List Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"AddSelection":["Selection.Selection"],"TypeRouteId":["String.String"],"TypeStopId":["String.String"],"DeleteSelection":["Basics.Int"],"ToggleDirection":["Basics.Int"],"AddRouteToSelection":["Basics.Int","Mbta.RouteId"],"CloseModal":[],"OpenRoutePicker":["Maybe.Maybe Basics.Int"],"PickRoute":["Mbta.RouteId"],"RemoveRouteFromSelection":["Basics.Int","Mbta.RouteId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"ReceiveRoutesForStopId":["Mbta.StopId","Mbta.Api.ApiResult (List.List Mbta.Route)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Selection.Selection":{"args":[],"tags":{"WithoutStop":["Selection.PartialSelection"],"WithStop":["Selection.CompleteSelection"]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
+_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)({"versions":{"elm":"0.19.1"},"types":{"message":"Model.Msg","aliases":{"Mbta.Api.ApiResult":{"args":["primary"],"type":"Result.Result Mbta.Api.ApiError (Mbta.Api.Data primary)"},"Mbta.Route":{"args":[],"type":"{ id : Mbta.RouteId, routeType : Mbta.RouteType, shortName : Maybe.Maybe String.String, longName : String.String, description : String.String, fareClass : String.String, directions : Maybe.Maybe Mbta.RouteDirections, sortOrder : Basics.Int, textColor : Color.Color, color : Color.Color }"},"Mbta.RouteDirection":{"args":[],"type":"{ name : String.String, destination : String.String }"},"Mbta.RouteDirections":{"args":[],"type":"{ d0 : Mbta.RouteDirection, d1 : Mbta.RouteDirection }"},"Url.Url":{"args":[],"type":"{ protocol : Url.Protocol, host : String.String, port_ : Maybe.Maybe Basics.Int, path : String.String, query : Maybe.Maybe String.String, fragment : Maybe.Maybe String.String }"},"Json.Decode.Value":{"args":[],"type":"Json.Encode.Value"},"Mbta.ActivePeriod":{"args":[],"type":"{ start : Time.Posix, end : Maybe.Maybe Time.Posix }"},"Mbta.Alert":{"args":[],"type":"{ id : Mbta.AlertId, url : Maybe.Maybe String.String, shortHeader : String.String, header : String.String, description : Maybe.Maybe String.String, createdAt : Time.Posix, updatedAt : Time.Posix, timeframe : Maybe.Maybe String.String, activePeriod : List.List Mbta.ActivePeriod, severity : Basics.Int, serviceEffect : String.String, lifecycle : Mbta.AlertLifecycle, effect : String.String, cause : String.String, informedEntities : List.List Mbta.InformedEntity }"},"Mbta.ChangedDate":{"args":[],"type":"{ date : Mbta.ServiceDate, notes : Maybe.Maybe String.String }"},"Mbta.Facility":{"args":[],"type":"{ id : Mbta.FacilityId, stopId : Maybe.Maybe Mbta.StopId, longName : String.String, shortName : String.String, facilityType : Mbta.FacilityType, latLng : Maybe.Maybe Mbta.LatLng, properties : Mbta.FacilityProperties }"},"Mbta.FacilityProperties":{"args":[],"type":"Dict.Dict String.String (List.List Mbta.FacilityPropertyValue)"},"Mbta.InformedEntity":{"args":[],"type":"{ activities : List.List Mbta.InformedEntityActivity, routeType : Maybe.Maybe Mbta.RouteType, routeId : Maybe.Maybe Mbta.RouteId, directionId : Maybe.Maybe Mbta.DirectionId, tripId : Maybe.Maybe Mbta.TripId, stopId : Maybe.Maybe Mbta.StopId, facilityId : Maybe.Maybe Mbta.FacilityId }"},"Mbta.LatLng":{"args":[],"type":"{ latitude : Basics.Float, longitude : Basics.Float }"},"Mbta.Line":{"args":[],"type":"{ id : Mbta.LineId, shortName : Maybe.Maybe String.String, longName : String.String, sortOrder : Basics.Int, color : Color.Color, textColor : Color.Color }"},"Mbta.LiveFacility":{"args":[],"type":"{ id : Mbta.FacilityId, updatedAt : Time.Posix, properties : Mbta.FacilityProperties }"},"Mbta.Mixed.Mixed":{"args":[],"type":"{ predictions : AssocList.Dict Mbta.PredictionId Mbta.Prediction, vehicles : AssocList.Dict Mbta.VehicleId Mbta.Vehicle, routes : AssocList.Dict Mbta.RouteId Mbta.Route, routePatterns : AssocList.Dict Mbta.RoutePatternId Mbta.RoutePattern, lines : AssocList.Dict Mbta.LineId Mbta.Line, schedules : AssocList.Dict Mbta.ScheduleId Mbta.Schedule, trips : AssocList.Dict Mbta.TripId Mbta.Trip, services : AssocList.Dict Mbta.ServiceId Mbta.Service, shapes : AssocList.Dict Mbta.ShapeId Mbta.Shape, stops : AssocList.Dict Mbta.StopId Mbta.Stop, facilities : AssocList.Dict Mbta.FacilityId Mbta.Facility, liveFacilities : AssocList.Dict Mbta.FacilityId Mbta.LiveFacility, alerts : AssocList.Dict Mbta.AlertId Mbta.Alert }"},"Mbta.Prediction":{"args":[],"type":"{ id : Mbta.PredictionId, routeId : Mbta.RouteId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, scheduleId : Maybe.Maybe Mbta.ScheduleId, vehicleId : Maybe.Maybe Mbta.VehicleId, alertIds : List.List Mbta.AlertId, arrivalTime : Maybe.Maybe Time.Posix, departureTime : Maybe.Maybe Time.Posix, status : Maybe.Maybe String.String, directionId : Mbta.DirectionId, scheduleRelationship : Mbta.PredictionScheduleRelationship }"},"Mbta.RoutePattern":{"args":[],"type":"{ id : Mbta.RoutePatternId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, name : String.String, typicality : Mbta.RoutePatternTypicality, timeDesc : Maybe.Maybe String.String, sortOrder : Basics.Int, representativeTripId : Mbta.TripId }"},"Mbta.Schedule":{"args":[],"type":"{ id : Mbta.ScheduleId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, predictionId : Maybe.Maybe Mbta.PredictionId, timepoint : Basics.Bool, departureTime : Maybe.Maybe Time.Posix, arrivalTime : Maybe.Maybe Time.Posix, pickupType : Mbta.PickupDropOffType, dropOffType : Mbta.PickupDropOffType }"},"Mbta.Service":{"args":[],"type":"{ id : Mbta.ServiceId, description : Maybe.Maybe String.String, serviceType : Maybe.Maybe Mbta.ServiceType, name : Maybe.Maybe String.String, typicality : Mbta.ServiceTypicality, startDate : Mbta.ServiceDate, endDate : Mbta.ServiceDate, validDays : List.List Basics.Int, addedDates : List.List Mbta.ChangedDate, removedDates : List.List Mbta.ChangedDate }"},"Mbta.Shape":{"args":[],"type":"{ id : Mbta.ShapeId, name : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, stopIds : List.List Mbta.StopId, priority : Basics.Int, polyline : String.String }"},"Mbta.Stop_Entrance":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, parentStation : Mbta.StopId }"},"Mbta.Stop_Node":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, parentStation : Mbta.StopId }"},"Mbta.Stop_Station":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId, childStops : List.List Mbta.StopId }"},"Mbta.Stop_Stop":{"args":[],"type":"{ id : Mbta.StopId, name : String.String, description : Maybe.Maybe String.String, wheelchairAccessible : Mbta.WheelchairAccessible, latLng : Mbta.LatLng, address : Maybe.Maybe String.String, parentStation : Maybe.Maybe Mbta.StopId, platformCode : Maybe.Maybe String.String, platformName : Maybe.Maybe String.String, zone : Maybe.Maybe Mbta.ZoneId }"},"Mbta.Trip":{"args":[],"type":"{ id : Mbta.TripId, serviceId : Maybe.Maybe Mbta.ServiceId, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, routePatternId : Maybe.Maybe Mbta.RoutePatternId, name : Maybe.Maybe String.String, headsign : String.String, shapeId : Maybe.Maybe Mbta.ShapeId, wheelchairAccessible : Mbta.WheelchairAccessible, bikesAllowed : Mbta.BikesAllowed, blockId : Maybe.Maybe Mbta.BlockId }"},"Mbta.Vehicle":{"args":[],"type":"{ id : Mbta.VehicleId, label : String.String, routeId : Mbta.RouteId, directionId : Mbta.DirectionId, tripId : Mbta.TripId, stopId : Mbta.StopId, stopSequence : Mbta.StopSequence, currentStatus : Mbta.CurrentStatus, latLng : Mbta.LatLng, speed : Maybe.Maybe Basics.Float, bearing : Basics.Int, updatedAt : Time.Posix }"}},"unions":{"Model.Msg":{"args":[],"tags":{"Tick":["Time.Posix"],"OnUrlRequest":["Browser.UrlRequest"],"OnUrlChange":["Url.Url"],"DeleteSelection":["Basics.Int"],"ToggleDirection":["Basics.Int"],"AddRouteToSelection":["Basics.Int","Mbta.RouteId"],"NewSelectionStart":[],"NewSelectionChoseRoute":["Mbta.RouteId"],"NewSelectionChoseDirection":["Maybe.Maybe Mbta.DirectionId"],"NewSelectionChoseStop":["Mbta.StopId"],"NewSelectionAddExtraRoute":[],"NewSelectionRemoveRoute":["Mbta.RouteId"],"NewSelectionBack":[],"NewSelectionCancel":[],"RemoveRouteFromSelection":["Basics.Int","Mbta.RouteId"],"ReceiveRoutes":["Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStops":["Mbta.Api.ApiResult (List.List Mbta.Stop)"],"ReceiveRoutesForStopId":["Mbta.StopId","Mbta.Api.ApiResult (List.List Mbta.Route)"],"ReceiveStopsForRoutes":["List.List Mbta.RouteId","Maybe.Maybe Mbta.DirectionId","Mbta.Api.ApiResult (List.List Mbta.Stop)"],"StreamMsg":["String.String","Json.Decode.Value"],"RefreshStream":[]}},"Mbta.Api.ApiError":{"args":[],"tags":{"InvalidRequest":["String.String"],"HttpError":["Http.Error"],"ApiError":["List.List Json.Decode.Value"],"DecodeError":["String.String"]}},"Color.Color":{"args":[],"tags":{"RgbaSpace":["Basics.Float","Basics.Float","Basics.Float","Basics.Float"]}},"Mbta.Api.Data":{"args":["primary"],"tags":{"Data":["{ primaryData : primary, included : Mbta.Mixed.Mixed }"]}},"Mbta.DirectionId":{"args":[],"tags":{"D0":[],"D1":[]}},"Basics.Int":{"args":[],"tags":{"Int":[]}},"List.List":{"args":["a"],"tags":{}},"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Time.Posix":{"args":[],"tags":{"Posix":["Basics.Int"]}},"Url.Protocol":{"args":[],"tags":{"Http":[],"Https":[]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Mbta.RouteId":{"args":[],"tags":{"RouteId":["String.String"]}},"Mbta.RouteType":{"args":[],"tags":{"RouteType_0_LightRail":[],"RouteType_1_HeavyRail":[],"RouteType_2_CommuterRail":[],"RouteType_3_Bus":[],"RouteType_4_Ferry":[]}},"Mbta.Stop":{"args":[],"tags":{"Stop_0_Stop":["Mbta.Stop_Stop"],"Stop_1_Station":["Mbta.Stop_Station"],"Stop_2_Entrance":["Mbta.Stop_Entrance"],"Stop_3_Node":["Mbta.Stop_Node"]}},"Mbta.StopId":{"args":[],"tags":{"StopId":["String.String"]}},"String.String":{"args":[],"tags":{"String":[]}},"Browser.UrlRequest":{"args":[],"tags":{"Internal":["Url.Url"],"External":["String.String"]}},"Json.Encode.Value":{"args":[],"tags":{"Value":[]}},"Mbta.AlertId":{"args":[],"tags":{"AlertId":["String.String"]}},"Mbta.AlertLifecycle":{"args":[],"tags":{"Alert_New":[],"Alert_Ongoing":[],"Alert_OngoingUpcoming":[],"Alert_Upcoming":[]}},"Mbta.BikesAllowed":{"args":[],"tags":{"Bikes_0_NoInformation":[],"Bikes_1_Allowed":[],"Bikes_2_NotAllowed":[]}},"Mbta.BlockId":{"args":[],"tags":{"BlockId":["String.String"]}},"Basics.Bool":{"args":[],"tags":{"True":[],"False":[]}},"Mbta.CurrentStatus":{"args":[],"tags":{"IncomingAt":[],"StoppedAt":[],"InTransitTo":[]}},"AssocList.Dict":{"args":["a","b"],"tags":{"D":["List.List ( a, b )"]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String.String"],"Timeout":[],"NetworkError":[],"BadStatus":["Basics.Int"],"BadBody":["String.String"]}},"Mbta.FacilityId":{"args":[],"tags":{"FacilityId":["String.String"]}},"Mbta.FacilityPropertyValue":{"args":[],"tags":{"FacilityProperty_String":["String.String"],"FacilityProperty_Int":["Basics.Int"],"FacilityProperty_Null":[]}},"Mbta.FacilityType":{"args":[],"tags":{"FacilityType":["String.String"]}},"Basics.Float":{"args":[],"tags":{"Float":[]}},"Mbta.InformedEntityActivity":{"args":[],"tags":{"Activity_Board":[],"Activity_BringingBike":[],"Activity_Exit":[],"Activity_ParkCar":[],"Activity_Ride":[],"Activity_StoreBike":[],"Activity_UsingEscalator":[],"Activity_UsingWheelchair":[]}},"Mbta.LineId":{"args":[],"tags":{"LineId":["String.String"]}},"Mbta.PickupDropOffType":{"args":[],"tags":{"PUDO_0_Regular":[],"PUDO_1_NotAllowed":[],"PUDO_2_PhoneAgency":[],"PUDO_3_CoordinateWithDriver":[]}},"Mbta.PredictionId":{"args":[],"tags":{"PredictionId":["String.String"]}},"Mbta.PredictionScheduleRelationship":{"args":[],"tags":{"ScheduleRelationship_Scheduled":[],"ScheduleRelationship_Added":[],"ScheduleRelationship_Cancelled":[],"ScheduleRelationship_NoData":[],"ScheduleRelationship_Skipped":[],"ScheduleRelationship_Unscheduled":[]}},"Mbta.RoutePatternId":{"args":[],"tags":{"RoutePatternId":["String.String"]}},"Mbta.RoutePatternTypicality":{"args":[],"tags":{"RoutePatternTypicality_0_NotDefined":[],"RoutePatternTypicality_1_Typical":[],"RoutePatternTypicality_2_Deviation":[],"RoutePatternTypicality_3_Atypical":[],"RoutePatternTypicality_4_Diversion":[]}},"Mbta.ScheduleId":{"args":[],"tags":{"ScheduleId":["String.String"]}},"Mbta.ServiceDate":{"args":[],"tags":{"ServiceDate":["String.String"]}},"Mbta.ServiceId":{"args":[],"tags":{"ServiceId":["String.String"]}},"Mbta.ServiceType":{"args":[],"tags":{"ServiceType_Weekday":[],"ServiceType_Saturday":[],"ServiceType_Sunday":[],"ServiceType_Other":[]}},"Mbta.ServiceTypicality":{"args":[],"tags":{"ServiceTypicality_0_NotDefined":[],"ServiceTypicality_1_Typical":[],"ServiceTypicality_2_ExtraService":[],"ServiceTypicality_3_ReducedHoliday":[],"ServiceTypicality_4_PlannedDisruption":[],"ServiceTypicality_5_WeatherDisruption":[]}},"Mbta.ShapeId":{"args":[],"tags":{"ShapeId":["String.String"]}},"Mbta.StopSequence":{"args":[],"tags":{"StopSequence":["Basics.Int"]}},"Mbta.TripId":{"args":[],"tags":{"TripId":["String.String"]}},"Mbta.VehicleId":{"args":[],"tags":{"VehicleId":["String.String"]}},"Mbta.WheelchairAccessible":{"args":[],"tags":{"Accessible_0_NoInformation":[],"Accessible_1_Accessible":[],"Accessible_2_Inaccessible":[]}},"Mbta.ZoneId":{"args":[],"tags":{"ZoneId":["String.String"]}},"Dict.NColor":{"args":[],"tags":{"Red":[],"Black":[]}}}}})}});}(this));
