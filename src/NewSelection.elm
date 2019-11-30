@@ -146,16 +146,39 @@ addPill =
         }
 
 
+header : String -> Element Msg
+header text =
+    El.row
+        [ El.width El.fill
+        , El.padding (unit // 2)
+        , El.spacing (unit // 2)
+        ]
+        [ El.el
+            [ Font.size 24
+            ]
+            (El.text text)
+        , El.el
+            [ El.alignRight
+            ]
+            closeButton
+        ]
+
+
+closeButton : Element Msg
+closeButton =
+    ViewHelpers.iconButton
+        NewSelectionCancel
+        { src = "/assets/close.svg"
+        , description = "close"
+        }
+
+
 chooseRoute : List Mbta.Route -> Element Msg
 chooseRoute allRoutes =
     El.column
         [ El.width El.fill
         ]
-        [ El.el
-            [ El.padding (unit // 2)
-            , Font.size 24
-            ]
-            (El.text "Choose Route")
+        [ header "Choose Route"
         , routeList allRoutes
         ]
 
@@ -165,11 +188,7 @@ chooseExtraRoute allRoutes selectedRouteIds =
     El.column
         [ El.width El.fill
         ]
-        [ El.el
-            [ El.padding (unit // 2)
-            , Font.size 24
-            ]
-            (El.text "Choose Another Route")
+        [ header "Choose Another Route"
         , pillList (selectedRoutes allRoutes selectedRouteIds) False
         , routeList allRoutes
         ]
@@ -201,11 +220,7 @@ chooseStop routes stops =
     El.column
         [ El.width El.fill
         ]
-        [ El.el
-            [ El.padding (unit // 2)
-            , Font.size 24
-            ]
-            (El.text "Choose Stop")
+        [ header "Choose Stop"
         , pillList routes True
         , stopList stops
         ]
