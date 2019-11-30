@@ -197,28 +197,17 @@ directionIcon index directionId =
                     , description = "direction 1"
                     }
     in
-    Input.button
-        []
-        { onPress = Just (ToggleDirection index)
-        , label =
-            El.image
-                [ El.height (El.px 20) ]
-                icon
-        }
+    ViewHelpers.iconButton
+        (ToggleDirection index)
+        icon
 
 
 removeSelection : Int -> Element Msg
 removeSelection index =
-    Input.button
-        []
-        { onPress = Just (DeleteSelection index)
-        , label =
-            El.image
-                [ El.height (El.px 20)
-                ]
-                { src = "/assets/close.svg"
-                , description = "remove"
-                }
+    ViewHelpers.iconButton
+        (DeleteSelection index)
+        { src = "/assets/close.svg"
+        , description = "remove"
         }
 
 
