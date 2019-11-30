@@ -246,5 +246,6 @@ stopList stops =
 stopListStop : Mbta.Stop -> Element msg
 stopListStop stop =
     El.paragraph
-        []
+        [ El.padding (unit // 2)
+        ]
         [ El.text (Mbta.stopName stop) ]
