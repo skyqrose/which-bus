@@ -50,7 +50,12 @@ init flags url key =
       , url = url
       , navigationKey = key
       , selections = selections
-      , newSelectionState = NotMakingNewSelection
+      , newSelectionState =
+            if List.isEmpty selections then
+                ChoosingRoute
+
+            else
+                NotMakingNewSelection
       , routes = []
       , stops = Dict.empty
       , routesByStopId = Dict.empty
