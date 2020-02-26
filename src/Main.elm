@@ -200,7 +200,7 @@ update msg model =
             in
             ( { model
                 | newSelectionState =
-                    ChoosingStop newRouteIds directionId []
+                    ChoosingStop newRouteIds directionId Dict.empty
               }
             , getStopsForRoutes newRouteIds directionId
             )
@@ -209,7 +209,7 @@ update msg model =
             case model.newSelectionState of
                 ChoosingStop routeIds _ _ ->
                     ( { model
-                        | newSelectionState = ChoosingStop routeIds directionId []
+                        | newSelectionState = ChoosingStop routeIds directionId Dict.empty
                       }
                     , getStopsForRoutes routeIds directionId
                     )
@@ -269,7 +269,7 @@ update msg model =
 
         NewSelectionRemoveRoute routeId ->
             case model.newSelectionState of
-                ChoosingStop routeIds directionId _ ->
+                ChoosingStop routeIds directionId stopsByRouteId ->
                     let
                         newRouteIds =
                             List.Extra.remove routeId routeIds
@@ -283,9 +283,13 @@ update msg model =
 
                     else
                         ( { model
-                            | newSelectionState = ChoosingStop newRouteIds directionId []
+                            | newSelectionState =
+                                ChoosingStop
+                                    newRouteIds
+                                    directionId
+                                    (Dict.remove routeId stopsByRouteId)
                           }
-                        , getStopsForRoutes newRouteIds directionId
+                        , Cmd.none
                         )
 
                 ChoosingExtraRoutes routeIds directionId ->
@@ -323,7 +327,7 @@ update msg model =
 
                 ChoosingExtraRoutes routeIds directionId ->
                     ( { model
-                        | newSelectionState = ChoosingStop routeIds directionId []
+                        | newSelectionState = ChoosingStop routeIds directionId Dict.empty
                       }
                     , getStopsForRoutes routeIds directionId
                     )
@@ -379,16 +383,25 @@ update msg model =
             , Cmd.none
             )
 
-        ReceiveStopsForRoutes requestRouteIds requestDirectionId apiResult ->
+        ReceiveStopsForRoutes requestRouteId requestDirectionId apiResult ->
             case model.newSelectionState of
-                ChoosingStop currentRouteIds currentDirectionId _ ->
-                    if requestRouteIds == currentRouteIds && requestDirectionId == currentDirectionId then
-                        ( { model
-                            | newSelectionState =
+                ChoosingStop currentRouteIds currentDirectionId previousStopsByRouteId ->
+                    if requestDirectionId == currentDirectionId && List.member requestRouteId currentRouteIds then
+                        let
+                            newStops =
                                 apiResult
                                     |> Result.map Mbta.Api.getPrimaryData
                                     |> Result.withDefault []
-                                    |> ChoosingStop requestRouteIds requestDirectionId
+
+                            newStopsByRouteId =
+                                Dict.insert
+                                    requestRouteId
+                                    newStops
+                                    previousStopsByRouteId
+                        in
+                        ( { model
+                            | newSelectionState =
+                                ChoosingStop currentRouteIds requestDirectionId newStopsByRouteId
                           }
                         , Cmd.none
                         )
@@ -504,13 +517,20 @@ getRoutesByStopId existingRoutesByStopId selections =
 
 getStopsForRoutes : List Mbta.RouteId -> Maybe Mbta.DirectionId -> Cmd Msg
 getStopsForRoutes routeIds directionId =
+    routeIds
+        |> List.map (\routeId -> getStopsForRoute routeId directionId)
+        |> Cmd.batch
+
+
+getStopsForRoute : Mbta.RouteId -> Maybe Mbta.DirectionId -> Cmd Msg
+getStopsForRoute routeId directionId =
     Mbta.Api.getStops
-        (ReceiveStopsForRoutes routeIds directionId)
+        (ReceiveStopsForRoutes routeId directionId)
         apiHost
         []
         (Maybe.Extra.cons
             (Maybe.map Mbta.Api.filterStopsByDirectionId directionId)
-            [ Mbta.Api.filterStopsByRouteIds routeIds ]
+            [ Mbta.Api.filterStopsByRouteIds [ routeId ] ]
         )
 
 

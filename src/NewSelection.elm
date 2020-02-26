@@ -1,5 +1,6 @@
 module NewSelection exposing (viewModal)
 
+import AssocList as Dict exposing (Dict)
 import Color
 import Element as El exposing (Element)
 import Element.Background as Background
@@ -7,6 +8,7 @@ import Element.Border as Border
 import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
+import ListHelpers
 import Mbta
 import Model exposing (..)
 import Pill
@@ -23,9 +25,12 @@ viewModal routes newSelectionState =
             modalWrapper
                 (chooseRoute routes)
 
-        ChoosingStop routeIds directionId loadedStops ->
+        ChoosingStop routeIds directionId loadedStopsByRouteId ->
             modalWrapper
-                (chooseStop (selectedRoutes routes routeIds) loadedStops)
+                (chooseStop
+                    (selectedRoutes routes routeIds)
+                    (ListHelpers.dictKeepOnly routeIds loadedStopsByRouteId)
+                )
 
         ChoosingExtraRoutes routeIds directionId ->
             modalWrapper
@@ -224,8 +229,14 @@ routeListRoute route =
         ]
 
 
-chooseStop : List Mbta.Route -> List Mbta.Stop -> Element Msg
-chooseStop routes stops =
+chooseStop : List Mbta.Route -> Dict Mbta.RouteId (List Mbta.Stop) -> Element Msg
+chooseStop routes stopsByRouteId =
+    let
+        stops =
+            stopsByRouteId
+                |> Dict.values
+                |> ListHelpers.listIntersect
+    in
     El.column
         [ El.width El.fill
         ]

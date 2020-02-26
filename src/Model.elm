@@ -57,7 +57,7 @@ type
     | ReceiveRoutes (Mbta.Api.ApiResult (List Mbta.Route))
     | ReceiveStops (Mbta.Api.ApiResult (List Mbta.Stop))
     | ReceiveRoutesForStopId Mbta.StopId (Mbta.Api.ApiResult (List Mbta.Route))
-    | ReceiveStopsForRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId) (Mbta.Api.ApiResult (List Mbta.Stop))
+    | ReceiveStopsForRoutes Mbta.RouteId (Maybe Mbta.DirectionId) (Mbta.Api.ApiResult (List Mbta.Stop))
     | StreamMsg String Decode.Value
     | RefreshStream
 
@@ -65,5 +65,5 @@ type
 type NewSelectionState
     = NotMakingNewSelection
     | ChoosingRoute
-    | ChoosingStop (List Mbta.RouteId) (Maybe Mbta.DirectionId) (List Mbta.Stop)
+    | ChoosingStop (List Mbta.RouteId) (Maybe Mbta.DirectionId) (Dict Mbta.RouteId (List Mbta.Stop))
     | ChoosingExtraRoutes (List Mbta.RouteId) (Maybe Mbta.DirectionId)
