@@ -19,7 +19,7 @@
             "elm-community/list-extra": "8.2.3",
             "elm-community/maybe-extra": "5.2.0",
             "justinmimbs/timezone-data": "2.1.4",
-            "mdgriffith/elm-ui": "1.1.5",
+            "mdgriffith/elm-ui": "1.1.8",
             "pzp1997/assoc-list": "1.0.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.3"
         },
